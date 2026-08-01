@@ -49,10 +49,18 @@ that have real content.
 ## The viewer
 
 - Faceted filters: category, priority, type (manual/automated/both), automation status, status,
-  module, tags, and free-text search across title/steps/expected result/tags.
+  **result** (pass/fail/blocked/skipped/not run), module, tags, and free-text search across
+  title/steps/expected result/tags.
 - Click a row to open the full test case (preconditions, steps, expected result, traceability).
+- **Mark a result** — from the detail panel, click Pass/Fail/Blocked/Skipped (or reset to not
+  run), optionally add your name and notes, and it's written straight back to the source JSON
+  file on disk. Same panel lets you correct the `automationStatus`/`automationRef` fields by
+  hand. This requires running via `node server.js` (below) — it's a real write API, not just a
+  static viewer. See "Marking results" in [SCHEMA.md](SCHEMA.md) for details and an important
+  caveat about trusting existing `automationRef` values.
 - **Export to Excel** — writes an `.xlsx` with an "All Test Cases" sheet plus one sheet per
-  category present in the current filtered view, respecting whatever filters are active.
+  category present in the current filtered view, respecting whatever filters are active, and
+  including each case's latest Result/Run At/Run By/Notes.
 - **Export CSV** — same filtered rows, single flat file, for quick diffing or import into other
   tools.
 

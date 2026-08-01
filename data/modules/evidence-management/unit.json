@@ -8,13 +8,18 @@
     "priority": "P2",
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Hashing utility function is imported in isolation, no DB/S3 dependency"],
+    "preconditions": [
+      "Hashing utility function is imported in isolation, no DB/S3 dependency"
+    ],
     "steps": [
       "Call the hash utility twice with the same buffer",
       "Compare the two resulting hash strings"
     ],
     "expectedResult": "Both calls return the identical SHA-256 hex digest.",
-    "tags": ["hashing", "integrity"],
+    "tags": [
+      "hashing",
+      "integrity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -29,13 +34,18 @@
     "priority": "P2",
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Coverage calculation function under test with a fixture set containing active and deprecated evidence"],
+    "preconditions": [
+      "Coverage calculation function under test with a fixture set containing active and deprecated evidence"
+    ],
     "steps": [
       "Build a fixture with 10 controls, 6 with active evidence, 2 with only deprecated evidence, 2 with none",
       "Run the coverage formula"
     ],
     "expectedResult": "Coverage is reported as 6/10 (60%), not counting the 2 controls whose only evidence is deprecated.",
-    "tags": ["coverage", "calculation"],
+    "tags": [
+      "coverage",
+      "calculation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,12 +59,13 @@
     "title": "Retention expiry date is calculated from upload date plus policy duration",
     "priority": "P3",
     "type": "automated",
-    "automationStatus": "automated",
     "steps": [
       "Call the retention calculator with uploadDate=2026-01-01 and policy=365 days"
     ],
     "expectedResult": "Returned expiry date is 2027-01-01.",
-    "tags": ["retention"],
+    "tags": [
+      "retention"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -70,14 +81,19 @@
     "priority": "P2",
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["hasTriggerFieldChange tested in isolation with plain updateData objects"],
+    "preconditions": [
+      "hasTriggerFieldChange tested in isolation with plain updateData objects"
+    ],
     "steps": [
       "Call hasTriggerFieldChange({ status: 'submitted', tags: ['x'] })",
       "Call hasTriggerFieldChange({ title: 'New title' })",
       "Call hasTriggerFieldChange({ metadata: { confidentialityLevel: 'restricted' } })"
     ],
     "expectedResult": "First and third calls return false (no version bump — status/tags/metadata are non-trigger fields); second call returns true (title is a trigger field).",
-    "tags": ["versioning", "unit"],
+    "tags": [
+      "versioning",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -93,13 +109,19 @@
     "priority": "P1",
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["buildOrgScope() tested with mock req objects, no DB/HTTP dependency"],
+    "preconditions": [
+      "buildOrgScope() tested with mock req objects, no DB/HTTP dependency"
+    ],
     "steps": [
       "Call buildOrgScope with req.permissions NOT containing 'organization.admin', req.orgId='orgA', req.query.orgId='orgB'",
       "Call buildOrgScope with req.permissions containing 'organization.admin', same req.orgId/req.query.orgId"
     ],
     "expectedResult": "First call returns 'orgA' (spoofed query param ignored). Second call returns 'orgB' (super-admin override honored).",
-    "tags": ["multi-tenant", "rbac", "unit"],
+    "tags": [
+      "multi-tenant",
+      "rbac",
+      "unit"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

@@ -201,6 +201,11 @@ tbody tr:last-child td { border-bottom: none; }
 .badge--not_automated { background: var(--chip-bg); }
 .badge--planned { background: #7b6fd6; color: #fff; }
 .badge--flaky { background: var(--warning); color: #1a1d24; }
+.badge--pass { background: var(--success); color: #fff; }
+.badge--fail { background: var(--danger); color: #fff; }
+.badge--blocked { background: var(--warning); color: #1a1d24; }
+.badge--skipped { background: #7b6fd6; color: #fff; }
+.badge--not_run { background: var(--chip-bg); color: var(--text-muted); }
 
 .cat-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
 
@@ -231,6 +236,40 @@ tbody tr:last-child td { border-bottom: none; }
 .detail-section ol, .detail-section ul { margin: 0; padding-left: 20px; }
 .detail-section p { margin: 0; }
 .detail-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+
+.detail-section--edit {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.detail-section--edit label { display: block; font-size: 12px; color: var(--text-muted); margin: 10px 0 4px; }
+.detail-section--edit input[type="text"],
+.detail-section--edit select,
+.detail-section--edit textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+.result-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn--result { border-width: 1px; }
+.btn--result.btn--pass { border-color: var(--success); }
+.btn--result.btn--fail { border-color: var(--danger); }
+.btn--result.btn--blocked { border-color: var(--warning); }
+.btn--result.btn--skipped { border-color: #7b6fd6; }
+.btn--result.active.btn--pass { background: var(--success); color: #fff; }
+.btn--result.active.btn--fail { background: var(--danger); color: #fff; }
+.btn--result.active.btn--blocked { background: var(--warning); color: #1a1d24; }
+.btn--result.active.btn--skipped { background: #7b6fd6; color: #fff; }
+.detail-section--edit .btn--link { margin-top: 8px; padding-left: 0; }
+.detail-meta { margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+.save-status { margin-top: 8px; font-size: 12px; color: var(--text-muted); min-height: 14px; }
 
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }

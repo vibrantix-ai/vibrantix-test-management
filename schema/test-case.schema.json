@@ -94,6 +94,20 @@
       "description": "deprecated cases are kept for history but excluded from default views/exports."
     },
     "createdAt": { "type": "string", "format": "date" },
-    "updatedAt": { "type": "string", "format": "date" }
+    "updatedAt": { "type": "string", "format": "date" },
+    "execution": {
+      "type": "object",
+      "description": "Latest execution outcome, set from the viewer's Mark Pass/Fail/Blocked controls (or edited by hand). Tracks the most recent run only, not history. Distinct from 'status' (lifecycle: active/draft/deprecated) and 'automationStatus' (whether an automated spec exists for this case).",
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["not_run", "pass", "fail", "blocked", "skipped"]
+        },
+        "runAt": { "type": "string", "format": "date" },
+        "runBy": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    }
   }
 }

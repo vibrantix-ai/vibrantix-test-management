@@ -7,8 +7,10 @@
   const TYPE_ORDER = ['manual', 'automated', 'both'];
   const AUTOMATION_ORDER = ['automated', 'not_automated', 'planned', 'flaky'];
   const STATUS_ORDER = ['active', 'draft', 'deprecated'];
+  const RESULT_ORDER = ['fail', 'blocked', 'not_run', 'skipped', 'pass'];
   const DEFAULT_ACTIVE_STATUSES = ['active', 'draft'];
   const MAX_TAG_CHIPS = 60;
+  const RUN_BY_STORAGE_KEY = 'vtms.runBy';
 
   const state = {
     allCases: [],
@@ -19,13 +21,19 @@
       type: new Set(),
       automation: new Set(),
       status: new Set(DEFAULT_ACTIVE_STATUSES),
+      result: new Set(),
       tag: new Set(),
       module: new Set(),
     },
     search: '',
     moduleSearch: '',
     sort: { key: 'id', dir: 'asc' },
+    openDetailId: null,
   };
+
+  function getExecutionResult(c) {
+    return (c.execution && c.execution.result) || 'not_run';
+  }
 
   const el = (id) => document.getElementById(id);
 
@@ -87,18 +95,32 @@
     return counts;
   }
 
+  function countByExecutionResult(cases) {
+    const counts = {};
+    cases.forEach((c) => {
+      const r = getExecutionResult(c);
+      counts[r] = (counts[r] || 0) + 1;
+    });
+    return counts;
+  }
+
   function renderStats() {
     const total = state.allCases.length;
     const active = state.allCases.filter((c) => c.status !== 'deprecated').length;
     const catCounts = countBy(state.allCases, 'category');
     const p0 = countBy(state.allCases, 'priority').P0 || 0;
     const automated = countBy(state.allCases, 'automationStatus').automated || 0;
+    const resultCounts = countByExecutionResult(state.allCases);
 
     const tiles = [
       { label: 'Total test cases', value: total },
       { label: 'Active', value: active },
       { label: 'P0 (blocking)', value: p0 },
       { label: 'Automated', value: automated },
+      { label: 'Passed', value: resultCounts.pass || 0 },
+      { label: 'Failed', value: resultCounts.fail || 0 },
+      { label: 'Blocked', value: resultCounts.blocked || 0 },
+      { label: 'Not run', value: resultCounts.not_run || 0 },
       ...CATEGORY_ORDER.filter((c) => catCounts[c]).map((c) => ({ label: c, value: catCounts[c] })),
     ];
 
@@ -162,6 +184,7 @@
     chipGroup('filter-category', 'category', CATEGORY_ORDER, countBy(state.allCases, 'category'));
     chipGroup('filter-priority', 'priority', PRIORITY_ORDER, countBy(state.allCases, 'priority'));
     chipGroup('filter-type', 'type', TYPE_ORDER, countBy(state.allCases, 'type'));
+    chipGroup('filter-result', 'result', RESULT_ORDER, countByExecutionResult(state.allCases), (v) => v.replace('_', ' '));
     chipGroup('filter-automation', 'automation', AUTOMATION_ORDER, countBy(state.allCases, 'automationStatus'), (v) => v.replace('_', ' '));
     chipGroup('filter-status', 'status', STATUS_ORDER, countBy(state.allCases, 'status'));
 
@@ -183,6 +206,7 @@
       if (state.active.type.size && !state.active.type.has(c.type)) return false;
       if (state.active.automation.size && !state.active.automation.has(c.automationStatus)) return false;
       if (state.active.status.size && !state.active.status.has(c.status)) return false;
+      if (state.active.result.size && !state.active.result.has(getExecutionResult(c))) return false;
       if (state.active.module.size && !state.active.module.has(c.module)) return false;
       if (state.active.tag.size && !(c.tags || []).some((t) => state.active.tag.has(t))) return false;
       if (search) {
@@ -199,11 +223,16 @@
     });
   }
 
+  function sortValue(c, key) {
+    if (key === 'result') return getExecutionResult(c);
+    return c[key];
+  }
+
   function sortCases(cases) {
     const { key, dir } = state.sort;
     const sorted = [...cases].sort((a, b) => {
-      const av = (a[key] ?? '').toString();
-      const bv = (b[key] ?? '').toString();
+      const av = (sortValue(a, key) ?? '').toString();
+      const bv = (sortValue(b, key) ?? '').toString();
       return av.localeCompare(bv, undefined, { numeric: true });
     });
     if (dir === 'desc') sorted.reverse();
@@ -219,7 +248,7 @@
     el('result-count').textContent = `Showing ${rows.length} of ${state.allCases.length} test cases`;
 
     if (!rows.length) {
-      el('table-body').innerHTML = `<tr class="empty-row"><td colspan="9">No test cases match the current filters.</td></tr>`;
+      el('table-body').innerHTML = `<tr class="empty-row"><td colspan="10">No test cases match the current filters.</td></tr>`;
       return;
     }
 
@@ -235,6 +264,7 @@
           <td>${escapeHtml(c.type)}</td>
           <td><span class="badge badge--${escapeAttr(c.automationStatus || 'not_automated')}">${escapeHtml((c.automationStatus || '—').replace('_', ' '))}</span></td>
           <td><span class="badge badge--${escapeAttr(c.status)}">${escapeHtml(c.status)}</span></td>
+          <td><span class="badge badge--${escapeAttr(getExecutionResult(c))}">${escapeHtml(getExecutionResult(c).replace('_', ' '))}</span></td>
         </tr>`
       )
       .join('');
@@ -247,9 +277,24 @@
   function openDetail(id) {
     const c = state.allCases.find((x) => x.id === id);
     if (!c) return;
+    state.openDetailId = id;
     const section = (title, body) => (body ? `<div class="detail-section"><h4>${title}</h4>${body}</div>` : '');
     const list = (items) => (items && items.length ? `<ol>${items.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ol>` : '');
     const bareList = (items) => (items && items.length ? `<ul>${items.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ul>` : '');
+
+    const result = getExecutionResult(c);
+    const exec = c.execution || {};
+    const savedRunBy = localStorage.getItem(RUN_BY_STORAGE_KEY) || '';
+    const resultButtons = ['pass', 'fail', 'blocked', 'skipped']
+      .map((v) => `<button type="button" class="btn btn--result btn--${v}${result === v ? ' active' : ''}" data-action="set-result" data-value="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`)
+      .join('');
+    const lastRunLine = exec.runAt
+      ? `<div class="detail-meta">Last run: <strong>${escapeHtml(result.replace('_', ' '))}</strong> on ${escapeHtml(exec.runAt)}${exec.runBy ? ` by ${escapeHtml(exec.runBy)}` : ''}</div>`
+      : '';
+
+    const automationOptions = ['', 'automated', 'not_automated', 'planned', 'flaky']
+      .map((v) => `<option value="${v}"${(c.automationStatus || '') === v ? ' selected' : ''}>${v ? v.replace('_', ' ') : '— unset —'}</option>`)
+      .join('');
 
     el('detail-content').innerHTML = `
       <div class="detail-id">${escapeHtml(c.id)} · ${escapeHtml(moduleName(c.module))}</div>
@@ -260,7 +305,21 @@
         <span class="badge">${escapeHtml(c.type)}</span>
         <span class="badge badge--${escapeAttr(c.automationStatus || 'not_automated')}">${escapeHtml((c.automationStatus || '—').replace('_', ' '))}</span>
         <span class="badge badge--${escapeAttr(c.status)}">${escapeHtml(c.status)}</span>
+        <span class="badge badge--${escapeAttr(result)}">${escapeHtml(result.replace('_', ' '))}</span>
       </div>
+
+      <div class="detail-section detail-section--edit">
+        <h4>Test result</h4>
+        <div class="result-buttons">${resultButtons}</div>
+        <button type="button" class="btn btn--link" data-action="set-result" data-value="not_run">Reset to not run</button>
+        <label for="detail-run-by">Run by</label>
+        <input type="text" id="detail-run-by" value="${escapeAttr(savedRunBy)}" placeholder="Your name (optional)" />
+        <label for="detail-result-notes">Notes</label>
+        <textarea id="detail-result-notes" rows="2" placeholder="Optional notes, e.g. failure reason">${escapeHtml(exec.notes || '')}</textarea>
+        ${lastRunLine}
+        <div id="detail-result-status" class="save-status"></div>
+      </div>
+
       ${section('Description', c.description ? `<p>${escapeHtml(c.description)}</p>` : '')}
       ${section('Preconditions', bareList(c.preconditions))}
       ${section('Steps', list(c.steps))}
@@ -269,15 +328,50 @@
       ${section('Tags', c.tags && c.tags.length ? `<div class="chip-group">${c.tags.map((t) => `<span class="chip">${escapeHtml(t)}</span>`).join('')}</div>` : '')}
       ${section('Requirement', c.requirement ? `<p>${escapeHtml(c.requirement)}</p>` : '')}
       ${section('Linked defect', c.linkedDefect ? `<p>${escapeHtml(c.linkedDefect)}</p>` : '')}
-      ${section('Automation ref', c.automationRef ? `<p>${escapeHtml(c.automationRef)}</p>` : '')}
+
+      <div class="detail-section detail-section--edit">
+        <h4>Automation</h4>
+        <label for="detail-automation-status">Automation status</label>
+        <select id="detail-automation-status">${automationOptions}</select>
+        <label for="detail-automation-ref">Automation ref (file:line)</label>
+        <input type="text" id="detail-automation-ref" value="${escapeAttr(c.automationRef || '')}" placeholder="test-framework/tests/.../file.spec.ts:42" />
+        <button type="button" class="btn btn--secondary" data-action="save-automation">Save automation info</button>
+        <div id="detail-automation-status-msg" class="save-status"></div>
+      </div>
+
       ${section('Owner', c.owner ? `<p>${escapeHtml(c.owner)}</p>` : '')}
       ${section('Dates', (c.createdAt || c.updatedAt) ? `<p>Created ${escapeHtml(c.createdAt || '—')} · Updated ${escapeHtml(c.updatedAt || '—')}</p>` : '')}
     `;
     el('detail-overlay').classList.remove('hidden');
   }
 
+  async function saveTestCasePatch(id, patch, statusElId) {
+    const c = state.allCases.find((x) => x.id === id);
+    if (!c) return;
+    const statusEl = statusElId ? el(statusElId) : null;
+    if (statusEl) statusEl.textContent = 'Saving...';
+    try {
+      const res = await fetch('/api/test-case', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ module: c.module, category: c.category, id: c.id, patch }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+      Object.assign(c, body.testCase);
+      renderStats();
+      renderFilters();
+      renderTable(getFilteredCases());
+      if (state.openDetailId === id) openDetail(id);
+    } catch (err) {
+      if (statusEl) statusEl.textContent = `Failed to save — is the app running via "node server.js"? (${err.message})`;
+      console.error(err);
+    }
+  }
+
   function closeDetail() {
     el('detail-overlay').classList.add('hidden');
+    state.openDetailId = null;
   }
 
   function renderAll() {
@@ -298,6 +392,10 @@
       Type: c.type,
       'Automation Status': c.automationStatus || '',
       Status: c.status,
+      Result: getExecutionResult(c),
+      'Run At': (c.execution && c.execution.runAt) || '',
+      'Run By': (c.execution && c.execution.runBy) || '',
+      'Result Notes': (c.execution && c.execution.notes) || '',
       Preconditions: (c.preconditions || []).join(' | '),
       Steps: (c.steps || []).map((s, i) => `${i + 1}. ${s}`).join(' | '),
       'Test Data': c.testData || '',
@@ -313,7 +411,7 @@
     };
   }
 
-  const EXPORT_COL_WIDTHS = [12, 22, 12, 20, 40, 8, 10, 16, 12, 40, 60, 30, 40, 24, 20, 14, 10, 30, 12, 12, 40].map((wch) => ({ wch }));
+  const EXPORT_COL_WIDTHS = [12, 22, 12, 20, 40, 8, 10, 16, 12, 10, 12, 14, 30, 40, 60, 30, 40, 24, 20, 14, 10, 30, 12, 12, 40].map((wch) => ({ wch }));
 
   function dateStamp() {
     const d = new Date();
@@ -397,7 +495,7 @@
     el('btn-reset-filters').addEventListener('click', () => {
       state.active = {
         category: new Set(), priority: new Set(), type: new Set(), automation: new Set(),
-        status: new Set(DEFAULT_ACTIVE_STATUSES), tag: new Set(), module: new Set(),
+        status: new Set(DEFAULT_ACTIVE_STATUSES), result: new Set(), tag: new Set(), module: new Set(),
       };
       state.search = '';
       state.moduleSearch = '';
@@ -416,6 +514,31 @@
     el('detail-close').addEventListener('click', closeDetail);
     el('detail-overlay').addEventListener('click', (e) => {
       if (e.target === el('detail-overlay')) closeDetail();
+    });
+    el('detail-content').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn || !state.openDetailId) return;
+      const id = state.openDetailId;
+
+      if (btn.dataset.action === 'set-result') {
+        const runByInput = el('detail-run-by');
+        const runBy = runByInput ? runByInput.value.trim() : '';
+        if (runBy) localStorage.setItem(RUN_BY_STORAGE_KEY, runBy);
+        const notesInput = el('detail-result-notes');
+        const execution = { result: btn.dataset.value, notes: notesInput ? notesInput.value.trim() : '' };
+        if (runBy) execution.runBy = runBy;
+        saveTestCasePatch(id, { execution }, 'detail-result-status');
+      }
+
+      if (btn.dataset.action === 'save-automation') {
+        const statusSel = el('detail-automation-status');
+        const refInput = el('detail-automation-ref');
+        const patch = {
+          automationRef: refInput ? refInput.value.trim() : '',
+          automationStatus: statusSel ? statusSel.value : '',
+        };
+        saveTestCasePatch(id, patch, 'detail-automation-status-msg');
+      }
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeDetail();

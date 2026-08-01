@@ -8,9 +8,11 @@
     "description": "Full path: page.jsx streamRealAPI() -> aiAssistantService.sendChatMessageStream() -> POST /api/assistant/chat/stream (SSE) -> assistant-service chat.routes.ts pipes python-ai's blocks/content/followups/done events back to the browser.",
     "priority": "P0",
     "type": "both",
-    "automationStatus": "automated",
     "automationRef": "test-framework/tests/e2e/ai-assistant.spec.ts",
-    "preconditions": ["Logged in as a seeded user with a project selected", "AI Engine (Python backend) is online"],
+    "preconditions": [
+      "Logged in as a seeded user with a project selected",
+      "AI Engine (Python backend) is online"
+    ],
     "steps": [
       "Navigate to /assistant",
       "Type 'Show compliance status across all frameworks' and press Enter",
@@ -18,11 +20,20 @@
       "Wait for the response to finish"
     ],
     "expectedResult": "A stat_tiles/table/donut block renders deterministically (not model-generated), narrative text appears via BlockRenderer's markdown block, citations (if any) are attached to the message, and 2-4 suggested follow-up question chips appear below the response.",
-    "tags": ["streaming", "sse", "rendering"],
+    "tags": [
+      "streaming",
+      "sse",
+      "rendering"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-01",
+    "execution": {
+      "result": "not_run",
+      "notes": ""
+    },
+    "automationStatus": "not_automated"
   },
   {
     "id": "AIAS-E2E-002",
@@ -34,13 +45,20 @@
     "priority": "P1",
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has an active conversation under Project A", "User is also a member of Project B"],
+    "preconditions": [
+      "User has an active conversation under Project A",
+      "User is also a member of Project B"
+    ],
     "steps": [
       "On /assistant, send a message and receive a response under Project A",
       "Use the project selector (Navbar) to switch to Project B without navigating away"
     ],
     "expectedResult": "The chat pane clears and shows 'Project switched! How can I help with this project?' with fresh quick actions. No message from the Project A conversation remains visible, and conversationId is reset (a new message starts a brand-new thread scoped to Project B).",
-    "tags": ["session-reset", "multi-tenant", "project-scope"],
+    "tags": [
+      "session-reset",
+      "multi-tenant",
+      "project-scope"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -56,14 +74,20 @@
     "priority": "P0",
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["User A has an active /assistant conversation with visible messages", "User B is a different member of the same organization"],
+    "preconditions": [
+      "User A has an active /assistant conversation with visible messages",
+      "User B is a different member of the same organization"
+    ],
     "steps": [
       "As User A, send at least one message on /assistant and confirm it renders",
       "Log out (without closing the tab) and log in as User B in the same tab",
       "Navigate to /assistant"
     ],
     "expectedResult": "User B sees a fresh welcome message, not User A's conversation. sessionStorage's vibrantix_assistant_chat_session entry is cleared/replaced, and no network call is made using User A's stale conversationId.",
-    "tags": ["session-security", "multi-tenant"],
+    "tags": [
+      "session-security",
+      "multi-tenant"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -79,13 +103,18 @@
     "priority": "P2",
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A prior response rendered at least one suggested follow-up chip"],
+    "preconditions": [
+      "A prior response rendered at least one suggested follow-up chip"
+    ],
     "steps": [
       "Send an initial query that returns follow-up suggestion chips",
       "Click one of the suggestion chips"
     ],
     "expectedResult": "The chip's text is submitted as a new user message (visible in the transcript) and a new streamed AI response begins, without requiring the user to retype anything into the composer.",
-    "tags": ["ux", "follow-ups"],
+    "tags": [
+      "ux",
+      "follow-ups"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -101,13 +130,18 @@
     "priority": "P1",
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A response is actively streaming (narrative visibly typing in)"],
+    "preconditions": [
+      "A response is actively streaming (narrative visibly typing in)"
+    ],
     "steps": [
       "Send a query that produces a long streamed response",
       "While the response is still streaming, click the Stop button"
     ],
     "expectedResult": "Streaming halts immediately; the assistant bubble shows 'Response stopped.' with a Retry option that resubmits the original query; no 'Service error' toast is shown for a user-initiated stop.",
-    "tags": ["streaming", "ux"],
+    "tags": [
+      "streaming",
+      "ux"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -122,14 +156,19 @@
     "priority": "P2",
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["At least 2 saved conversations exist for the current project"],
+    "preconditions": [
+      "At least 2 saved conversations exist for the current project"
+    ],
     "steps": [
       "Open the History tab in the assistant sidebar",
       "Rename a conversation via the inline edit control and confirm",
       "Delete a different conversation and confirm the browser confirm() dialog"
     ],
     "expectedResult": "The renamed title reflects immediately in the sidebar list (optimistic update) without a full history reload. The deleted conversation disappears from the list; if it was the active conversation, the chat pane resets to a new conversation.",
-    "tags": ["conversation-management", "ux"],
+    "tags": [
+      "conversation-management",
+      "ux"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -146,14 +185,19 @@
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/assistant/EvidencePreviewModal.jsx:159",
-    "preconditions": ["An assistant response includes at least one expandable_items entry of type 'evidence'"],
+    "preconditions": [
+      "An assistant response includes at least one expandable_items entry of type 'evidence'"
+    ],
     "steps": [
       "Ask the assistant a query that returns evidence items (e.g. 'List evidence items and their control mapping status')",
       "Open the evidence preview for one returned item",
       "Check the Details, Content, Controls, and History tabs"
     ],
     "expectedResult": "Details tab shows correct id/category/date/uploadedBy/framework matching the source evidence record. History tab shows either the real audit trail for that evidence item or, if unavailable, a clearly generic 2-entry placeholder — confirm which, and flag if the placeholder is shown for evidence that does have real history (misleading audit trail).",
-    "tags": ["evidence-preview", "audit-trail"],
+    "tags": [
+      "evidence-preview",
+      "audit-trail"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "active",

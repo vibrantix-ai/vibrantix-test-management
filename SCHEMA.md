@@ -79,7 +79,8 @@ Plain-English summary:
 | `linkedDefect` | no | QA tracker defect ID this case guards against regressing. |
 | `owner` | no | `SDET` / `QA` / `Security` / etc. |
 | `status` | yes | `active` / `draft` / `deprecated`. Deprecated cases are excluded from default view/export. |
-| `createdAt` / `updatedAt` | no | `YYYY-MM-DD`. |
+| `createdAt` / `updatedAt` | no | `YYYY-MM-DD`. `updatedAt` is auto-bumped whenever the viewer writes a change. |
+| `execution` | no | `{ result, runAt, runBy, notes }` — the *latest* run outcome only, not history. Set via the viewer's Mark Pass/Fail/Blocked/Skipped controls (see "Marking results" below), or edited by hand. Distinct from `status` (case lifecycle) and `automationStatus` (whether an automated spec exists). `result` is one of `not_run` / `pass` / `fail` / `blocked` / `skipped`. |
 
 ### Example
 
@@ -128,3 +129,33 @@ relevant:
 - Keep IDs, `module`, and `category` fields internally consistent — the viewer trusts the data
   and does not validate against the JSON Schema at runtime. Run a JSON Schema validator over
   `data/modules/**/*.json` in CI if you want that enforced.
+
+## Marking results (Pass/Fail/Blocked/Skipped)
+
+The viewer can write back to the source JSON files directly — this is the only mutation path;
+everything else about a test case is authored content meant to be edited in the JSON files
+themselves. Opening a row's detail panel exposes:
+
+- **Test result** — Pass/Fail/Blocked/Skipped buttons (or "Reset to not run"), an optional
+  "Run by" field (remembered in the browser via `localStorage` so you don't retype it each
+  time), and a notes field. Saving sets `execution.result`, `execution.runAt` (stamped
+  server-side to today), `execution.runBy`, and `execution.notes` on that case.
+- **Automation** — an editable `automationStatus` dropdown and `automationRef` text field, so
+  you can correct these by hand as you verify which cases actually have a matching automated
+  spec (see the caveat below).
+
+This only works when the app is served via `node server.js` (see [README.md](README.md)) — the
+server exposes `PUT /api/test-case` which re-reads the target `data/modules/<slug>/<category>.json`
+file from disk, patches the one matching `id`, and writes the whole array back with the same
+2-space-indent formatting used everywhere else in this repo (so `git diff` stays minimal). Only
+`execution`, `automationStatus`, and `automationRef` can be changed this way; the endpoint
+rejects any other field, and validates `module`/`category` against a strict slug pattern to
+prevent writing outside `data/modules/`.
+
+**Caveat on `automationStatus`/`automationRef`:** these fields describe whether a matching
+automated test exists in `test-framework/`/`test-automation/` elsewhere in this repo — this
+system itself has no test runner and executes nothing. Treat pre-filled values as claims to be
+verified, not facts: a repo-wide check found the majority of existing `automationRef` pointers
+either cited production source code instead of a test file, or named a plausible-looking test
+file that doesn't actually exist. Correct these by hand via the Automation panel as you confirm
+(or disprove) each one.

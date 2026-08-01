@@ -73,6 +73,12 @@ for (const dir of moduleDirs) {
         }
       }
       if (Array.isArray(c.steps) && c.steps.length === 0) errors.push(`${loc} steps array is empty`);
+      if (c.execution !== undefined) {
+        const validResults = ['not_run', 'pass', 'fail', 'blocked', 'skipped'];
+        if (c.execution.result !== undefined && !validResults.includes(c.execution.result)) {
+          errors.push(`${loc} execution.result has invalid value "${c.execution.result}" (allowed: ${validResults.join(', ')})`);
+        }
+      }
     });
   }
 }
