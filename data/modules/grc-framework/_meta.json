@@ -1,0 +1,10 @@
+{
+  "slug": "grc-framework",
+  "name": "GRC Framework",
+  "scope": "feature",
+  "routes": [
+    "/grc-framework"
+  ],
+  "qaAgent": "GRC_Framework_QA_Agent",
+  "description": "Framework catalog, activation, compliance map, control coverage, PCL sync."
+}

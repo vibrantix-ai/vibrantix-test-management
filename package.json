@@ -1,0 +1,10 @@
+{
+  "name": "vibrantix-test-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular JSON test case repository + HTML viewer/exporter for the Vibrantix GRC platform.",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node scripts/seed-modules.js"
+  }
+}

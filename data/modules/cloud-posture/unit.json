@@ -1,0 +1,179 @@
+[
+  {
+    "id": "CLPO-UNIT-001",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Scan Lifecycle",
+    "title": "isActive() classifies each scan status as active or terminal correctly",
+    "description": "CloudPostureScan.isActive() drives whether the reconciler, cancellation, and delete-guard logic treat a scan as in-flight. pending/validating/queued/initializing/running/processing/processing_results/cancelling must return true; completed/completed_with_warnings/failed/cancelled/timed_out/abandoned must return false.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:17",
+    "steps": [
+      "Construct a CloudPostureScan document with status='running' (and each other status in the active set) and call isActive()",
+      "Construct a CloudPostureScan document with status='completed' (and each other status in the terminal set) and call isActive()"
+    ],
+    "expectedResult": "isActive() returns true for all 8 active-set statuses and false for all 6 terminal-set statuses, with no status missing from either set.",
+    "tags": ["scan-lifecycle", "state-machine"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-002",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Scan Progress",
+    "title": "calculateProgress() prefers totalSteps/completedSteps over totalChecks/checksCompleted when both are present",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Set progress.totalSteps=10, progress.completedSteps=4, progress.totalChecks=100, progress.checksCompleted=50",
+      "Call scan.calculateProgress()"
+    ],
+    "expectedResult": "progress.percentage is set to 40 (based on totalSteps/completedSteps), not 50 (which the totalChecks/checksCompleted branch would have produced).",
+    "tags": ["progress-calculation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-003",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Scheduling",
+    "title": "nextRun() advances the occurrence date deterministically per frequency",
+    "description": "Scheduler correctness for recurring scans depends on nextRun() producing the exact next UTC timestamp for hourly/daily/weekly/monthly cadences.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:28",
+    "steps": [
+      "Call nextRun(new Date('2026-07-22T00:00:00Z'), 'hourly')",
+      "Call nextRun(new Date('2026-07-22T00:00:00Z'), 'weekly')",
+      "Call nextRun(new Date('2026-07-22T00:00:00Z'), 'monthly')",
+      "Call nextRun(new Date('2026-07-22T00:00:00Z'), 'daily' or an unrecognized frequency string)"
+    ],
+    "expectedResult": "hourly returns 2026-07-22T01:00:00.000Z; weekly returns 2026-07-29T00:00:00.000Z; monthly rolls the UTC month forward by 1; daily/unrecognized falls back to +1 UTC day (the scheduler's default branch).",
+    "tags": ["scheduling", "date-math"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-004",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Credential Storage",
+    "title": "toSafeJSON() strips raw provider secrets and exposes only has*/isConfigured booleans",
+    "description": "CloudPostureConfig.toSafeJSON() is the only sanitizer between the Mongo document and the API response. If it regresses, raw AWS/GCP/Azure secrets could be serialized to the client.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Build a CloudPostureConfig document where providers.aws.credentialConfigured=true and providers.aws.credentials contains legacy fields (accessKeyId, secretAccessKey, region, accountId)",
+      "Call config.toSafeJSON()",
+      "Repeat for gcp.credentials.serviceAccountKey and azure.credentials.clientId/clientSecret/tenantId"
+    ],
+    "expectedResult": "The returned object never contains accessKeyId, secretAccessKey, sessionToken, serviceAccountKey, clientId, clientSecret, tenantId, or vaultPath for any provider; instead it contains hasAccessKeyId/hasSecretAccessKey/isConfigured (aws), hasServiceAccountKey/isConfigured (gcp), and hasClientId/hasClientSecret/hasTenantId/hasSubscriptionId/isConfigured (azure), all derived from credentialConfigured.",
+    "tags": ["credential-security", "data-sanitization"],
+    "requirement": "ISO 27001 Annex A.8.9",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-005",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Compliance Mapping",
+    "title": "findingCheckId() falls back through the identity chain in priority order",
+    "description": "findingCheckId() is the join key used by finding-compliance.service and the executive-dashboard compliance sync to match a Finding back to scanner_check_master. It must prefer finding.checkId, then prowlerRaw.metadata.event_code, then prowlerRaw.check_id/CheckID, then the evidence.rawData mirrors, then ruleId.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call findingCheckId({ checkId: 'a', prowlerRaw: { metadata: { event_code: 'b' } }, ruleId: 'c' })",
+      "Call findingCheckId({ prowlerRaw: { metadata: { event_code: 'b' } }, ruleId: 'c' })",
+      "Call findingCheckId({ ruleId: 'c' })",
+      "Call findingCheckId({})"
+    ],
+    "expectedResult": "Results are 'a', 'b', 'c', '' respectively — the highest-priority non-empty source always wins.",
+    "tags": ["compliance-mapping", "prowler-integration"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-006",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Provider Onboarding",
+    "title": "AWS accountId is rejected unless it is exactly 12 numeric digits",
+    "description": "validateCredentials('aws', creds) in config.controller.js is the last server-side gate before an AWS credential bundle is written to Vault.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/tests/modules/cloud-posture-config.controller.test.js",
+    "steps": [
+      "Call validateCredentials('aws', { accessKeyId: 'AKIA...', secretAccessKey: 'x', region: 'us-east-1', accountId: '123456789012' })",
+      "Call validateCredentials('aws', { ...same, accountId: '12345' })",
+      "Call validateCredentials('aws', { ...same, accountId: '12345678901a' })"
+    ],
+    "expectedResult": "The 12-digit numeric accountId passes; a 5-digit value and an alphanumeric value both fail with 'AWS accountId must be exactly 12 numeric digits'.",
+    "tags": ["input-validation", "aws"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-007",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Provider Onboarding",
+    "title": "GCP serviceAccountKey must be valid JSON or credential validation fails fast",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call validateCredentials('gcp', { serviceAccountKey: '{\"type\":\"service_account\"}', projectId: 'proj-1' })",
+      "Call validateCredentials('gcp', { serviceAccountKey: 'not-json', projectId: 'proj-1' })"
+    ],
+    "expectedResult": "A well-formed JSON key string passes; a malformed string fails with 'GCP serviceAccountKey must be valid JSON', never reaching Vault or the Prowler validation call.",
+    "tags": ["input-validation", "gcp"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-UNIT-008",
+    "module": "cloud-posture",
+    "category": "unit",
+    "subFeature": "Scan Progress",
+    "title": "getScanProgressCacheKey() namespaces the Redis key by environment",
+    "description": "Guards against progress bleed between development/staging/production if ENVIRONMENT is misconfigured — the worker and API must compute the identical key.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:37",
+    "preconditions": ["process.env.ENVIRONMENT set to 'development'"],
+    "steps": [
+      "Call cloudPostureRuntime.getScanProgressCacheKey('scan-external-1')"
+    ],
+    "expectedResult": "Returns 'prowler-development:scan:scan-external-1', matching exactly what the Python worker writes to Redis.",
+    "tags": ["redis", "scan-progress"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

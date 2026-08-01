@@ -1,0 +1,177 @@
+[
+  {
+    "id": "PROJ-SEC-001",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "GET /projects/project/:id rejects a project ID belonging to another organization",
+    "description": "assertOrgAccess (project.controller.js) compares the target project's organizationId against req.orgId and throws 403 unless the caller holds organization.admin. Regression guard for cross-org project metadata disclosure.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
+    "preconditions": ["Two orgs (A, B) each with at least one project", "Valid JWT for a non-admin user in org A"],
+    "steps": [
+      "As an org A user, call GET /api/projects/project/:id using a project ID that belongs to org B"
+    ],
+    "expectedResult": "Request is rejected with 403 'Access denied' — no project name, budget, compliance, or team data from org B is returned.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-002",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project-Level Access Control",
+    "title": "GET /projects/project/:id rejects a same-org user who is not a member of that project",
+    "description": "Same-org membership scoping (PLAC) — resolveProjectScope(req, projectId) throws 403 for a non-admin who isn't a ProjectMember row of this project, even though they belong to the same organization. Prior to this fix, project.read (a baseline permission granted to all authenticated users) let any org member browse every project's metadata regardless of membership.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
+    "preconditions": ["User has no ProjectMember row for Project X", "User does not hold project.admin", "Project X belongs to the user's own organization"],
+    "steps": [
+      "As the user, call GET /api/projects/project/:X_id"
+    ],
+    "expectedResult": "Request is rejected with 403 'You are not a member of this project' despite same-org membership.",
+    "tags": ["access-control", "plac"],
+    "requirement": "PLAC-006",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-003",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project-Level Access Control",
+    "title": "PUT /projects/project/:id blocks a same-org user with a stale org-wide project.update grant who isn't a member of the target project",
+    "description": "SEC-2 fix (2026-07-22): assertOrgAccess alone only checks same-org, not membership — an org-wide project.update grant (e.g. a legacy Custom role) would otherwise let a non-member mutate ANY project in the org. exports.update now also calls resolveProjectScope(req, existing._id) after assertOrgAccess, which throws 403 for a non-member even if their role grants project.update globally. Must not regress.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
+    "preconditions": ["User holds a Custom role with the global 'project.update' permission but no ProjectMember row for Project X", "User does not hold project.admin"],
+    "steps": [
+      "As the user, call PUT /api/projects/project/:X_id with { name: 'Hijacked name' }"
+    ],
+    "expectedResult": "Request is rejected with 403 — the project's name is not changed. The same protection applies to archive, restore, and remove (delete), which all call resolveProjectScope after assertOrgAccess for the identical reason.",
+    "tags": ["access-control", "plac", "regression-guard"],
+    "linkedDefect": "SEC-2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-004",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "POST /projects/:orgId (project creation) is rejected for a caller without project.create",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["User authenticated but has no 'project.create' permission and is not a per-project admin"],
+    "steps": [
+      "Call POST /api/projects/:orgId with a valid { name: 'New Project' } body"
+    ],
+    "expectedResult": "Request is rejected with 403 before any Project document, quota consumption, or billing provisioning occurs.",
+    "tags": ["rbac", "permission-gating"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-005",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project Team RBAC",
+    "title": "Team management endpoints reject a plain project member who is not this project's own admin",
+    "description": "requireProjectTeamAdmin (project.routes.js) gates POST/PUT/DELETE /project/:id/team* on org-level project.admin OR this project's own admin-tier ProjectRole (T6b). A plain 'Member' role on this project must be rejected even though they are a genuine ProjectMember.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["User is a ProjectMember of Project X with the system PROJECT_MEMBER role (non-admin)"],
+    "steps": [
+      "As the user, call POST /api/projects/project/:X_id/team with { userId: someOtherUserId }",
+      "Call DELETE /api/projects/project/:X_id/team/:someUserId"
+    ],
+    "expectedResult": "Both calls are rejected with 403 'You must be an admin of this project to perform this action'; GET /project/:id/team still succeeds for this same user (read-only roster view requires membership only, not admin).",
+    "tags": ["rbac", "project-level-rbac"],
+    "requirement": "T6b",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-006",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project Team RBAC",
+    "title": "addTeamMember rejects adding a user who belongs to a different organization",
+    "description": "addTeamMember (project.controller.js) explicitly checks targetUser.organizationId against project.organizationId before creating the ProjectMember row — 'the boundary T4 explicitly requires.'",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project X belongs to Org A", "Target userId belongs to Org B"],
+    "steps": [
+      "As a Project X admin (Org A), call POST /api/projects/project/:X_id/team with { userId: <org-B-user-id> }"
+    ],
+    "expectedResult": "Request is rejected with 400 'User does not belong to this project's organization' — no ProjectMember row is created and no cross-org quota consumption occurs.",
+    "tags": ["multi-tenant", "idor"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-007",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project Team RBAC",
+    "title": "A Custom Project Role scoped to one project cannot be assigned to a member on a different project",
+    "description": "_assertProjectRoleAssignable (project.controller.js) rejects a projectRoleId whose organizationId/projectId does not exactly match the target project — 'Custom Project Roles are per-project only, never reusable' per the confirmed decision.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A Custom Project Role 'Auditor' exists, scoped to Project X only", "Project Y exists in the same org"],
+    "steps": [
+      "As a Project Y admin, call POST /api/projects/project/:Y_id/team with { userId, projectRoleId: <Project-X's 'Auditor' role id> }"
+    ],
+    "expectedResult": "Request is rejected with 400 'This project role does not belong to this project'. Assigning a system role (isSystem:true) in the same call, by contrast, succeeds anywhere.",
+    "tags": ["rbac", "project-level-rbac"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-SEC-008",
+    "module": "project-management",
+    "category": "security",
+    "subFeature": "Project-Level Access Control",
+    "title": "listAssignmentCandidates and listTeam remain org-scoped even for a valid same-org caller with no project relationship",
+    "description": "listTeam/listAssignmentCandidates run assertOrgAccess but sit behind requireProjectTeamMember at the route level, which itself requires ProjectMember (or admin bypass) — verifies the two layers agree and neither can be satisfied alone by a caller who is same-org but not a project member.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User belongs to the same org as Project X but has no ProjectMember row for it"],
+    "steps": [
+      "Call GET /api/projects/project/:X_id/team",
+      "Call GET /api/projects/project/:X_id/assignment-candidates"
+    ],
+    "expectedResult": "Both requests are rejected with 403 before reaching the controller body — the route-level requireProjectTeamMember middleware blocks non-members regardless of same-org standing.",
+    "tags": ["access-control", "plac"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

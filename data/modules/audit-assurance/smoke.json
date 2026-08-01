@@ -1,0 +1,87 @@
+[
+  {
+    "id": "AUDT-SMK-001",
+    "module": "audit-assurance",
+    "category": "smoke",
+    "subFeature": "Module Load",
+    "title": "Audit Assurance module loads and the audit list renders without error",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "preconditions": ["Logged in as a user with audit.read permission"],
+    "steps": [
+      "Navigate to /audit-assurance"
+    ],
+    "expectedResult": "AuditAssurance2Content.jsx renders the audit list with no console errors and no failed network requests to /api/audit-assurance.",
+    "tags": ["smoke"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SMK-002",
+    "module": "audit-assurance",
+    "category": "smoke",
+    "subFeature": "CAR Creation",
+    "title": "Create a new CAR with default fields via CARDetailDrawer",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "preconditions": ["An open finding exists on an active audit"],
+    "steps": [
+      "Open the finding and click 'Raise CAR'",
+      "Fill in the minimum required fields and submit"
+    ],
+    "expectedResult": "The CAR is created with status='open', a valid carReference is displayed, and the CAR appears in the corrective actions list without error.",
+    "tags": ["smoke", "car-lifecycle"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SMK-003",
+    "module": "audit-assurance",
+    "category": "smoke",
+    "subFeature": "Findings Register",
+    "title": "Findings Register tab loads and displays existing findings",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "preconditions": ["Audit has at least one finding"],
+    "steps": [
+      "Open an audit and click the 'Findings' tab"
+    ],
+    "expectedResult": "FindingsRegisterTab.jsx renders the findings table with severity, status, and scope/clause reference columns populated, with no unhandled loading/error state.",
+    "tags": ["smoke", "findings"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SMK-004",
+    "module": "audit-assurance",
+    "category": "smoke",
+    "subFeature": "Audit Closure",
+    "title": "Audit Closure tab loads checklist, artifacts, and approval status without error",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "preconditions": ["An audit is in progress"],
+    "steps": [
+      "Open the audit and click the 'Closure' tab"
+    ],
+    "expectedResult": "AuditClosureTab.jsx fires its parallel getAuditClosure/getAuditClosureChecklist/getAuditClosureArtifacts calls on mount and renders all three sections (checklist, artifacts, approval status) without a blank screen or unhandled promise rejection.",
+    "tags": ["smoke", "audit-closure"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

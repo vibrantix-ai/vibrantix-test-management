@@ -1,0 +1,157 @@
+[
+  {
+    "id": "UIUX-A11Y-001",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Aria Labels",
+    "title": "Icon-only buttons expose an accessible name via aria-label platform-wide",
+    "description": "Regression/coverage guard: src/components/evidence-management/EvidenceTable.jsx currently supplies aria-label on all 3 of its IconButtons (view/download/delete). This case exists to catch any new icon-only button added anywhere on the platform without an accessible name.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "steps": [
+      "Using a screen reader (NVDA/VoiceOver) or the accessibility tree inspector in devtools, tab through the action icons in the Evidence Table (view/download/delete)",
+      "Repeat for icon-only buttons in at least one other module's data table (e.g., Risk Register, Vendor Management)"
+    ],
+    "expectedResult": "Every icon-only IconButton announces a meaningful accessible name describing its action (e.g., 'Download file', 'Delete evidence') rather than being silent or announcing only 'button'.",
+    "tags": ["aria-label", "screen-reader", "icon-button"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-002",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Focus Indicators",
+    "title": "Custom-built form inputs that override outline:none still provide a clearly visible alternative focus indicator",
+    "description": "src/components/evidence-management/EvidenceFilters.jsx's hand-rolled search input sets _focus={{ outline: 'none', borderColor: 'blue.400', boxShadow: '...' }} — an explicit outline override. §9 permits this only if a clear alternative focus indicator is provided. This case verifies the border/boxShadow alternative remains visibly distinguishable from the unfocused state in both color modes and at high browser zoom.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Tab into the Evidence Management search input using keyboard only (no mouse click)",
+      "Confirm a visible focus ring/border change appears immediately",
+      "Zoom the browser to 200% and repeat",
+      "Switch to dark mode and repeat"
+    ],
+    "expectedResult": "A clearly visible focus indicator (border color change plus box-shadow ring) is present in every combination of zoom level and color mode — the element is never focused with zero visible indication.",
+    "tags": ["focus-ring", "keyboard", "evidence-management"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-003",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Color Contrast",
+    "title": "Muted/secondary text meets 4.5:1 contrast against its card background in both light and dark mode",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Using a contrast-checking devtool (Chrome DevTools color picker contrast ratio, or axe DevTools), sample the StatsCard subtitle text (helpTextColor = gray.500 on white in light mode, gray.500 on gray.800 in dark mode)",
+      "Sample the same for a chart panel subtitle and a table header label",
+      "Record the computed contrast ratio for each sample"
+    ],
+    "expectedResult": "All sampled body/secondary text meets at least 4.5:1 contrast (3:1 for large/bold text) against its background in both light and dark mode. Any pairing below threshold is a defect requiring a darker/lighter shade.",
+    "tags": ["contrast", "wcag", "dark-mode"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-004",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Keyboard Navigation",
+    "title": "A full task (create and submit a risk) can be completed using only the keyboard",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with risk.write permission"],
+    "steps": [
+      "Using only Tab/Shift+Tab/Enter/Space/Arrow keys, open the 'Create Risk' modal from Risk Register",
+      "Tab through every form field, select a value in at least one dropdown, and submit the form",
+      "Confirm the modal can also be dismissed with Escape without submitting"
+    ],
+    "expectedResult": "Every field, dropdown, and button in the flow is reachable and operable via keyboard alone, tab order matches visual order, the modal traps focus while open, and Escape closes it without submitting.",
+    "tags": ["keyboard", "modal", "risk-register"],
+    "requirement": "UI_UX_STANDARD.md §9, §6.10",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-005",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Motion & Animation",
+    "title": "Stats card hover/scale/rotate animations are suppressed when prefers-reduced-motion is enabled",
+    "description": "src/components/common/StatsCard.jsx's hover effects (icon rotate/scale via _groupHover, gradient overlay fade, value scale-up) use unconditional CSS transitions with no prefers-reduced-motion guard, contradicting §9's explicit requirement that all transitions/animations be wrapped in a reduced-motion check or omitted.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Enable 'Reduce motion' in OS accessibility settings (or emulate prefers-reduced-motion: reduce in the devtools rendering tab)",
+      "Reload a page with stats cards (e.g., /audit-assurance/programme) and hover a stats card"
+    ],
+    "expectedResult": "With prefers-reduced-motion: reduce active, the icon rotate/scale and value scale-up transitions should be disabled or reduced to an instant, no-motion state. Currently the hover animations in StatsCard.jsx play unconditionally regardless of the OS setting — a documented gap.",
+    "tags": ["reduced-motion", "animation", "stats-card"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-006",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Charts",
+    "title": "Chart panels expose an aria-label summarizing the chart's purpose",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Inspect the DOM/accessibility tree for a chart panel (e.g., Risk Center > Trends, or an Audit Assurance report chart)",
+      "Check for a wrapping element with aria-label and/or an adjacent text summary of the data"
+    ],
+    "expectedResult": "Every chart panel's outer container carries an aria-label describing the chart (e.g., 'Risk trend over the last 12 months') so screen reader users receive an equivalent summary of the visualization, per §9.",
+    "tags": ["aria-label", "charts", "screen-reader"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-A11Y-007",
+    "module": "ui-ux",
+    "category": "accessibility",
+    "subFeature": "Badges / Status Chips",
+    "title": "Status badges convey state through a text label, not color alone",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Enable a color-blindness simulation filter (devtools rendering > Emulate vision deficiencies > Achromatopsia)",
+      "View a list containing multiple status badges (e.g., Evidence Management review queue: Pending / Approved / Rejected)"
+    ],
+    "expectedResult": "Every status remains distinguishable under full color-blindness simulation because each badge carries a readable text label, not only a colored dot or pill — no status relies on hue alone to be understood.",
+    "tags": ["color-blind", "badges", "wcag"],
+    "requirement": "UI_UX_STANDARD.md §9",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

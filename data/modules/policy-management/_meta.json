@@ -1,0 +1,10 @@
+{
+  "slug": "policy-management",
+  "name": "Policy Management",
+  "scope": "feature",
+  "routes": [
+    "/policy-management"
+  ],
+  "qaAgent": "Policy_Management_QA_Agent",
+  "description": "Policy lifecycle (draft/review/approval/active), AI generation, templates, framework mapping."
+}

@@ -1,0 +1,103 @@
+[
+  {
+    "id": "NOTF-SMK-001",
+    "module": "notifications",
+    "category": "smoke",
+    "subFeature": "Bell Icon",
+    "title": "Notification bell renders in the Navbar for an authenticated session",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Any authenticated user session"],
+    "steps": [
+      "Log in and land on any private-layout page"
+    ],
+    "expectedResult": "The bell icon is visible in the Navbar, and clicking it opens NotificationMenu without a console error.",
+    "tags": ["smoke", "navbar"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SMK-002",
+    "module": "notifications",
+    "category": "smoke",
+    "subFeature": "Unread Count API",
+    "title": "GET /api/notifications/unread-count returns 200 with a numeric count",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Valid JWT for any authenticated user"],
+    "steps": [
+      "GET /api/notifications/unread-count"
+    ],
+    "expectedResult": "200 response: { success: true, data: { count: <number> } } where count >= 0.",
+    "tags": ["smoke", "client-api"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SMK-003",
+    "module": "notifications",
+    "category": "smoke",
+    "subFeature": "Client List API",
+    "title": "GET /api/notifications/client returns 200 with a notifications array and pagination object",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Valid JWT for any authenticated user"],
+    "steps": [
+      "GET /api/notifications/client?surface=drawer&limit=50"
+    ],
+    "expectedResult": "200 response containing data.notifications (array), data.pagination (total/page/limit/totalPages), and data.unreadCount (number).",
+    "tags": ["smoke", "client-api"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SMK-004",
+    "module": "notifications",
+    "category": "smoke",
+    "subFeature": "Socket Connectivity",
+    "title": "Socket.IO client connects and receives a 'connect' event with a valid session token",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User is logged in and a project is selected"],
+    "steps": [
+      "Load any page inside the private layout (NotificationProvider mounted)",
+      "Open the browser console and confirm the socket connection log"
+    ],
+    "expectedResult": "Console shows '[SOCKET] Connected...' and a socket id; connectionStatus in NotificationContext becomes 'connected'.",
+    "tags": ["smoke", "socket.io"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SMK-005",
+    "module": "notifications",
+    "category": "smoke",
+    "subFeature": "Internal Endpoint Reachability",
+    "title": "POST /api/internal/notifications with a correct token is reachable and returns 201",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["INTERNAL_API_TOKEN configured", "Valid targetUserId/organizationId fixtures"],
+    "steps": [
+      "POST /api/internal/notifications with a correct X-Internal-Token and a minimal valid body"
+    ],
+    "expectedResult": "201 response with { success: true, data: { id: <notificationId> } }, confirming the microservice-facing endpoint is up and correctly wired for basic dispatch.",
+    "tags": ["smoke", "internal-api"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

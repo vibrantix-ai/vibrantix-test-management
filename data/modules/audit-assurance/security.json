@@ -1,0 +1,137 @@
+[
+  {
+    "id": "AUDT-SEC-001",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Permission Granularity",
+    "title": "Closure approve/reject endpoints are gated by generic audit.update instead of a dedicated approval permission",
+    "description": "audit-closure.routes.js:20-22 registers POST /:auditId/closure/approve and /reject behind requirePermission('audit.update') — the same coarse permission that gates creating/editing CARs and findings. There is no audit.approve or audit.approve_closure permission anywhere in the module (confirmed across all route files).",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["User B has audit.update (general edit rights) but is not designated an approver/lead auditor", "A closure request is pending approval"],
+    "steps": [
+      "As User B (holds only audit.update), call POST /api/audit-assurance/:auditId/closure/approve"
+    ],
+    "expectedResult": "Current behavior: the call succeeds because audit.update is sufficient — there is no role distinction preventing any editor from approving audit closure. Flag for remediation: introduce a dedicated audit.approve_closure permission distinct from audit.update.",
+    "tags": ["rbac", "permission-gap", "audit-closure"],
+    "linkedDefect": "H-004",
+    "requirement": "ISO 27001:2022 Clause 9.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SEC-002",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Segregation of Duties",
+    "title": "Audit closure approval is rejected when the approver is the same user who requested it",
+    "description": "Positive control: approveClosure() (audit-closure.service.js:142-144) checks closure.approval.requestedBy.toString() === userId.toString() and throws 403 'Approver cannot be the same as the requestor (segregation of duties)'. This SoD check exists at the service layer even though the broader permission gap (H-004, AUDT-SEC-001) remains.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/audit-closure-sod.test.ts",
+    "preconditions": ["UserA requested closure approval for an audit"],
+    "steps": [
+      "As UserA, call POST /api/audit-assurance/:auditId/closure/approve on the closure UserA just requested"
+    ],
+    "expectedResult": "Request is rejected with 403 'Approver cannot be the same as the requestor (segregation of duties)'. The closure remains in 'pending_approval' state.",
+    "tags": ["segregation-of-duties", "audit-closure"],
+    "requirement": "ISO 27001:2022 Clause 9.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SEC-003",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Evidence Upload",
+    "title": "CAR evidence confirm rejects an s3Key outside the caller's organization prefix",
+    "description": "corrective-action.service.js addEvidence/uploadEvidenceFile (line 480) asserts s3Key.startsWith('evidence/${orgId}/') before accepting the file record — mirrors the same IDOR protection pattern already verified in evidence-management (EVID-SEC-003).",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Valid JWT for a user in org A", "A CAR belonging to org A"],
+    "steps": [
+      "As an org A user, call the CAR evidence attach endpoint with a forged s3Key beginning with 'evidence/{orgB-id}/' instead of org A's prefix"
+    ],
+    "expectedResult": "Request is rejected with 403 — the s3Key does not belong to the caller's organization; no evidence subdocument referencing org B's S3 object is appended to the CAR.",
+    "tags": ["idor", "multi-tenant", "s3-upload", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SEC-004",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Segregation of Duties",
+    "title": "A user can raise a finding and later close it themselves with no self-review block",
+    "description": "Unlike CAR verify() (which blocks assignee===verifier), findings.controller.js updateFinding has no check comparing raisedBy to the caller closing the finding — closedBy is simply set to whoever calls the PATCH.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["UserA has audit.update permission and raised finding F (raisedBy = UserA)"],
+    "steps": [
+      "As UserA, call PATCH /:auditId/findings/:findingId with { status: 'closed' } on the finding UserA raised"
+    ],
+    "expectedResult": "Current behavior: the request succeeds and closedBy is set to UserA — the same person who raised the nonconformity closes it with no independent reviewer. Flag for remediation: add a closedBy !== raisedBy (or equivalent role-based) check analogous to the CAR verify() SoD guard.",
+    "tags": ["segregation-of-duties", "findings"],
+    "requirement": "ISO 27001:2022 Clause 10.1",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SEC-005",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "CAR detail endpoint rejects requests for a carId belonging to another organization's audit",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/audit-assurance-idor.test.ts",
+    "preconditions": ["Two orgs (A, B) each have an audit with at least one CAR", "Valid JWT for a user in org A"],
+    "steps": [
+      "As an org A user, call GET /api/audit-assurance/:orgBAuditId/corrective-actions/:orgBCarId using org B's audit and CAR IDs"
+    ],
+    "expectedResult": "Request is rejected with 403/404 — no CAR metadata, evidence, or verification history from org B is returned.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SEC-006",
+    "module": "audit-assurance",
+    "category": "security",
+    "subFeature": "Evidence Upload",
+    "title": "CAR evidence upload uses server-verified file metadata rather than trusting client-supplied contentType/size",
+    "description": "Positive control: addEvidence/uploadEvidenceFile calls S3.getFileMetadata(s3Key) server-side to obtain real contentLength/contentType instead of trusting client-supplied values (in-code comment: 'never trust client-supplied values'), and enforces a 25MB cap plus extension/MIME allowlists (ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES).",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A presigned S3 upload URL has been generated for a CAR evidence slot"],
+    "steps": [
+      "Upload a file directly to the presigned URL, then call the confirm/attach endpoint declaring a mimeType/fileSize that does not match the real object",
+      "Attempt to attach a file whose extension is on the allowlist (e.g. .pdf) but whose actual content type is disallowed"
+    ],
+    "expectedResult": "The server's own S3.getFileMetadata lookup is used for the persisted contentType/fileSize (not the client-declared values), and the allowlist check rejects disallowed real content types even when the extension looks legitimate.",
+    "tags": ["file-upload", "s3-upload", "owasp-a03"],
+    "requirement": "ISO 27001 Annex A.8.16",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

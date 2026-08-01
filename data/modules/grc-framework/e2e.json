@@ -1,0 +1,181 @@
+[
+  {
+    "id": "GRCF-E2E-001",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Framework Activation",
+    "title": "Activating a licensed framework moves it from Available to Active and exposes View Compliance Map",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/e2e/grc-framework.spec.ts",
+    "preconditions": ["Logged in as a user with compliance.create", "Target framework is licensed for the org but not yet added to the project"],
+    "steps": [
+      "Navigate to /grc-framework",
+      "Locate the framework tile in the 'Available Frameworks' section and click 'Activate'",
+      "Observe the tile move and a success toast",
+      "Click 'View Compliance Map' on the now-active tile"
+    ],
+    "expectedResult": "The framework tile moves to 'Active Frameworks' immediately (optimistic UI update), a success toast reads '<name> is now active.', and clicking 'View Compliance Map' navigates to /grc-framework/:id/compliance-map showing that framework's control list.",
+    "tags": ["activation", "core-flow"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-002",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Framework Deactivation",
+    "title": "Deactivating an active framework shows an impact summary and moves it back to Available on confirm",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["A framework with a non-zero controlCount is currently active"],
+    "steps": [
+      "On /grc-framework, click 'Deactivate' on an active framework tile",
+      "Read the confirmation modal's Impact Summary",
+      "Click 'Deactivate' to confirm"
+    ],
+    "expectedResult": "The modal shows '<N> controls will no longer be tracked' and warns the compliance map/coverage will stop updating. After confirming, the tile moves to 'Available Frameworks', a success toast appears, and the framework's compliance map data is no longer surfaced as active for this project.",
+    "tags": ["deactivation", "impact-awareness"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-003",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Licensing Gate",
+    "title": "Clicking Activate on an unlicensed framework shows the Upgrade Required modal and never calls the activation API",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["Target framework has isLicensed:false for this org"],
+    "steps": [
+      "On /grc-framework, locate an unlicensed framework tile (shows 'Upgrade Required' button)",
+      "Click the button",
+      "Observe network activity during the click"
+    ],
+    "expectedResult": "An 'Upgrade Required' modal opens explaining the framework isn't licensed and to contact an administrator. No POST to /compliance-frameworks/projects/:projectId/frameworks fires — the gate is enforced client-side before any network call, and would also be rejected server-side (403 LICENSING_REQUIRED) if bypassed.",
+    "tags": ["licensing", "upsell"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-004",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Compliance Map",
+    "title": "Opening a control from the domain accordion shows the 7-dimension resource-metrics grid and resource table in the drawer",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Framework is active with at least one control that has evidence, a policy, a vendor mapping and a linked risk"],
+    "steps": [
+      "Navigate to /grc-framework/:id/compliance-map",
+      "Expand a domain accordion section",
+      "Click a control row that shows non-zero 'direct' and 'automated' counts"
+    ],
+    "expectedResult": "The Control Detail drawer opens showing: Evidence/Policy/Certs/Cloud/Integration/Vendor/Risk score tiles, a Resources table listing each attached item with type/source/last-updated, and a Related Risks section listing linked risks with severity and status badges.",
+    "tags": ["compliance-map", "control-drawer"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-005",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "CSV Export",
+    "title": "Exporting with active filters produces a CSV containing only the filtered controls, in two sections",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Compliance map is loaded with more controls than match a chosen filter"],
+    "steps": [
+      "Set statusFilter to 'gap' and search for a keyword that matches a handful of controls",
+      "Click 'Export Filtered CSV'",
+      "Open the downloaded file"
+    ],
+    "expectedResult": "Button label reads 'Export Filtered CSV' (vs 'Export CSV' with no filters). The downloaded file is named '<framework>-compliance-map-<date>.csv', opens correctly in Excel (UTF-8 BOM preserved, no mojibake on the '·' domain separator), and contains a Control Summary section followed by a blank line and a Resource Detail section — both restricted to only the controls currently matching the active filters.",
+    "tags": ["csv-export", "filters"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-006",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Sync / Refresh",
+    "title": "Refresh on the frameworks catalog page bypasses the compliance-summary cache and shows updated coverage",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "description": "handleRefresh calls complianceService.refreshProjectSummary(projectId) before reloading — this forces aggregationService.refreshProjectSummary to recompute and re-cache ClientComplianceSummary, bypassing its 1-hour staleness threshold.",
+    "preconditions": ["Some evidence was just approved, changing a control's coverageScore, but the project's ClientComplianceSummary cache is still within its 1-hour freshness window"],
+    "steps": [
+      "Navigate to /grc-framework and note an active framework's displayed coverage %",
+      "Approve evidence elsewhere that changes that framework's underlying coverage",
+      "Return to /grc-framework and click 'Refresh'"
+    ],
+    "expectedResult": "The Refresh button shows a loading state ('Refreshing'), then the framework tile's coverage % and status badge update to reflect the just-approved evidence — not the stale cached value that a plain page reload (without Refresh) would still show for up to an hour.",
+    "tags": ["cache", "staleness", "pcl"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-007",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Filter Combinations",
+    "title": "Combining search + status + domain + asset-type filters narrows results to the strict intersection",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["Framework has controls across at least 2 domains, mixed coverage statuses, and mixed asset attachments"],
+    "steps": [
+      "Set search text matching a subset of control titles",
+      "Set statusFilter to 'partial'",
+      "Set domainFilter to a specific domain code",
+      "Set assetFilter to 'evidence' (Has Evidence)",
+      "Read the '<N> of <Total> controls' counter and the visible accordion rows"
+    ],
+    "expectedResult": "Only controls satisfying all four predicates simultaneously (title/ID matches search AND coverageStatus==='partial' AND domain matches AND _evidenceCount>0) are shown; the counter matches the number of visible rows exactly, and domains with zero matching controls after filtering are hidden from the accordion entirely.",
+    "tags": ["filters", "compliance-map"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-E2E-008",
+    "module": "grc-framework",
+    "category": "e2e",
+    "subFeature": "Compliance Map Header",
+    "title": "The Navbar header updates dynamically to the framework's real title once compliance-map data loads",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate directly to /grc-framework/:id/compliance-map via a bookmarked URL (cold load)",
+      "Observe the page/nav header text before and after data finishes loading"
+    ],
+    "expectedResult": "Before data loads, the header shows a generic/placeholder title. Once loadData resolves, setPageHeader updates it to '<Framework Title> — Compliance Map' with the subtitle 'Control-by-control coverage tracker · evidence, policies, vendors and cloud checks', and the header reverts/clears when navigating away (clearPageHeader on unmount).",
+    "tags": ["navbar", "page-header"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

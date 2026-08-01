@@ -1,0 +1,11 @@
+{
+  "slug": "onboarding",
+  "name": "Onboarding & Getting Started",
+  "scope": "feature",
+  "routes": [
+    "/getting-started",
+    "/onboarding"
+  ],
+  "qaAgent": "Onboarding_QA_Agent",
+  "description": "First-run wizard, step completion tracking, checklist, platform tour."
+}

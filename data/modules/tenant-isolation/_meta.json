@@ -1,0 +1,8 @@
+{
+  "slug": "tenant-isolation",
+  "name": "Multi-Tenant Isolation",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "Tenant_Isolation_QA_Agent",
+  "description": "Cross-tenant leakage, fresh-tenant zero-data guarantees, cache/index namespace isolation."
+}

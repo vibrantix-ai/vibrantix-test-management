@@ -1,0 +1,192 @@
+[
+  {
+    "id": "INTA-UNIT-001",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Question Validation",
+    "title": "validateAnswer rejects a single_select answer not present in the question's response_options",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:137",
+    "steps": [
+      "Call validateAnswer('single_select', 'not_an_option', [{value:'yes'},{value:'no'}])"
+    ],
+    "expectedResult": "Function returns the string 'Answer must be one of: yes, no' instead of null, so the caller treats the answer as invalid.",
+    "tags": ["unit", "validation", "phase1"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-002",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Question Validation",
+    "title": "validateAnswer normalises an array-wrapped answer to its first element for single_select/text/boolean types",
+    "description": "Some clients submit answer as ['yes'] instead of 'yes'; the function must unwrap before validating rather than failing type checks.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:138",
+    "steps": [
+      "Call validateAnswer('boolean', ['true'], undefined)"
+    ],
+    "expectedResult": "Function returns null (valid) — the array is unwrapped to 'true' before the boolean check runs.",
+    "tags": ["unit", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-003",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Question Validation",
+    "title": "answerValues treats the literal placeholder string 'select' as unanswered",
+    "description": "answerValues() lower-cases and filters out the sentinel 'select' value used by dropdown placeholders, so a question left on its placeholder is not counted as answered.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:204",
+    "steps": [
+      "Call answerValues('Select')",
+      "Call answerValues(['Select', 'Yes'])"
+    ],
+    "expectedResult": "First call returns []. Second call returns ['Yes'] — the placeholder entry is dropped but the real answer is kept.",
+    "tags": ["unit", "validation", "phase1"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-004",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Question Validation",
+    "title": "validateQuestionCompletion throws on duplicate questionId answers within the same submission",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:212",
+    "preconditions": ["A strategic question catalog snapshot with at least 2 questions"],
+    "steps": [
+      "Call validateQuestionCompletion with an answers array containing two entries for the same questionId"
+    ],
+    "expectedResult": "AppError.validation is thrown with message 'Duplicate answers submitted for strategic question(s): <id>' and completion is not persisted.",
+    "tags": ["unit", "validation", "phase1"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-005",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Question Validation",
+    "title": "validateQuestionCompletion lists every unanswered question by number and text before allowing section completion",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:248",
+    "steps": [
+      "Call validateQuestionCompletion with a 5-question catalog and answers covering only 3 of them"
+    ],
+    "expectedResult": "AppError.validation is thrown listing all 2 unanswered questions as 'Question <n> — <text>' joined with '; ', with a details array of {questionId, questionNumber, question}.",
+    "tags": ["unit", "validation", "phase1"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-006",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "AI Plan Generation",
+    "title": "recommendationIdempotencyKey produces the same hash regardless of the order answers were submitted in",
+    "description": "The idempotency key sorts normalized answers by questionId before hashing, so retrying Phase 2 generation with the same answers in a different order must be treated as identical (reused, not regenerated).",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:298",
+    "steps": [
+      "Call recommendationIdempotencyKey(audit, answers) with answers in order [Q2, Q1]",
+      "Call recommendationIdempotencyKey(audit, answers) again with the same two answers in order [Q1, Q2]"
+    ],
+    "expectedResult": "Both calls return the identical SHA-256 hex digest.",
+    "tags": ["unit", "idempotency", "ai-plan"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-007",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Gap Analysis",
+    "title": "Gap risk-score-to-priority mapping assigns 'Critical' at score 7 while severity mapping requires score 8",
+    "description": "runGapAnalysis derives two separate labels from the same clamped riskScore using different thresholds: priority uses >=7 for Critical, but severity uses >=8. A gap with riskScore 7 therefore shows priority=Critical and severity=High simultaneously — capture the exact current behavior so any future threshold alignment is a deliberate change, not a silent drift.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:3516",
+    "steps": [
+      "Construct a Phase 3 control whose gap signals sum to a clamped riskScore of 7 (e.g. Missing Evidence + 2 Failed Findings + Not Assessed)",
+      "Run the gap classification logic for that control"
+    ],
+    "expectedResult": "The resulting gap has priority='Critical' (score >= 7) and severity='High' (score < 8) on the same object.",
+    "tags": ["unit", "gap-analysis", "consistency"],
+    "linkedDefect": "INTA-BUG-priority-severity-threshold-mismatch",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-008",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Phase Navigation",
+    "title": "progressPercentage virtual returns 50% when exactly Phase 1 and Phase 2 are completed",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.model.js:713",
+    "steps": [
+      "Construct an IntelligentAudit document with phaseStatus.phase1.isCompleted=true, phase2.isCompleted=true, phase3/phase4 not completed",
+      "Read the progressPercentage virtual"
+    ],
+    "expectedResult": "progressPercentage equals 50 (2 of 4 phases completed).",
+    "tags": ["unit", "phase-navigation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-UNIT-009",
+    "module": "intelli-audit",
+    "category": "unit",
+    "subFeature": "Phase Navigation",
+    "title": "completePhase(4) sets audit.status to 'completed' instead of activating a phase 5",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.model.js:724",
+    "steps": [
+      "Call audit.completePhase(4) on an audit currently in phase 4"
+    ],
+    "expectedResult": "phaseStatus.phase4.isCompleted=true, isActive=false, completedAt is set, and audit.status becomes 'completed' (no phase5 key is touched).",
+    "tags": ["unit", "phase-navigation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

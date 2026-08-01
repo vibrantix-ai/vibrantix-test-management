@@ -1,0 +1,10 @@
+{
+  "slug": "audit-assurance",
+  "name": "Audit Assurance",
+  "scope": "feature",
+  "routes": [
+    "/audit-assurance"
+  ],
+  "qaAgent": "Audit_Assurance_QA_Agent",
+  "description": "Audit lifecycle, findings, CAR management, nonconformity tracking, management review."
+}

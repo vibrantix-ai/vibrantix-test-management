@@ -1,0 +1,139 @@
+[
+  {
+    "id": "UIUX-E2E-001",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Dark Mode",
+    "title": "Toggling dark mode from the Navbar updates every visible component on the current page without a reload",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in, on a data-dense page such as /risk-center"],
+    "steps": [
+      "Navigate to /risk-center in light mode",
+      "Toggle dark mode via the Navbar color-mode switch",
+      "Without reloading, inspect stats cards, the data table, filter controls, and all icon containers on the page"
+    ],
+    "expectedResult": "Every themed element (card backgrounds, borders, text, icon containers, table header/row colors) switches to its dark-mode token value immediately. Known gap: the four hardcoded icon containers in risk-center/page.jsx (red.900/purple.900/blue.900/orange.900, see UIUX-REG-002) do not visibly change between modes since they are hardcoded rather than theme-aware — flag if still present.",
+    "tags": ["dark-mode", "e2e", "risk-center"],
+    "requirement": "UI_UX_STANDARD.md §10",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-E2E-002",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Responsive Layout",
+    "title": "Resizing from desktop to mobile viewport collapses stats card and chart panel grids per the defined breakpoints",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open a stats-card-driven page (e.g., /audit-assurance/programme) at a desktop width (>= 992px)",
+      "Resize the browser/devtools viewport down to a mobile width (< 480px)",
+      "Observe the stats card grid column count and any chart panel row layout"
+    ],
+    "expectedResult": "Stats cards collapse from their desktop column count (4, or 6 per ProgrammeStatsCards' lg:6) down to 2 columns at the 'base' breakpoint per §8; any 2:1 chart panel grid stacks to a single column; the page title remains full-size (no reduction of the 'lg' heading); no horizontal scrollbar appears on the page body.",
+    "tags": ["responsive", "mobile", "stats-card"],
+    "requirement": "UI_UX_STANDARD.md §3, §8",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-E2E-003",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Empty States",
+    "title": "An empty-state action button routes the user into the correct creation flow for that module",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A filtered view that produces zero results, e.g., Risk Register filtered to a status with no matching risks"],
+    "steps": [
+      "Apply a filter combination on Risk Register that yields zero risks",
+      "Confirm the empty state renders with a contextual message and an action button (e.g., 'Add Risk')",
+      "Click the action button"
+    ],
+    "expectedResult": "The empty state's action button opens the correct creation modal/page for that module (Create Risk modal), pre-filled with any filter context if applicable, rather than a dead link, wrong-module route, or no-op.",
+    "tags": ["empty-state", "e2e", "risk-register"],
+    "requirement": "UI_UX_STANDARD.md §6.14",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-E2E-004",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Loading & Partial Failure",
+    "title": "A page with multiple parallel data panels shows partial data with a warning instead of blocking entirely when one panel's fetch fails",
+    "description": "Verifies the Promise.allSettled UX principle from §11 end-to-end using devtools request blocking rather than just reading the code pattern.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Ability to block a specific network request via devtools request blocking"],
+    "steps": [
+      "Open a multi-panel page such as the Risk Center overview or Dashboard",
+      "Using devtools 'Block request URL', block one of the underlying data-fetch endpoints feeding a single panel",
+      "Reload the page"
+    ],
+    "expectedResult": "All unaffected panels render their real data normally; only the panel whose request was blocked shows an inline error/warning state with a retry option. The rest of the page must not be blocked, blanked, or show an unhandled error boundary.",
+    "tags": ["partial-failure", "resilience", "e2e"],
+    "requirement": "UI_UX_STANDARD.md §11",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-E2E-005",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Filter Bars",
+    "title": "Combining search, dropdown filters, and tag removal updates results live without a full page reload",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Evidence Management has at least 5 evidence items spanning 2+ categories and statuses"],
+    "steps": [
+      "On /evidence-management, type a search term that matches a subset of items",
+      "Add a status filter and a category filter (active filter tags should appear)",
+      "Remove one active filter tag via its close button, then click 'Clear all'"
+    ],
+    "expectedResult": "The result list updates after every step without a full page navigation/reload. Active filter tags appear only once at least one filter is set, 'Clear all' is visible only while filters are active, and clicking it resets both the visible list and the tag row to the unfiltered state.",
+    "tags": ["filter-bar", "e2e", "evidence-management"],
+    "requirement": "UI_UX_STANDARD.md §6.5",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "UIUX-E2E-006",
+    "module": "ui-ux",
+    "category": "e2e",
+    "subFeature": "Toasts",
+    "title": "A completion toast confirms an action without blocking the page's primary controls",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has permission to perform an action that produces a success toast, e.g., exporting a report"],
+    "steps": [
+      "Trigger an action that produces a success toast (e.g., CSV export in the GRC Framework compliance map)",
+      "While the toast is visible, attempt to interact with a button/control elsewhere on the page (not underneath the toast)"
+    ],
+    "expectedResult": "The toast appears bottom-right per §6.12, auto-dismisses after its configured duration (3-4s for success/info), and does not intercept clicks on unrelated page controls while visible.",
+    "tags": ["toast", "e2e"],
+    "requirement": "UI_UX_STANDARD.md §6.12",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

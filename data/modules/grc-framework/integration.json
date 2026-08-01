@@ -1,0 +1,216 @@
+[
+  {
+    "id": "GRCF-INT-001",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Framework Activation",
+    "title": "Concurrent activation requests for the same framework/project produce a single ClientFramework document",
+    "description": "addToProject uses ClientFramework.findOneAndUpdate({organizationId, projectId, frameworkId}, {...}, {upsert:true, new:true}) specifically to make double-click / concurrent-tab activation atomic instead of creating duplicate rows.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Framework is active in the catalog and licensed for the org"],
+    "steps": [
+      "Fire two POST /compliance-frameworks/projects/:projectId/frameworks requests with the same frameworkId in quick succession",
+      "Query ClientFramework for {organizationId, projectId, frameworkId}"
+    ],
+    "expectedResult": "Exactly one ClientFramework document exists with status 'active'; no duplicate-key error and no second document created.",
+    "tags": ["race-condition", "activation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-002",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Framework Activation",
+    "title": "Activating an unlicensed framework returns 403 LICENSING_REQUIRED without creating a ClientFramework record",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Framework exists and is status 'active' in the catalog, but is not in the org's licensed set"],
+    "steps": [
+      "POST /compliance-frameworks/projects/:projectId/frameworks with { frameworkId }"
+    ],
+    "expectedResult": "Response is 403 with body { success: false, error: 'LICENSING_REQUIRED', message: ... }. No ClientFramework document is created for this org/project/framework.",
+    "tags": ["licensing"],
+    "requirement": "Billing & Plans licensing gate parity",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-003",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Framework Activation",
+    "title": "A failed complianceSync.activateFramework leaves the ClientFramework doc already upserted to 'active' before the seed error is raised",
+    "description": "In addToProject, the ClientFramework upsert (setting status:'active') happens BEFORE the try/catch around complianceSync.activateFramework. If the seed of client requirements/controls throws, the caller receives a 503 telling them to retry — but the ClientFramework record is already status:'active' with no ClientRequirement/ClientControl rows behind it. Documents current behavior: the framework will appear 'Active' in the UI with a compliance map that has zero controls until retried.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["complianceSync.activateFramework is mocked/forced to throw (e.g. DB write failure during seeding)"],
+    "steps": [
+      "POST /compliance-frameworks/projects/:projectId/frameworks for a licensed framework while activateFramework is forced to fail",
+      "Observe the API response",
+      "Query ClientFramework for this org/project/framework",
+      "Navigate to /grc-framework and check the framework's displayed status"
+    ],
+    "expectedResult": "API returns 503 'Framework activation could not seed client requirements and controls. Retry activation.' However the ClientFramework doc already exists with status:'active' — the framework shows as Active in the catalog with an empty compliance map until the caller retries activation. Flagged as a partial-failure state worth hardening (wrap the upsert and seed in one transaction, or roll back the upsert on seed failure).",
+    "tags": ["activation", "partial-failure", "data-integrity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-004",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Framework Deactivation",
+    "title": "Deactivating a framework whose license was revoked (status='license_revoked') succeeds and sets status to 'archived'",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["A ClientFramework record has status 'license_revoked' (set by a prior license-revocation cascade)"],
+    "steps": [
+      "DELETE /compliance-frameworks/projects/:projectId/frameworks/by-framework/:frameworkId"
+    ],
+    "expectedResult": "Request succeeds (200) and the ClientFramework document's status becomes 'archived' with archivedAt/archivedBy set — it is no longer an orphaned dead-end record that can never be cleanly removed.",
+    "tags": ["deactivation", "licensing"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-005",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Framework Catalog",
+    "title": "available-frameworks controlCount is sourced from active leaf FrameworkRequirement counts, matching the count shown post-activation",
+    "description": "availableFrameworks() deliberately counts FrameworkRequirement leaf nodes (isLeaf:true, status:'active'), the same source ClientRequirement rows are materialized from on activation — not the older, drifted FrameworkControl collection getControls() uses — so the catalog's advertised control count doesn't change once the framework is activated.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A framework has 42 active leaf FrameworkRequirement docs but a different count in the legacy FrameworkControl collection"],
+    "steps": [
+      "GET /compliance-frameworks/projects/:projectId/available-frameworks and note controlCount for the framework (pre-activation)",
+      "Activate the framework",
+      "GET /grc-framework/:id/compliance-map and note totalControls"
+    ],
+    "expectedResult": "Both counts equal 42 — the pre-activation catalog count and the post-activation compliance map count agree, using the FrameworkRequirement source in both places.",
+    "tags": ["catalog", "data-consistency"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-006",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Excluded Controls (SoA)",
+    "title": "PATCH excluded-controls persists a mixed valid/invalid ID list, keeping only the valid subset",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "PATCH /compliance-frameworks/projects/:projectId/frameworks/:id/excluded-controls with excludedRequirementIds containing 2 valid leaf requirement IDs of this framework and 1 invalid/foreign ID",
+      "Inspect the response body"
+    ],
+    "expectedResult": "Response returns excludedRequirementIds (and the compatibility alias excludedControlIds) containing only the 2 valid IDs; the invalid one is dropped without erroring the whole request.",
+    "tags": ["soa", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-007",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Control Detail / UCL Mapping",
+    "title": "getControlUclDetail filters automated checks to only the cloud providers enabled in the project's pscanner_configs",
+    "description": "When a projectId query param is supplied, getControlUclDetail reads pscanner_configs for that project and filters the control's checks down to providers with providers.<name>.enabled true. Without a matching config, all checks for the control are returned unfiltered.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A control has automated checks from both aws and azure providers", "The project's pscanner_configs has aws.enabled=true, azure.enabled=false"],
+    "steps": [
+      "GET /compliance-frameworks/:frameworkId/controls/:controlStringId/ucl-detail?projectId=<id>"
+    ],
+    "expectedResult": "Only the aws-provider checks are present in the response's checks array; azure checks for the same control are excluded.",
+    "tags": ["cloud-posture", "ucl-mapping"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-008",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Project Membership Gate",
+    "title": "A user with org-level compliance.read but no membership on the target project is rejected on /projects/:projectId/frameworks",
+    "description": "PLAC Phase 2 fix: requireProjectMembership() now runs on every /projects/:projectId/* compliance-frameworks and client-compliance route, closing a gap where only org membership (assertOrgAccess) was ever checked, never actual project membership.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User has the compliance.read permission at the org/role level", "User is NOT a member of projectId (no ProjectMember row) and is not an org-level project.admin"],
+    "steps": [
+      "GET /compliance-frameworks/projects/:projectId/frameworks as this user"
+    ],
+    "expectedResult": "403 Forbidden — org-level compliance.read alone is not sufficient; project membership (or org project.admin bypass) is required.",
+    "tags": ["plac", "rbac", "multi-tenant"],
+    "requirement": "Project-Level Access Control",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-009",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Client Requirements List",
+    "title": "listRequirements with limit=0 fetches up to the 2000-row cap without a divide-by-zero in pagination.pages",
+    "description": "limit=0 means 'fetch all up to MAX_LIMIT' for internal compliance-map use. The fix uses effectiveLimit (never 0) in the pages calculation instead of the raw query param, which previously produced pages: Infinity.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "GET /compliance-frameworks/projects/:projectId/client-requirements?limit=0 for a framework with 300 requirements"
+    ],
+    "expectedResult": "pagination.limit is 2000 (the MAX_LIMIT), pagination.pages is a finite integer (1), and data contains all 300 requirements — not Infinity/NaN.",
+    "tags": ["pagination", "edge-case"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-INT-010",
+    "module": "grc-framework",
+    "category": "integration",
+    "subFeature": "Asset Enrichment",
+    "title": "getRequirementWithAssets returns both direct-attached and UCL-chain-attached resources for a single requirement",
+    "description": "A resource can reach a requirement two ways: directly (doc.evidenceIds/policyIds/certificationIds/vendorControlIds/riskIds) or via the UCL chain (requirement -> requirement_ucl_mapping_v2 -> a ClientControl sharing that uclId -> that control's own policyIds/vendorControlIds/integrationEvidenceIds/trustCertificationIds/riskIds). 'direct' wins when a resource is reachable both ways (resolveSource checks direct sourceMap entries first).",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Requirement R has one directly-attached policy P1", "R maps to UCL U1, and a ClientControl for U1 has vendor V1 and (also) P1 attached"],
+    "steps": [
+      "GET /compliance-frameworks/projects/:projectId/client-requirements/:id/assets"
+    ],
+    "expectedResult": "resources[] contains P1 with source:'direct' (not 'control', despite also being reachable via the UCL-linked ClientControl) and V1 with source:'control' and a populated uclInfo object.",
+    "tags": ["asset-enrichment", "ucl-mapping"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

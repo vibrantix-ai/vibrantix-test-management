@@ -1,0 +1,160 @@
+[
+  {
+    "id": "DASH-INT-001",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Cross-Module Aggregation",
+    "title": "GET /api/dashboard/metrics aggregates compliance, resources, risk, vendor, and audit-assurance data into one response",
+    "description": "dashboard-metrics/index.js joins ClientComplianceSummary (compliance), CloudResource+Finding (resources), the risks collection (risk), client_vendors+vendor_assessments (vendorRisk), and the audit-assurance module's audits/audit_nonconformances collections (audit) — five genuinely separate data sources feeding one payload consumed by AuditOverviewContent.jsx.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Seeded org with at least one active framework, one open risk, one vendor with an assessment, one open audit finding"
+    ],
+    "steps": [
+      "As an authenticated org member, call GET /api/dashboard/metrics",
+      "Inspect data.compliance.summary, data.resources.summary, data.risk.summary, data.vendorRisk.summary, data.audit.summary"
+    ],
+    "expectedResult": "Each of the five summary blocks reflects the seeded data from its own real collection — e.g. data.risk.summary.openRisks counts treatment.status != 'completed', not a stale or zeroed value.",
+    "tags": ["cross-module", "aggregation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-002",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Project Scoping",
+    "title": "?projectIds= narrows every board's numbers, including the vendor pipeline joined through client_vendors",
+    "description": "vendor_assessments has no reliable projectId of its own; fetchVendorAssessmentMetrics scopes via client_vendors.projectId through a $lookup. Verify assessmentsOverdue/pipeline actually changes when projectIds is narrowed, not silently zeroed (the pre-fix behavior for any project-scoped caller).",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Two projects in the same org, each with a vendor that has an overdue assessment"
+    ],
+    "steps": [
+      "Call GET /api/dashboard/metrics?projectIds=<projectA>",
+      "Call GET /api/dashboard/metrics?projectIds=<projectA>,<projectB>"
+    ],
+    "expectedResult": "The first call's data.vendorRisk.assessmentPipeline.overdue counts only projectA's vendor; the second call's count includes both.",
+    "tags": ["cross-module", "vendor", "project-scope"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-003",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Risk Posture Cross-Service Call",
+    "title": "Risk posture/governance fields are only populated when exactly one project is in scope",
+    "description": "fetchRiskPostureAndGovernance only calls risk-management-service's risk-center/posture and risk-center/governance (which require a single projectId and 400 without one) when scopedIds resolves to exactly 1 project. With 0 projects selected, or 2+ projects selected, or the RMS unreachable, postureScore/postureTrend/treatmentsOverdue/unownedRisks/acceptancesExpiring must come back null, not 0 or a stale number.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/dashboard/metrics?projectIds=<projectA> (single project)",
+      "Call GET /api/dashboard/metrics?projectIds=<projectA>,<projectB> (two projects)"
+    ],
+    "expectedResult": "First call returns non-null data.risk.summary.postureScore; second call returns data.risk.summary.postureScore === null and the frontend renders it as '—', never as 0.",
+    "tags": ["cross-module", "risk-management-service", "microservice"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-004",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Redis Caching",
+    "title": "A cached /api/dashboard/metrics entry is reused for identical params and bypassed for a different filter combination",
+    "description": "dashboard-cache.js's getCache/setCache key on a hash of {scope, dateFrom, dateTo, severities, frameworkIds}. Identical repeat requests within EXEC_DASH_CACHE_TTL (default 60s) must hit the cache; changing any one filter must produce a cache miss and a fresh aggregation.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/dashboard/metrics twice in immediate succession with identical query params",
+      "Insert a new risk in the underlying data, then call again with the same params within 60s",
+      "Call again with dateFrom set to a different value"
+    ],
+    "expectedResult": "The second call returns the identical (stale) cached payload despite the new risk; the third call (different dateFrom) triggers a fresh aggregation reflecting the new risk.",
+    "tags": ["cache", "redis"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-005",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Date/Severity Filters",
+    "title": "dateFrom/dateTo/severities filter Finding and risks but do not silently no-op CloudResource's compliance-status counts",
+    "description": "dashboard-metrics/index.js applies dateRangeMatch/severityMatch to the Finding and risks aggregations only, because CloudResource has no createdAt/severity field of its own and its compliance.status reflects current state, not a point-in-time event. Verify resourceBoard's passRate/complianceStatusBreakdown stay constant across date ranges while resource findings-derived numbers change.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/dashboard/metrics?dateFrom=<30 days ago>&dateTo=<today>",
+      "Call GET /api/dashboard/metrics with no date filters",
+      "Compare data.resources.summary.passRate and data.resources.summary.totalFindings across both calls"
+    ],
+    "expectedResult": "passRate/complianceStatusBreakdown are identical across both calls; totalFindings/severityDistribution differ if findings exist outside the 30-day window.",
+    "tags": ["filters", "resource-board"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-006",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Org-Level Provider Coverage",
+    "title": "GET /api/dashboard/:orgId enforces same-org-or-organization.admin before returning providerCoverage",
+    "description": "The :orgId route in dashboard-metrics/index.js checks req.permissions.has('organization.admin') OR requestedOrgId === req.orgId before calling fetchProviderCoverage; anything else is a 403.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two distinct orgs, A and B, each with active frameworks"],
+    "steps": [
+      "As a user in org A (no organization.admin permission), call GET /api/dashboard/<orgB id>",
+      "As the same user, call GET /api/dashboard/<orgA id>",
+      "As a user holding organization.admin, call GET /api/dashboard/<orgB id>"
+    ],
+    "expectedResult": "First call returns 403 Access denied; second call returns 200 with org A's data; third call returns 200 with org B's data.",
+    "tags": ["multi-tenant", "idor"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-007",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Framework Readiness Project Scoping",
+    "title": "fetchFrameworkReadiness's ClientFramework query respects the caller's project scope",
+    "description": "Regression coverage for the fix noted in the source: fetchFrameworkReadiness previously queried ClientFramework org-wide regardless of the selected project(s), feeding the Framework Board's readyCount/avgCoverage/strongest/weakest with unscoped data.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project A has 2 active frameworks; Project B has 1 different active framework"],
+    "steps": [
+      "Call GET /api/dashboard/metrics?projectIds=<projectA only>",
+      "Inspect data.compliance.frameworkReadiness.totalActive and .list"
+    ],
+    "expectedResult": "totalActive is 2 and .list contains only Project A's two frameworks — Project B's framework is absent.",
+    "tags": ["framework-board", "project-scope"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

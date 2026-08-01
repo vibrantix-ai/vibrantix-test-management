@@ -1,0 +1,97 @@
+[
+  {
+    "id": "VCIS-SMK-001",
+    "module": "vciso",
+    "category": "smoke",
+    "subFeature": "Executive Dashboard",
+    "title": "Executive dashboard endpoint responds 200 for an authenticated vciso.read user",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Call GET /organizations/:orgId/executive-dashboard with a valid JWT holding vciso.read"
+    ],
+    "expectedResult": "200 response with { success: true, data: {...} } and no server error.",
+    "tags": ["smoke", "executive-dashboard"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SMK-002",
+    "module": "vciso",
+    "category": "smoke",
+    "subFeature": "Access Control",
+    "title": "/vciso root route redirects to /vciso/executive-dashboard without error",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate to /vciso as an authenticated user with vciso.read"
+    ],
+    "expectedResult": "Client-side redirect to /vciso/executive-dashboard completes before first paint; no console error, no blank page.",
+    "tags": ["smoke", "routing"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SMK-003",
+    "module": "vciso",
+    "category": "smoke",
+    "subFeature": "Strategic Planning",
+    "title": "Roadmap endpoint returns 200 with the base roadmap shape",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Call GET /strategic-planning/roadmap with a valid JWT holding vciso.read"
+    ],
+    "expectedResult": "200 response with success:true and a data object containing quarters/goals/initiatives arrays (or exists:false with a message if no roadmap has been configured yet).",
+    "tags": ["smoke", "strategic-planning"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SMK-004",
+    "module": "vciso",
+    "category": "smoke",
+    "subFeature": "Risk Intelligence",
+    "title": "FAIR scenarios list endpoint returns 200 for a new org with zero scenarios",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Call GET /risk-intelligence/scenarios for a brand-new org"
+    ],
+    "expectedResult": "200 response with data.items = [] and total = 0 — no server error on an empty scenario collection.",
+    "tags": ["smoke", "risk-intelligence"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SMK-005",
+    "module": "vciso",
+    "category": "smoke",
+    "subFeature": "Board Reporting",
+    "title": "Report templates endpoint returns 200 and includes the system-provided templates",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Call GET /board-reporting/templates with a valid JWT holding vciso.read"
+    ],
+    "expectedResult": "200 response with a non-empty data array containing at least the built-in system templates, even for an org that has never created a custom template.",
+    "tags": ["smoke", "board-reporting"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

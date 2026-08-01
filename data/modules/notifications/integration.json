@@ -1,0 +1,198 @@
+[
+  {
+    "id": "NOTF-INT-001",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Internal Microservice Endpoint",
+    "title": "POST /api/internal/notifications with a valid X-Internal-Token dispatches and returns the created id",
+    "description": "Simulates vendor-service/risk-management-service/trust-vault-service calling the internal notification endpoint to push a notification into the central bell without user auth.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["INTERNAL_API_TOKEN configured on the backend", "A valid targetUserId and organizationId exist"],
+    "steps": [
+      "POST /api/internal/notifications with header X-Internal-Token=<configured token> and body { targetUserId, organizationId, message: 'Vendor assessment overdue', notificationType: 'task_overdue', sourceModule: 'vendor' }"
+    ],
+    "expectedResult": "Response is 201 with { success: true, data: { id: <notificationId> } }, and a Notification document is persisted with sourceModule='vendor' and notificationType='task_overdue'.",
+    "tags": ["internal-api", "microservice"],
+    "requirement": "Cross-service notification contract",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-002",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Internal Microservice Endpoint",
+    "title": "POST /api/internal/notifications rejects requests missing targetUserId, organizationId, or message with 400",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Valid X-Internal-Token"],
+    "steps": [
+      "POST /api/internal/notifications with a valid token but body missing 'message'"
+    ],
+    "expectedResult": "400 response: { success: false, error: 'targetUserId, organizationId, and message are required' }. No document is created.",
+    "tags": ["internal-api", "validation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-003",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Dispatch to Delivery",
+    "title": "dispatch() enqueues a BullMQ 'deliver' job that the worker consumes and emits over Socket.IO",
+    "description": "End-to-end of the documented pipeline: dispatch -> MongoDB -> BullMQ (notification-dispatch queue, job name 'deliver', payload { notificationId }) -> notification.worker.js fetches the doc and emits 'notification' to room org:{organizationId}:user:{targetUserId}.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Redis available and REDIS_ENABLED != 'false'", "A test Socket.IO client is connected and joined to org:{orgId}:user:{userId}"],
+    "steps": [
+      "Call notificationService.dispatch({ targetUserId, organizationId, message: 'Audit invitation', notificationType: 'audit_invitation' })",
+      "Wait for the notification-dispatch queue to process the enqueued 'deliver' job",
+      "Observe events received by the connected test Socket.IO client"
+    ],
+    "expectedResult": "The client receives a 'notification' event whose payload includes _id, notificationType='audit_invitation', message='Audit invitation', isRead=false, matching the persisted document.",
+    "tags": ["bullmq", "socket.io", "e2e-pipeline"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-004",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Dispatch to Delivery",
+    "title": "dispatch() falls back to a direct Socket.IO emit when BullMQ is unavailable",
+    "description": "notification.service.js catches a queue.add() failure (Redis down / REDIS_ENABLED=false) and, when job is null, calls getIo() directly and emits 'notification' to the same org-scoped room, so delivery isn't silently lost even though the async worker path never ran.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["REDIS_ENABLED=false or Redis intentionally stopped for this test", "A connected Socket.IO test client in the target user's room"],
+    "steps": [
+      "With Redis unavailable, call notificationService.dispatch({ targetUserId, organizationId, message: 'Fallback test' })",
+      "Observe the connected client"
+    ],
+    "expectedResult": "The client still receives the 'notification' event with the correct payload, delivered via the direct-emit fallback path rather than the BullMQ worker, and the Notification document is persisted regardless.",
+    "tags": ["bullmq", "resilience", "fallback"],
+    "linkedDefect": "NOTIF-002",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-005",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Client Inbox API",
+    "title": "GET /api/notifications/client paginates correctly across multiple pages",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["A user has 45 notifications"],
+    "steps": [
+      "GET /api/notifications/client?page=1&limit=20",
+      "GET /api/notifications/client?page=2&limit=20",
+      "GET /api/notifications/client?page=3&limit=20"
+    ],
+    "expectedResult": "Page 1 and 2 each return 20 notifications, page 3 returns 5. pagination.total=45, pagination.totalPages=3, and no notification appears on two different pages (stable sort by createdAt desc).",
+    "tags": ["pagination", "client-api"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-006",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Client Inbox API",
+    "title": "PUT /api/notifications/:id/read returns 404 for a notification owned by a different user",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Notification N belongs to User A", "Valid JWT for User B"],
+    "steps": [
+      "As User B, call PUT /api/notifications/{N._id}/read"
+    ],
+    "expectedResult": "404 'Notification not found' — N.isRead remains false in the database; no cross-user state mutation occurs.",
+    "tags": ["idor", "ownership"],
+    "requirement": "OWASP API1 Broken Object Level Authorization",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-007",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Client Inbox API",
+    "title": "PUT /api/notifications/mark-all-read only flips isRead for the caller's own org + user scope",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["User A (org X) has 4 unread notifications", "User B (org X) has 2 unread notifications", "User A also somehow has a stray notification with organizationId = org Y (data anomaly guard)"],
+    "steps": [
+      "As User A, call PUT /api/notifications/mark-all-read"
+    ],
+    "expectedResult": "Response { modifiedCount: 4 } — only User A's org-X notifications flip to isRead=true; User B's 2 unread notifications and the org-Y stray notification are untouched.",
+    "tags": ["mark-all-read", "multi-tenant"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-008",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Socket Room Lifecycle",
+    "title": "join-project-room rejects a projectId belonging to a different organization than the authenticated socket",
+    "description": "core/socket.js join-project-room handler looks up the Project by id and compares project.organizationId to socket.orgId (derived from the verified JWT during the io.use auth middleware, never from client input). Mismatch emits 'project-room-join-denied' and the socket never joins the room.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Project P belongs to Org A", "A valid JWT for a user in Org B"],
+    "steps": [
+      "Connect a Socket.IO client authenticated as an Org B user",
+      "Emit 'join-project-room' with { projectId: P._id }"
+    ],
+    "expectedResult": "The client receives 'project-room-join-denied' with { projectId: P._id } and is never added to room project:{P._id} — subsequent scan events for P are not delivered to this socket.",
+    "tags": ["socket.io", "multi-tenant", "idor"],
+    "requirement": "PLAC-012 / T24 project-membership hardening",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-INT-009",
+    "module": "notifications",
+    "category": "integration",
+    "subFeature": "Scan Event Relay",
+    "title": "Redis pub/sub scan-progress message is relayed to the correct project Socket.IO room",
+    "description": "The Python scan worker publishes to prowler-{environment}:scan:progress:{projectId}; core/socket.js psubscribes to that pattern, parses projectId from the payload or channel suffix, maps status→event name (running→scan-progress, completed→scan-completed, etc.) and emits to room project:{projectId} only.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Two Socket.IO clients each joined to a different project's room (project:P1 and project:P2)"],
+    "steps": [
+      "Publish a message to prowler-{env}:scan:progress:P1 with { projectId: 'P1', scanId: 'SCAN-1', status: 'running', progress: 40 }",
+      "Observe both connected clients"
+    ],
+    "expectedResult": "Only the client in room project:P1 receives a 'scan-progress' event with progress=40; the client in project:P2 receives nothing for this message.",
+    "tags": ["redis-pubsub", "socket.io", "scan-relay"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

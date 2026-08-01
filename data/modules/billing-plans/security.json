@@ -1,0 +1,181 @@
+[
+  {
+    "id": "BILL-SEC-001",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "/billing-plans page is gated behind billing.read via PermissionGate; unauthorized users see Access Denied",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has no billing.read permission (NORMAL_USER without CUSTOMER_BILLING_ADMIN role)"],
+    "steps": [
+      "Log in as the unprivileged user",
+      "Navigate directly to /billing-plans"
+    ],
+    "expectedResult": "PermissionGate renders the fallback 'Access Denied' page ('You don't have permission to view this page. Contact your organization admin to request access.') rather than any billing data.",
+    "tags": ["permission-gate", "billing.read", "rbac"],
+    "requirement": "OWASP API Top 10 A01",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-002",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "/billing page (the alternate duplicate route) is not wrapped in PermissionGate — verify it is not an unguarded bypass of the billing.read check",
+    "description": "src/app/(private)/billing/page.jsx renders the same Overview/Plans tabs as /billing-plans/page.jsx but has no <PermissionGate> wrapper in the page file itself. Two parallel billing UI trees exist (components/billing/* and components/organization/billing/*). This case exists to confirm gating is enforced some other way (layout-level guard, or the underlying API calls still 403) rather than being a straight bypass of the access control on the sibling page.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has no billing.read permission"],
+    "steps": [
+      "Log in as the unprivileged user",
+      "Navigate directly to /billing instead of /billing-plans",
+      "If the page renders, inspect whether the underlying billingService calls (getPlan/getUsage/getInvoices) return 403 or actual data"
+    ],
+    "expectedResult": "Either the page itself denies access via a layout-level guard, or every data call it makes is rejected 403 by the backend's requirePermission('billing.read') so no billing data is ever displayed. If neither is true, this is a live access-control gap between two nearly-identical routes and must be raised as a defect, not silently accepted.",
+    "tags": ["permission-gate", "billing.read", "rbac", "duplicate-route"],
+    "requirement": "OWASP API Top 10 A01",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-003",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "GET /v1/billing/plan never returns another organization's subscription/plan data",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two orgs (A, B) each with distinct active plans/tiers", "Valid JWT for a billing.read user in org A"],
+    "steps": [
+      "As an org A user, call GET /v1/billing/plan, GET /v1/billing/usage, and GET /v1/billing/invoices",
+      "Attempt to influence the org context via any client-suppliable parameter (e.g. a forged projectId belonging to org B, if project-billed) to see org B's data"
+    ],
+    "expectedResult": "All responses reflect only org A's subscription/plan/invoice data, scoped strictly by the authenticated JWT's orgId server-side — never by a client-suppliable identifier. Any attempt to pass an org-B-owned projectId is rejected 404 'Project not found' per billingProjectAccess middleware.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-004",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Stripe Webhook Security",
+    "title": "Stripe webhook endpoint rejects a payload with a missing or invalid stripe-signature header",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Valid STRIPE_WEBHOOK_SECRET configured on the server"],
+    "steps": [
+      "Send POST /webhooks/stripe with a well-formed event JSON body but no 'stripe-signature' header",
+      "Repeat with a stripe-signature header containing a tampered/invalid signature"
+    ],
+    "expectedResult": "Both requests are rejected with 400 { success:false, message:'Invalid signature' } and no handler for the claimed event type is ever invoked — an attacker cannot forge a checkout.session.completed or subscription-status-changing event without the real webhook secret.",
+    "tags": ["stripe", "webhook", "signature-verification", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-005",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Stripe Webhook Security",
+    "title": "Webhook route consumes the raw request body (express.raw) before any JSON body-parser touches it",
+    "description": "Stripe signature verification requires the exact raw bytes; if a global JSON parser runs first and re-serializes the body, signature verification would either false-reject every legitimate event or (worse) be skipped, opening a webhook-forgery path. The code comment explicitly calls out that /webhooks/stripe is mounted with express.raw before the JSON parser — this case pins that ordering.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Send a genuine, correctly-signed Stripe test event to POST /webhooks/stripe",
+      "Confirm the signature check passes and the event is processed",
+      "Inspect the Express app's middleware mount order to confirm express.raw({type:'application/json'}) is bound to this route ahead of any global express.json()"
+    ],
+    "expectedResult": "The correctly-signed event verifies and processes successfully, and the raw-body middleware is confirmed to run before any JSON body-parser for this specific route — regression guard against a future refactor accidentally reordering middleware and breaking/bypassing signature verification.",
+    "tags": ["stripe", "webhook", "middleware-order"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-006",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "NORMAL_USER without CUSTOMER_BILLING_ADMIN/SUPERADMIN role is denied billing.update actions",
+    "description": "Post the 8->3->2 system-role simplification, NORMAL_USER has zero org-wide permissions. Only SUPERADMIN (bypasses requirePermission entirely) and CUSTOMER_BILLING_ADMIN (explicit billing.read/update/admin) should be able to mutate billing state.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has role NORMAL_USER only (no CUSTOMER_BILLING_ADMIN grant)"],
+    "steps": [
+      "As this user, call POST /v1/billing/plan/upgrade",
+      "Call POST /v1/billing/plan/downgrade",
+      "Call POST /v1/billing/checkout-session"
+    ],
+    "expectedResult": "Every call is rejected 403 { success:false, message:'Missing permission: billing.update' }.",
+    "tags": ["rbac", "billing.update", "least-privilege"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-007",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "SUPERADMIN's blanket requirePermission bypass is scoped to isSuperAdmin(req) and does not leak to non-admin sessions",
+    "description": "requirePermission.js grants full access when req.isAdminPortal===true or the caller has systemRoleKey==='SUPERADMIN'. Because this bypass skips the granular permission table entirely, verify the check is strictly tied to the authenticated user's own role claim and cannot be influenced by a client-supplied header/body field.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A NORMAL_USER JWT (no SUPERADMIN role)"],
+    "steps": [
+      "Call a billing.update-protected route as the NORMAL_USER, attempting to add a spoofed 'isAdminPortal: true' field in the request body/headers",
+      "Attempt to add a spoofed 'systemRoleKey: SUPERADMIN' claim anywhere client-controllable (custom header, query param, body)"
+    ],
+    "expectedResult": "Neither spoofed field grants the SUPERADMIN bypass; the server derives isAdminPortal/systemRoleKey solely from the verified JWT/session, and the request is still rejected 403 Missing permission.",
+    "tags": ["rbac", "privilege-escalation", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SEC-008",
+    "module": "billing-plans",
+    "category": "security",
+    "subFeature": "Feature Flag Gating",
+    "title": "Disabling pricing_v1 for an org 404s billing routes without leaking whether the org exists or is merely unentitled",
+    "description": "Confirms the 404 { code:'NOT_FOUND' } response for a flagged-off org is indistinguishable from a route that genuinely doesn't exist, so probing does not let an attacker fingerprint which orgs have pricing_v1 enabled versus which orgIds are invalid.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org X: pricing_v1 disabled, valid JWT", "A syntactically valid but nonexistent orgId, no JWT"],
+    "steps": [
+      "Call GET /v1/billing/plan as an authenticated user of org X (flag off)",
+      "Compare status/body/timing against calling the same route unauthenticated or with a malformed token"
+    ],
+    "expectedResult": "Both cases return a generically-shaped 404/401 with no differing error detail that would let a caller distinguish 'valid org, feature flag off' from 'route not found' or 'unauthenticated'.",
+    "tags": ["feature-flag", "information-disclosure"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

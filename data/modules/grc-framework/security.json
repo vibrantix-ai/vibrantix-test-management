@@ -1,0 +1,155 @@
+[
+  {
+    "id": "GRCF-SEC-001",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Project Membership Isolation",
+    "title": "A user removed from a project can no longer read that project's compliance map data even with a valid org role",
+    "description": "requireProjectMembership() gates every /projects/:projectId/* route in compliance-frameworks.routes.js and client-compliance.routes.js. Regression guard for the pre-PLAC state where these controllers only ever called assertOrgAccess (org-membership), never real project membership.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/grc-framework-plac.test.ts",
+    "preconditions": ["User held ProjectMember row on project P, now removed", "User's org role still grants compliance.read at the org level", "User is not an org-level project.admin"],
+    "steps": [
+      "As this user, call GET /compliance-frameworks/projects/P/frameworks",
+      "Call GET /compliance-frameworks/projects/P/available-frameworks",
+      "Call GET /compliance-frameworks/projects/P/compliance/frameworks/:frameworkId/coverage",
+      "Call GET /compliance-frameworks/projects/P/client-requirements/:id/assets"
+    ],
+    "expectedResult": "All four requests return 403 Forbidden. Org-level compliance.read is not sufficient once project membership is revoked.",
+    "tags": ["idor", "multi-tenant", "plac", "owasp-a01"],
+    "requirement": "Project-Level Access Control",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-002",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Cross-Org IDOR",
+    "title": "A non-super-admin cannot read another organization's frameworks via the organizationId query/path param",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User belongs to org A", "organizationId in the request path belongs to org B"],
+    "steps": [
+      "As an org A user, call GET /compliance-frameworks/organizations/<orgB-id>/frameworks"
+    ],
+    "expectedResult": "403 Forbidden — listByOrganization's scopedOrgId-vs-organizationId mismatch check rejects the request before any org B data is queried.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-003",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Licensing Gate",
+    "title": "Calling the activation API directly for an unlicensed framework is rejected server-side even if the UI gate is bypassed",
+    "description": "Confirms the licensing check in addToProject is enforced independently of the frontend's Upgrade Required modal — a scripted/direct API call must not be able to activate an unlicensed framework.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Framework X is not in the org's licensed set"],
+    "steps": [
+      "As an authenticated user with compliance.create, POST /compliance-frameworks/projects/:projectId/frameworks with { frameworkId: X } directly (bypassing the UI)"
+    ],
+    "expectedResult": "403 { success:false, error:'LICENSING_REQUIRED' }. No ClientFramework record is created and complianceSync.activateFramework is never invoked.",
+    "tags": ["licensing", "business-logic-bypass"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-004",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Excluded Controls (SoA) Injection",
+    "title": "excludedRequirementIds cannot be used to mark another framework's or another project's controls Not Applicable",
+    "description": "updateExcludedControls validates every candidate ID against FrameworkRequirement scoped to cf.frameworkId — an attacker-supplied requirement ID belonging to a different framework (even one the org has never activated) is filtered out server-side.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Framework F1 is active for project P", "A valid, active leaf requirement ID R2 belongs to an unrelated framework F2"],
+    "steps": [
+      "PATCH /compliance-frameworks/projects/P/frameworks/:id/excluded-controls with excludedRequirementIds: [R2] where :id is F1's ClientFramework record"
+    ],
+    "expectedResult": "The response's excludedRequirementIds array does not contain R2 — F1's ClientFramework document cannot reference F2's requirements.",
+    "tags": ["idor", "soa", "injection"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-005",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "CSV Export Injection",
+    "title": "CSV export sanitises formula-injection prefixes on control/resource titles before writing cells",
+    "description": "exportCSV()'s sanitise() helper prefixes any cell value starting with =, +, -, @, tab or CR with a leading apostrophe, preventing a maliciously-named control/resource title (e.g. from an AI-generated or vendor-supplied title) from executing as a formula when the export is opened in Excel/Sheets.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A resource attached to a control has a title of '=1+1' (or begins with +, -, @)"],
+    "steps": [
+      "Export the compliance map to CSV including this resource",
+      "Inspect the raw CSV file content for that cell"
+    ],
+    "expectedResult": "The cell is written as \"'=1+1\" (leading apostrophe preserved in the raw file) — not a bare '=1+1' that a spreadsheet application would evaluate as a formula on open.",
+    "tags": ["csv-injection", "owasp-a03"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-006",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Admin-Gated Bulk Operations",
+    "title": "Bulk control/check status endpoints require framework.admin, not the lesser framework.read/update permissions",
+    "description": "PATCH /:frameworkId/controls/bulk-status and /:frameworkId/checks/bulk-status are gated on requirePermission('framework.admin') — a user who only has framework.update (enough to edit a single control) must not be able to mass-toggle an entire framework's controls/checks.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User has framework.read and framework.update but NOT framework.admin"],
+    "steps": [
+      "PATCH /compliance-frameworks/:frameworkId/controls/bulk-status with { status: 'inactive' }"
+    ],
+    "expectedResult": "403 Forbidden — framework.update alone does not unlock the bulk endpoints; no controls are modified.",
+    "tags": ["rbac", "privilege-escalation", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SEC-007",
+    "module": "grc-framework",
+    "category": "security",
+    "subFeature": "Framework Metadata Permission Split",
+    "title": "A 403 on the framework.read-gated getFramework call degrades the compliance map header only, without exposing coverage data it shouldn't have gated",
+    "description": "FrameworkComplianceMap.jsx deliberately fetches getFramework (framework.read) separately from getClientRequirements/getClientFrameworkCoverage (compliance.read) so a role with compliance.read but not framework.read still sees coverage data, just with a degraded header. Confirms the split doesn't leak framework.read-only fields (e.g. internal region/version metadata) through the compliance.read-gated endpoints as a side-channel.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has compliance.read but NOT framework.read"],
+    "steps": [
+      "As this user, open /grc-framework/:id/compliance-map",
+      "Observe the header area and the coverage/control data"
+    ],
+    "expectedResult": "An info banner reads that framework details (title/version/region) couldn't be loaded due to missing permission, while coverage stats and the control list still render normally. GET /compliance-frameworks/:id (framework.read-gated) itself still returns 403 for this user.",
+    "tags": ["rbac", "permission-split"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

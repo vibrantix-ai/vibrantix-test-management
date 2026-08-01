@@ -1,0 +1,86 @@
+[
+  {
+    "id": "POLM-INT-001",
+    "module": "policy-management",
+    "category": "integration",
+    "subFeature": "Framework Mapping",
+    "title": "Approving a policy's control mapping updates framework-mapping-stats without a separate recalculation call",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A policy mapped to control A.5.3 with no prior mapping"],
+    "steps": [
+      "POST /policies/:policyId/control-mappings mapping the policy to a new control",
+      "GET /policies/framework-mapping-stats immediately after"
+    ],
+    "expectedResult": "The stats reflect the new mapping without requiring a manual POST /:policyId/recalculate-score call first.",
+    "tags": ["framework-mapping", "cross-endpoint"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-INT-002",
+    "module": "policy-management",
+    "category": "integration",
+    "subFeature": "AI Policy Generation",
+    "title": "AI-generated policy from ai_policy_generator_python is stored with createdBy and a traceable generation source flag",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["ai_policy_generator_python microservice reachable"],
+    "steps": [
+      "Trigger AI policy generation via the policy-ai endpoint with a valid framework/template selection",
+      "Inspect the created policy record"
+    ],
+    "expectedResult": "The resulting policy has createdBy set to the requesting user and a field indicating it was AI-generated (source/generatedBy), so it's distinguishable from manually authored policies in reporting.",
+    "tags": ["ai-generated", "traceability"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-INT-003",
+    "module": "policy-management",
+    "category": "integration",
+    "subFeature": "AI Reader",
+    "title": "reader-analysis endpoint returns results consistent with the policy's currently stored content, not a stale cached version",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A policy has an existing AI Reader analysis, then its content is edited via PUT /:policyId"],
+    "steps": [
+      "Edit the policy content",
+      "GET /policies/:policyId/reader-analysis"
+    ],
+    "expectedResult": "Either the analysis is recomputed against the new content, or the response clearly indicates it is stale/pending re-analysis — it must not silently present outdated analysis as current.",
+    "tags": ["ai-reader", "staleness"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-INT-004",
+    "module": "policy-management",
+    "category": "integration",
+    "subFeature": "Evidence Links",
+    "title": "Deleting an evidence link from a policy does not delete the underlying evidence item in evidence-management",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A policy has an evidence-link pointing to an existing evidence-management item"],
+    "steps": [
+      "DELETE /policies/:policyId/evidence-links/:linkId",
+      "Check the evidence item still exists in /evidence-management"
+    ],
+    "expectedResult": "Only the link record is removed; the evidence item itself remains untouched in evidence-management.",
+    "tags": ["evidence-links", "cross-module"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

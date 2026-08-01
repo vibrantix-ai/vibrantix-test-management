@@ -1,0 +1,67 @@
+[
+  {
+    "id": "BILL-REG-001",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Cancellation",
+    "title": "customer.subscription.deleted webhook writes 'cancelled' to both Organization.subscription.status and SubscriptionOrg.status",
+    "description": "The handler's own code comment notes this dual-write 'fixes a real prior bug' where only one of the two status fields was updated, leaving the two records disagreeing about whether the org was cancelled. Regression guard to ensure a future refactor doesn't reintroduce the single-write bug.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "linkedDefect": "BILL-legacy-dual-write",
+    "preconditions": ["Org has an active org-level Stripe subscription"],
+    "steps": [
+      "Trigger a customer.subscription.deleted event for the org's subscription",
+      "Read both Organization.subscription.status and the corresponding SubscriptionOrg.status after the webhook completes"
+    ],
+    "expectedResult": "Both fields read 'cancelled'. Neither is left stale/out of sync with the other.",
+    "tags": ["regression", "webhook", "data-integrity"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-REG-002",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Downgrade Flow",
+    "title": "Cancelling a pending downgrade with none scheduled stays a silent client no-op, not a surfaced error toast",
+    "description": "billingService.cancelPendingChange() is called defensively in a few UI paths; the server's NO_PENDING_CHANGE code must keep being treated as success by the client so an org with nothing pending doesn't see a spurious error toast.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has no pending-tier-change document"],
+    "steps": [
+      "From the UI, trigger the cancel-pending-downgrade action (e.g. via PendingDowngradeBanner's Cancel, if rendered defensively even with nothing pending)"
+    ],
+    "expectedResult": "No error toast/banner appears; the call completes silently as a no-op, consistent with the server's NO_PENDING_CHANGE response.",
+    "tags": ["regression", "downgrade", "ui-error-handling"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-REG-003",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Stripe Webhook Security",
+    "title": "Unhandled/unknown Stripe event types are acknowledged 200 rather than causing a 500 that triggers Stripe retry storms",
+    "description": "Any event type without a registered handler (e.g. payment_intent.succeeded, which has no handler in this codebase) must still return 200 { received:true, ignored: event.type } so Stripe doesn't interpret it as a delivery failure and retry indefinitely.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A syntactically valid, correctly-signed Stripe event of a type with no registered handler (e.g. payment_intent.succeeded)"],
+    "steps": [
+      "Send this event to POST /webhooks/stripe with a valid signature"
+    ],
+    "expectedResult": "200 { received:true, ignored:'payment_intent.succeeded' } and no stripe_events record is left in a 'failed' state; Stripe does not retry the delivery.",
+    "tags": ["regression", "webhook", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

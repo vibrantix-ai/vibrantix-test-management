@@ -1,0 +1,84 @@
+[
+  {
+    "id": "AUDT-SAN-001",
+    "module": "audit-assurance",
+    "category": "sanity",
+    "subFeature": "CAR Lifecycle",
+    "title": "Uploading evidence to an open CAR still auto-flips status to remediation_in_progress after deploy",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR exists with status='open' and no evidence attached"],
+    "steps": [
+      "Attach a valid evidence file to the CAR via addEvidence",
+      "Reload the CAR detail view"
+    ],
+    "expectedResult": "The CAR's status shows 'remediation_in_progress' immediately after the first evidence attachment, consistent with pre-deploy behavior.",
+    "tags": ["sanity", "car-lifecycle"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SAN-002",
+    "module": "audit-assurance",
+    "category": "sanity",
+    "subFeature": "Audit Closure",
+    "title": "Closure request-approval is blocked until every checklist item is marked complete",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An audit closure checklist has at least one incomplete item"],
+    "steps": [
+      "Leave one checklist item unchecked",
+      "Click 'Request Approval'"
+    ],
+    "expectedResult": "The request is rejected — requestApproval() (audit-closure.service.js:87-129) requires closure.checklist to be 100% completed before allowing a request to proceed.",
+    "tags": ["sanity", "audit-closure"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SAN-003",
+    "module": "audit-assurance",
+    "category": "sanity",
+    "subFeature": "Management Review",
+    "title": "Creating a management review with attendees and agenda persists and appears in the review list",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Create a new management review with 2 attendees and a 3-item agenda",
+      "Navigate back to the management reviews list for the audit"
+    ],
+    "expectedResult": "The new review appears in the list with status='planned', correct attendee count, and agenda items intact.",
+    "tags": ["sanity", "management-review"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-SAN-004",
+    "module": "audit-assurance",
+    "category": "sanity",
+    "subFeature": "Global Findings Search",
+    "title": "Global findings search endpoint returns results without error for an organization with a large finding volume",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has 500+ findings across multiple audits"],
+    "steps": [
+      "Call GET /api/audit-assurance/findings/search with a common search term"
+    ],
+    "expectedResult": "The endpoint returns within an acceptable response time, capped at 20 results per page, with no timeout or 500 error.",
+    "tags": ["sanity", "findings"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

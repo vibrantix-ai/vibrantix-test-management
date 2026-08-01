@@ -1,0 +1,10 @@
+{
+  "slug": "project-management",
+  "name": "Project Management",
+  "scope": "feature",
+  "routes": [
+    "/project-management"
+  ],
+  "qaAgent": "Project_Management_QA_Agent",
+  "description": "Project creation wizard, project-scoped data filtering, multi-project isolation."
+}

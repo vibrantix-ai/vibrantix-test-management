@@ -1,0 +1,10 @@
+{
+  "slug": "compliance-vault",
+  "name": "Compliance Vault",
+  "scope": "feature",
+  "routes": [
+    "/compliance-vault"
+  ],
+  "qaAgent": "Compliance_Vault_QA_Agent",
+  "description": "Evidence collections, certification storage, vault workflow, Google Drive integration."
+}

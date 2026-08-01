@@ -1,0 +1,105 @@
+[
+  {
+    "id": "AIEV-SMK-001",
+    "module": "ai-evidence",
+    "category": "smoke",
+    "subFeature": "AI Upload",
+    "title": "/ai-evidence redirects to /ai-evidence/upload for a permitted, authenticated user",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/ai-evidence.spec.ts:5",
+    "preconditions": ["Logged in as a user with evidence.read", "Project selected"],
+    "steps": [
+      "Navigate to /ai-evidence"
+    ],
+    "expectedResult": "Browser is redirected to /ai-evidence/upload and the page renders without error.",
+    "tags": ["smoke"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-SMK-002",
+    "module": "ai-evidence",
+    "category": "smoke",
+    "subFeature": "AI Upload",
+    "title": "Uploading a single small PDF via AI Evidence completes without error and lands on the review page",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project selected", "AI upload allowance available"],
+    "steps": [
+      "Open /ai-evidence/upload",
+      "Drop a 1-page text PDF under 1MB",
+      "Wait for navigation to the review page"
+    ],
+    "expectedResult": "No error toast is shown; the review page loads with at least a title field populated (AI-suggested or blank on failure), within the 150-second frontend timeout.",
+    "tags": ["smoke", "s3-upload"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-SMK-003",
+    "module": "ai-evidence",
+    "category": "smoke",
+    "subFeature": "AI Upload",
+    "title": "AI Evidence upload dashboard loads its KPI cards without console error for a project with zero uploads",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A freshly created project with no evidence uploaded yet"],
+    "steps": [
+      "Navigate to /ai-evidence/upload for the fresh project"
+    ],
+    "expectedResult": "KPI cards render showing 0 for Total Uploads/Assigned/Closed/Failed and a sensible empty value (e.g. '—' or 0%) for Avg AI Score, with no console errors.",
+    "tags": ["smoke", "empty-state"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-SMK-004",
+    "module": "ai-evidence",
+    "category": "smoke",
+    "subFeature": "Post-Review Persistence",
+    "title": "'Send for Review' completes within the frontend's 150-second timeout without hanging",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted draft is at the review step with required fields filled in"],
+    "steps": [
+      "Click 'Send for Review' and time the response"
+    ],
+    "expectedResult": "The confirm call returns success (or a clear error) well within 150 seconds — no indefinite spinner.",
+    "tags": ["smoke", "workflow"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-SMK-005",
+    "module": "ai-evidence",
+    "category": "smoke",
+    "subFeature": "AI Classification",
+    "title": "python-notebookAI-service extract-metadata-fast endpoint is reachable at the configured NOTEBOOK_AI_SERVICE_URL",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/smoke/ai-evidence-service-health.test.ts:4",
+    "steps": [
+      "From vibrantix-backend, issue a health/connectivity check against ${NOTEBOOK_AI_SERVICE_URL}/api/v1/documents/extract-metadata-fast (or its health endpoint)"
+    ],
+    "expectedResult": "The service responds (2xx on health check, or a well-formed 4xx for a deliberately malformed request) rather than a connection refused/timeout, confirming the AI microservice dependency is up.",
+    "tags": ["smoke", "ai-classification"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

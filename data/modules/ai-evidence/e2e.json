@@ -1,0 +1,182 @@
+[
+  {
+    "id": "AIEV-E2E-001",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "AI Upload",
+    "title": "Full happy path: select file, AI suggestions populate the review form, accept, send for review, evidence appears assigned",
+    "description": "Verifies the complete chain from AIUploadInterface.jsx dropzone through the Python extract-metadata-fast call, review page prefill, confirmAI, and the workflow transition to 'assigned'.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:22",
+    "preconditions": ["Logged in as a user with evidence.create and evidence.read", "Project selected", "AI upload allowance available"],
+    "steps": [
+      "Navigate to /ai-evidence (redirects to /ai-evidence/upload)",
+      "Open the upload dropzone and drop a text-layer PDF policy document",
+      "Wait for hard navigation to /ai-evidence/[evidenceId]/review",
+      "Confirm the title, summary, evidence type, and category/subcategory fields are pre-filled from AI suggestions with visible confidence indicators",
+      "Select a reviewer and click 'Send for Review'"
+    ],
+    "expectedResult": "Evidence transitions to 'assigned' status and appears in /ai-evidence/upload history with status badge 'Assigned' and a non-empty Avg AI Score.",
+    "tags": ["ai-classification", "s3-upload", "workflow"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-002",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "AI Upload",
+    "title": "AI-assisted upload dropzone accepts only one file per drop, requiring the flow to be repeated for a batch",
+    "description": "AIUploadInterface.jsx is configured with maxFiles:1 — unlike the generic evidence-management multi-upload (up to 10 files), the AI-assisted path has no true multi-file batch mode; each file goes through its own upload -> extract -> review cycle.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project selected"],
+    "steps": [
+      "Open the AI Evidence upload dropzone",
+      "Attempt to drag and drop 3 files at once"
+    ],
+    "expectedResult": "Only the first file is accepted for AI-assisted upload (or the dropzone visibly rejects/ignores the extra files); to process the remaining 2, the user must repeat the upload flow individually — this is expected current behavior, not a batch-upload feature, and should be called out clearly in user-facing docs/UI copy if not already.",
+    "tags": ["ai-classification", "ux-gap"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-003",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "Review & Override",
+    "title": "User manually overrides AI-suggested title and category before sending for review; overrides are tracked as userModifications",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:60",
+    "preconditions": ["An evidence draft exists at the review step with AI suggestions for title and category"],
+    "steps": [
+      "Open the review page for the AI-assisted draft",
+      "Change the pre-filled title and pick a different category/subcategory than the AI suggestion",
+      "Click 'Send for Review'",
+      "Fetch the evidence document via GET /api/evidence/:evidenceId"
+    ],
+    "expectedResult": "aiAssistedUpload.userModifications.modified is true, modifiedFields includes 'title' and 'category', and the stored title/category reflect the user's override, not the original AI suggestion.",
+    "tags": ["ai-classification", "manual-override"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-004",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "Review & Override",
+    "title": "AI-suggested category is left blank on the review form when the suggestion is not a valid ObjectId",
+    "description": "The review page only pre-fills category/subCategory from an AI suggestion when isValidObjectId(value) passes; a category name string returned by a mismatched AI response shape is silently dropped, forcing manual selection.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["AI service stubbed to return categoryId as a human-readable name instead of a Mongo ObjectId"],
+    "steps": [
+      "Upload a file while the AI service stub returns categoryId.value = 'Security Policies' (a name, not an ObjectId)",
+      "Open the review page for the resulting draft"
+    ],
+    "expectedResult": "The category field is empty/unselected rather than showing the invalid value; 'Send for Review' is blocked by client-side validation until the user picks a real category.",
+    "tags": ["ai-classification", "validation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-005",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "Post-Review Persistence",
+    "title": "Accepted AI-assisted evidence appears in Evidence Management with correct metadata and file hash",
+    "description": "AI evidence is stored in the same evidence collection as manually-uploaded evidence — EvidenceManagementContent.jsx has no AI-specific branching, so it must render identically once submitted.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:95",
+    "steps": [
+      "Complete an AI-assisted upload and 'Send for Review' with a title, category, and confidentiality level set",
+      "Navigate to /evidence-management and locate the same item by title"
+    ],
+    "expectedResult": "The item appears in the Evidence Management list with the confirmed title, category, confidentiality level, correct SHA-256 file hash, and status 'Submitted' or 'Assigned' — indistinguishable in structure from a manually uploaded item.",
+    "tags": ["s3-upload", "control-mapping", "cross-module"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-006",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "Review & Override",
+    "title": "Cancelling the review hard-deletes the pending AI draft and navigates away regardless of delete errors",
+    "description": "The review page's Cancel handler calls deletePendingEvidence and navigates away even if the delete call throws ('ignore — navigate regardless' per code comment) — worth confirming this doesn't silently strand an orphaned S3 object if the delete actually failed.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Start an AI-assisted upload and reach the review page for the resulting draft",
+      "Click 'Cancel' without sending for review"
+    ],
+    "expectedResult": "The draft evidence document is removed and the user is returned to /ai-evidence/upload; the draft no longer appears in the upload history list.",
+    "tags": ["ai-classification", "data-integrity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-007",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "AI Upload",
+    "title": "AI Evidence upload dashboard KPI cards (Total Uploads, Assigned, Closed, Failed, Avg AI Score) reflect the current project accurately",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project has a mix of AI-assisted evidence in draft, submitted, assigned, closed, and extraction_failed states"],
+    "steps": [
+      "Navigate to /ai-evidence/upload for the project",
+      "Read the KPI cards at the top of the page"
+    ],
+    "expectedResult": "Counts match the actual number of items in each status bucket for the selected project, and Avg AI Score reflects the mean confidence_score across items with a successful extraction (excluding failed ones).",
+    "tags": ["ai-classification", "dashboard"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-E2E-008",
+    "module": "ai-evidence",
+    "category": "e2e",
+    "subFeature": "AI Upload",
+    "title": "Deleting non-draft AI-assisted evidence requires archiving first, enforced on the upload history page",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted evidence item exists in status 'submitted' (not draft, not archived)"],
+    "steps": [
+      "From /ai-evidence/upload, attempt to permanently delete the submitted item directly"
+    ],
+    "expectedResult": "The delete action is blocked with the client-side error 'Archive this evidence before deleting it permanently.' Only after archiving does a hard-delete option become available.",
+    "tags": ["data-integrity", "workflow"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

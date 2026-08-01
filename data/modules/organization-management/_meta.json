@@ -1,0 +1,10 @@
+{
+  "slug": "organization-management",
+  "name": "Organization Management",
+  "scope": "feature",
+  "routes": [
+    "/organization"
+  ],
+  "qaAgent": "Organization_Management_QA_Agent",
+  "description": "Org profile, team management, roles/permissions, security policy, departments."
+}

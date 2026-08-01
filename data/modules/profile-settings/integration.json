@@ -1,0 +1,160 @@
+[
+  {
+    "id": "PROF-INT-001",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Profile Persistence",
+    "title": "PUT /users/me persists firstName, lastName, and avatar to MongoDB",
+    "description": "Grounded in exports.updateMe (user.controller.js): only firstName, lastName, and avatar are destructured from req.body and conditionally $set on the ClientUser document via findByIdAndUpdate(req.userId, ..., { new: true, runValidators: true }).",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user via a valid JWT"],
+    "steps": [
+      "PUT /users/me with body { firstName: 'Priya', lastName: 'Nair', avatar: 'https://cdn.example/a.png' }",
+      "Re-fetch via GET /users/me"
+    ],
+    "expectedResult": "The response to PUT /users/me and the subsequent GET /users/me both show firstName 'Priya', lastName 'Nair', avatar updated, and a business.user.profile_updated log entry recording changedFields ['firstName','lastName','avatar'].",
+    "tags": ["profile-form", "persistence"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-002",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Profile Persistence",
+    "title": "PUT /users/me silently discards phone, department, and metadata (timezone/notificationPreferences) — none of these fields exist on the User schema",
+    "description": "The client (profile/page.jsx handleSaveProfile) sends { firstName, lastName, phone, metadata: { timezone, notificationPreferences } } to PUT /users/me. But exports.updateMe only ever reads req.body.firstName/lastName/avatar — phone and metadata are never referenced in the controller, and user.model.js has no phone, department, metadata, timezone, or notificationPreferences field defined at all. The values are accepted by the HTTP layer (200 OK) but never reach storage.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user with no phone/metadata previously set"],
+    "steps": [
+      "PUT /users/me with body { firstName: 'Priya', lastName: 'Nair', phone: '+1-555-0100', metadata: { timezone: 'America/Chicago', notificationPreferences: { email: false, push: false, security: true, updates: true } } }",
+      "Inspect the 200 response body's data object",
+      "Re-fetch via GET /users/me"
+    ],
+    "expectedResult": "The response returns success:true (misleadingly implying the whole payload was saved), but the returned user document and the subsequent GET /users/me response contain no phone, department, or metadata fields whatsoever — only firstName/lastName changed. This is a real, current gap: phone/timezone/notification preferences entered on the Profile Information and Notifications sections are never persisted server-side.",
+    "tags": ["profile-form", "notification-preferences", "gap", "data-loss"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-003",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Email Immutability",
+    "title": "PUT /users/me ignores an email field in the request body — email cannot be changed via this endpoint",
+    "description": "exports.updateMe never destructures req.body.email and never includes it in the $set object, regardless of whether the client sends one. This holds even though the Profile Information form renders an editable (non-disabled) email Input.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user with a known email"],
+    "steps": [
+      "PUT /users/me with body { firstName: 'Priya', email: 'attacker-controlled@example.com' }",
+      "Re-fetch via GET /users/me"
+    ],
+    "expectedResult": "firstName updates to 'Priya' but the account email is unchanged in both the PUT response and the subsequent GET /users/me — the email field in the payload has zero effect.",
+    "tags": ["profile-form", "email-immutability"],
+    "requirement": "Email changes must go through a separate verified admin/Keycloak flow, never self-service PUT /users/me",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-004",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Account Activity",
+    "title": "GET /users/me sets lastLoginAt to the current timestamp on every call, not just at login",
+    "description": "exports.getMe unconditionally runs User.findByIdAndUpdate(req.userId, { $set: { lastLoginAt: new Date() } }, { new: true }) on every invocation. Any page or code path that calls GET /users/me (auth callback, profile page mount, session bootstrap) advances lastLoginAt, so it functions as 'last seen' rather than a true login-event timestamp.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user with a known prior lastLoginAt"],
+    "steps": [
+      "Record the current lastLoginAt via GET /users/me",
+      "Wait a few seconds, then call GET /users/me again with no intervening login/re-authentication",
+      "Compare the two lastLoginAt values"
+    ],
+    "expectedResult": "The second call's lastLoginAt is strictly later than the first, confirming the field is refreshed on every /me fetch — the Account Activity 'Last Active' value on /profile will always read as approximately 'now' while the page is open, not the timestamp of the user's actual last sign-in.",
+    "tags": ["account-activity", "lastLoginAt"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-005",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Password Change",
+    "title": "PUT /users/me/password enforces a 12-character minimum on newPassword and rejects oldPassword===newPassword",
+    "description": "Route-level express-validator on PUT /users/me/password (user.routes.js) requires oldPassword non-empty and newPassword.isLength({min:12}); the controller then separately rejects newPassword === oldPassword before calling Keycloak.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user linked to Keycloak (keycloakUserId set)"],
+    "steps": [
+      "PUT /users/me/password with { oldPassword: 'CurrentP@ss123', newPassword: 'short1!' } (under 12 chars)",
+      "PUT /users/me/password with { oldPassword: 'CurrentP@ss123', newPassword: 'CurrentP@ss123' } (identical to current)"
+    ],
+    "expectedResult": "Both requests are rejected with 400 — the first for failing the 12-character minimum (express-validator), the second with 'New password must be different from the current password' — and neither call reaches Keycloak's verify/set-password APIs.",
+    "tags": ["password-change", "validation"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-006",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "MFA / First-Login Flag",
+    "title": "POST /users/me/password-changed clears mustChangePassword and transitions status from 'invited' to 'active'",
+    "description": "exports.clearPasswordFlag sets mustChangePassword:false and status:'active' unconditionally for req.userId, and logs compliance.password.changed + business.user.invitation_accepted. Intended to be called after a directly-created user completes Keycloak's forced UPDATE_PASSWORD action on first login.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A user created via direct-create (isDirectCreate=true) has mustChangePassword:true and status:'invited'"],
+    "steps": [
+      "As that user, call POST /users/me/password-changed",
+      "GET /users/me/access to inspect mustChangePassword and status"
+    ],
+    "expectedResult": "mustChangePassword is now false and status is 'active'. A compliance.password.changed and business.user.invitation_accepted log entry is recorded for the user.",
+    "tags": ["mfa-flag", "must-change-password"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-INT-007",
+    "module": "profile-settings",
+    "category": "integration",
+    "subFeature": "Name Validation",
+    "title": "PUT /users/me has no server-side length or control-character validation on firstName/lastName, unlike admin PUT /users/:id",
+    "description": "user.routes.js attaches nameValidators (isLength({max:100}) + NO_CONTROL_CHARS) via a validate([...]) middleware chain to POST / and PUT /:id, but PUT /me has no validate() middleware at all — only `router.put('/me', authenticate, ctrl.updateMe)`. Any format enforcement on self-service profile updates exists solely in the frontend's SUSPICIOUS_WORDS check, which does not test length or control characters.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated as a seeded user, calling the API directly (bypassing the browser form)"],
+    "steps": [
+      "PUT /users/me with firstName set to a 500-character string",
+      "PUT /users/me with firstName containing an embedded \\r\\n control sequence"
+    ],
+    "expectedResult": "Current behavior: both requests succeed (200) and persist the oversized/control-character value — there is no equivalent of PUT /:id's 100-character cap or NO_CONTROL_CHARS check on the self-service route. Flagged as a validation-parity gap versus the admin-edit path.",
+    "tags": ["validation", "gap", "self-service"],
+    "requirement": "Parity with PUT /:id nameValidators",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

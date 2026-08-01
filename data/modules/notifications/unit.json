@@ -1,0 +1,196 @@
+[
+  {
+    "id": "NOTF-UNIT-001",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Dispatch Pipeline",
+    "title": "dispatch() rejects payloads missing targetUserId, organizationId, or message",
+    "description": "notification.service.js dispatch() validates the three required fields before touching Mongo; on a miss it logs a warning and returns null instead of throwing.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["notificationService.dispatch is callable directly in a unit test context (Mongo connection mocked or test DB)"],
+    "steps": [
+      "Call dispatch({ targetUserId: 'u1', organizationId: 'org1' }) with message omitted",
+      "Call dispatch({ organizationId: 'org1', message: 'hi' }) with targetUserId omitted",
+      "Call dispatch({ targetUserId: 'u1', message: 'hi' }) with organizationId omitted"
+    ],
+    "expectedResult": "All three calls return null, no Notification document is created, and a '[NotificationService] dispatch called with missing required fields' warning is logged for each.",
+    "tags": ["dispatch", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-002",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Dispatch Pipeline",
+    "title": "dispatch() never throws — internal errors are caught and swallowed",
+    "description": "The entire dispatch() body is wrapped in try/catch; a downstream failure (e.g. Notification.create rejecting on a bad ObjectId string) must log via logger.error and return null, never propagate to the caller. This guarantees a broken notification path can never fail the business action that triggered it (e.g. an audit assignment).",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Mongoose write can be forced to reject (e.g. invalid organizationId type or DB connection dropped)"],
+    "steps": [
+      "Call dispatch() with a malformed organizationId that fails mongoose.Types.ObjectId() casting inside the try block, or stub Notification.create to reject",
+      "Await the call from the caller's perspective"
+    ],
+    "expectedResult": "The promise resolves to null (never rejects), and '[NotificationService] dispatch failed' is logged at error level with the underlying error.",
+    "tags": ["dispatch", "resilience", "error-handling"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-003",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Dispatch Pipeline",
+    "title": "dispatch() merges legacy meta and new metadata into both fields for backward/forward compatibility",
+    "description": "mergedMeta = { ...meta, ...metadata, projectId } is written to BOTH doc.meta and doc.metadata so old consumers reading meta and new consumers reading metadata see the same data.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "steps": [
+      "Call dispatch() with meta={ foo: 1 } and metadata={ bar: 2 } and projectId='p1'",
+      "Read back the created document"
+    ],
+    "expectedResult": "doc.meta and doc.metadata are both equal to { foo: 1, bar: 2, projectId: 'p1' } (metadata keys win on conflict since they are spread last).",
+    "tags": ["dispatch", "backward-compat"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-004",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "User Inbox Query",
+    "title": "getMyNotifications with surface='popup' restricts to unread, urgent/actionable types, max 5",
+    "description": "getMyNotifications applies filter.isRead=false plus an $or of priority in [high,critical] OR notificationType in a fixed actionable list, and clamps effectiveLimit to min(5, limit) only for the popup surface.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["A user has 8 unread notifications: 3 low-priority 'general', 5 mixed high-priority/actionable types"],
+    "steps": [
+      "Call getMyNotifications(userId, orgId, { surface: 'popup', limit: 20 })"
+    ],
+    "expectedResult": "Result contains at most 5 notifications, all isRead=false, and each either has priority in ['high','critical'] or notificationType in the actionable list (task_assigned, task_reassigned, task_overdue, review_requested, audit_invitation, escalation_required). The 3 low-priority 'general' unread items are excluded.",
+    "tags": ["popup", "unread", "pagination"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-005",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "User Inbox Query",
+    "title": "getMyNotifications backfills metadata from legacy meta for old documents",
+    "description": "The mapping step in getMyNotifications sets metadata = (doc.metadata non-empty) ? doc.metadata : (doc.meta || {}) so pre-migration documents that only ever wrote to `meta` still return a populated `metadata` field to API consumers.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["A Notification document exists with meta={ module: 'vendor' } and metadata={} (empty object, simulating a pre-migration write)"],
+    "steps": [
+      "Call getMyNotifications for the user owning that document"
+    ],
+    "expectedResult": "The returned notification's metadata field equals { module: 'vendor' }, not an empty object.",
+    "tags": ["backward-compat", "data-migration"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-006",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Unread Count",
+    "title": "getUnreadCount scopes strictly to targetUserId + organizationId",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["User A (org X) has 3 unread notifications; a different user in the same org has 2 unread; a user with the same _id string in a different org has 1 unread"],
+    "steps": [
+      "Call getUnreadCount(userA_id, orgX_id)"
+    ],
+    "expectedResult": "Returns exactly 3 — counts from the other org-scoped user and the cross-org same-id user are not included.",
+    "tags": ["unread-count", "multi-tenant"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-007",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Read State",
+    "title": "markRead only updates a notification owned by the calling user",
+    "description": "markRead's findOneAndUpdate filter is { _id, targetUserId: String(userId) } — a valid notificationId that belongs to a different targetUserId must not match and returns null (route layer turns this into 404).",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Notification N exists with targetUserId = 'userA'"],
+    "steps": [
+      "Call markRead(N._id, 'userB')"
+    ],
+    "expectedResult": "Returns null; N.isRead remains false and N.readAt remains unset in the database.",
+    "tags": ["ownership", "idor"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-008",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "TTL Expiry",
+    "title": "TTL index only expires notifications that are read, unread notifications never auto-delete",
+    "description": "notification.model.js defines { createdAt: 1 } with expireAfterSeconds: 90*24*60*60 and partialFilterExpression: { isRead: true }. MongoDB's TTL monitor only considers documents matching the partial filter, so isRead=false documents are exempt regardless of age.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Direct access to a test MongoDB instance to inspect index definitions (or a long-running TTL simulation environment)"],
+    "steps": [
+      "Run db.notifications.getIndexes() against the notifications collection",
+      "Locate the createdAt_1 index and inspect its expireAfterSeconds and partialFilterExpression"
+    ],
+    "expectedResult": "expireAfterSeconds = 7776000 (90 days) and partialFilterExpression = { isRead: true }; confirms unread notifications are excluded from TTL cleanup and cannot silently disappear from a user's inbox before they are read.",
+    "tags": ["ttl", "data-retention"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-UNIT-009",
+    "module": "notifications",
+    "category": "unit",
+    "subFeature": "Internal Auth",
+    "title": "internalAuth returns 503 when INTERNAL_API_TOKEN/INTERNAL_SERVICE_TOKEN is unset, 401 on a timing-safe mismatch",
+    "description": "notification-internal.routes.js reads INTERNAL_TOKEN once at module load. If empty, every request 503s with 'Internal endpoint not configured' before ever reaching crypto.timingSafeEqual. Otherwise it length-checks then timing-safe-compares the header value.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Two test runs: one with INTERNAL_API_TOKEN unset, one with it set to a known value"],
+    "steps": [
+      "With the env var unset, POST /api/internal/notifications with any X-Internal-Token header",
+      "With the env var set, POST /api/internal/notifications with a header of a different length than the configured token",
+      "With the env var set, POST /api/internal/notifications with a header of the correct length but wrong bytes"
+    ],
+    "expectedResult": "Step 1 returns 503 'Internal endpoint not configured'. Steps 2 and 3 both return 401 'Unauthorized: invalid internal token' without ever leaking timing differences between a length mismatch and a content mismatch.",
+    "tags": ["internal-api", "auth", "timing-safe"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

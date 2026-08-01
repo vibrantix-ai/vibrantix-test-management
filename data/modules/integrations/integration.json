@@ -1,0 +1,136 @@
+[
+  {
+    "id": "INTG-INT-001",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "Connector CRUD API",
+    "title": "GET /connectors returns only the requesting organization's connectors, scoped further by optional projectId",
+    "description": "The GET /connectors handler (connector.routes.ts:153+) accepts an optional projectId querystring and is gated by requirePermission(INTEGRATION_HUB_PERMISSIONS.VIEW); the underlying service call is expected to filter by user.organizationIdString.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org A has 3 connectors across 2 projects; Org B has its own separate connectors"],
+    "steps": [
+      "As an org A user, call GET /connectors with no projectId",
+      "Call GET /connectors?projectId=<projectA1Id>",
+      "Compare both responses against org B's connector list"
+    ],
+    "expectedResult": "The unfiltered call returns exactly org A's 3 connectors; the projectId-filtered call returns only connectors scoped to projectA1; no org B connector ever appears in either response.",
+    "tags": ["multi-tenant", "api-contract"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-INT-002",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "Connector CRUD API",
+    "title": "DELETE /connectors/:id performs a soft delete: status becomes inactive, document is not removed, and AWS sub-accounts are deactivated in the same call",
+    "description": "deleteConnector() (ConnectorService.ts:504-554) calls integrationRepo.softDelete(), then for AWS connector types also calls awsAccountRepo.deactivateByIntegration(orgId, integrationId) before invalidating Redis cache and writing an audit log entry.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An active AWS connector integration with at least one linked AWS sub-account record"],
+    "steps": [
+      "Call DELETE /connectors/:id for the AWS integration",
+      "Query the integrations collection directly for that _id",
+      "Query the AWS accounts collection for accounts linked to that integrationId"
+    ],
+    "expectedResult": "The integration document still exists but its status is inactive (not physically removed). All linked AWS accounts are also deactivated. An audit log entry of type 'integration_deactivated' exists for this integrationId.",
+    "tags": ["soft-delete", "aws", "audit-log"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-INT-003",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "OAuth Token Refresh",
+    "title": "SyncService's updateOAuthTokens writes only the fields present in the refresh response, leaving other credential fields untouched",
+    "description": "ConnectorConfigRepository.updateOAuthTokens() (ConnectorConfigRepository.ts:334-365) unconditionally sets credentials.accessToken, but only sets refreshToken/expiryDate/scope/tokenType in the $set when they are not undefined — a refresh response lacking a new refreshToken must not null out the existing stored one.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An integration with an existing refreshToken stored"],
+    "steps": [
+      "Trigger a token refresh where the provider's response includes a new accessToken but omits refreshToken (common for providers that don't rotate refresh tokens)",
+      "Inspect the stored credentials document after the update"
+    ],
+    "expectedResult": "credentials.accessToken reflects the new value; credentials.refreshToken remains the previously stored value (not cleared/overwritten to undefined/null).",
+    "tags": ["oauth", "token-refresh"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-INT-004",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "Sync Job API",
+    "title": "POST /sync/:integrationId requires the integration to be in 'active' status before starting a sync",
+    "description": "SyncService.triggerSync() rejects with 'Integration is not active (current status: \"<status>\"). Activate the integration first.' when integration.status !== 'active'.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An integration in 'inactive' or 'pending' status (not yet completed OAuth, or previously disconnected)"],
+    "steps": [
+      "Call POST /sync/:integrationId for an integration whose status is 'inactive'"
+    ],
+    "expectedResult": "The request is rejected with an error identifying the current non-active status; no sync job document is created and no queue job is enqueued.",
+    "tags": ["sync", "state-machine"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-INT-005",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "Sync Job API",
+    "title": "Incremental sync passes the correct lastSyncAt cutoff sourced from syncSettings or accountInfo",
+    "description": "triggerSync() resolves lastSyncAt as integration.syncSettings?.lastSyncAt || integration.accountInfo?.lastSyncAt, and for incremental syncType passes it as an ISO 'since' timestamp to the connector; full syncs must not apply this cutoff.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An integration with syncSettings.lastSyncAt set from a prior successful sync"],
+    "steps": [
+      "Trigger POST /sync/:integrationId with syncType='incremental'",
+      "Inspect the job payload/parameters passed to the connector's collect step",
+      "Trigger POST /sync/:integrationId with syncType='full' and repeat the inspection"
+    ],
+    "expectedResult": "The incremental job's 'since' parameter equals the stored lastSyncAt as an ISO string. The full job has no 'since' cutoff applied, regardless of the stored lastSyncAt.",
+    "tags": ["sync", "incremental-sync"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-INT-006",
+    "module": "integrations",
+    "category": "integration",
+    "subFeature": "Jira OAuth Enrichment",
+    "title": "Jira OAuth callback resolves and stores cloudId, jiraBaseUrl, and jiraSiteName from the accessible-resources API without blocking the callback on failure",
+    "description": "handleOAuthCallback() for integrationType 'jira' fetches https://api.atlassian.com/oauth/token/accessible-resources and, on success, persists credentials.cloudId plus accountInfo.jiraBaseUrl/jiraSiteName/displayName; a fetch failure is caught and logged as non-fatal, the OAuth callback still redirects successfully.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A Jira OAuth app configured; ability to simulate the accessible-resources call failing (e.g. network block)"],
+    "steps": [
+      "Complete the Jira OAuth connect flow normally and verify cloudId/jiraBaseUrl/jiraSiteName are populated",
+      "Repeat the flow with the accessible-resources endpoint simulated as unreachable/erroring"
+    ],
+    "expectedResult": "First run: credentials.cloudId and accountInfo.jiraBaseUrl/jiraSiteName/displayName are all populated correctly. Second run: the OAuth callback still completes and redirects to the sync-jobs page (non-fatal failure), but cloudId/site fields remain unset, and this should surface as a connector needing 'complete setup' rather than silently appearing fully healthy.",
+    "tags": ["jira", "oauth", "error-handling"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

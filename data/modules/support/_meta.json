@@ -1,0 +1,10 @@
+{
+  "slug": "support",
+  "name": "Support",
+  "scope": "feature",
+  "routes": [
+    "/support"
+  ],
+  "qaAgent": "Support_QA_Agent",
+  "description": "Bug report lifecycle, Jira sync, comment threads, webhook handling."
+}

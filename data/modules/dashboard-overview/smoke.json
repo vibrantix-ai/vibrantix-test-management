@@ -1,0 +1,103 @@
+[
+  {
+    "id": "DASH-SMK-001",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "API Availability",
+    "title": "GET /api/dashboard/metrics returns 200 success:true for an authenticated org member",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "As an authenticated user with a valid orgId, call GET /api/dashboard/metrics"
+    ],
+    "expectedResult": "HTTP 200 with body { success: true, data: {...} }.",
+    "tags": ["smoke", "api"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SMK-002",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "Page Load",
+    "title": "/dashboard renders without a console error or unhandled rejection on first load",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Seeded demo org with at least one active project"],
+    "steps": [
+      "Navigate to /dashboard as an authenticated user",
+      "Monitor the browser console for the duration of the initial load"
+    ],
+    "expectedResult": "No JS console error or unhandled promise rejection is logged during load.",
+    "tags": ["smoke", "frontend"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SMK-003",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "Board Cards Render",
+    "title": "All 6 board cards render with their correct icon and title in the idle grid",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate to /dashboard and wait for loading to finish"
+    ],
+    "expectedResult": "Resource Board (ShieldAlert), Compliance Board (CheckCircle2), Framework Board (Shield), Audit Board (ClipboardCheck), Vendor Board (Building2), and Risk Board (TrendingUp) all appear, each with its title minus the word 'Board' shown per MetricCard's title.replace(' Board','').",
+    "tags": ["smoke", "kpi-cards"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SMK-004",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "Filter Bar Render",
+    "title": "DashboardFilterBar renders without throwing when filterOptions.frameworks is empty",
+    "description": "A fresh org has no active frameworks yet, so filterOptions.frameworks arrives as []. SHOW_FRAMEWORKS_FILTER is currently false anyway, but the date-preset, severity, and project controls must still mount cleanly.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate to /dashboard for an org with zero active frameworks",
+      "Open the Filters panel"
+    ],
+    "expectedResult": "The date preset, severity chips, and project picker all render and are interactive; no exception is thrown.",
+    "tags": ["smoke", "filter-bar"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SMK-005",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "API Availability",
+    "title": "risk-distribution and risk-areas endpoints return 200 with an empty array when orgId can't be resolved",
+    "description": "Both /api/dashboard/risk-distribution and /api/dashboard/risk-areas have an early-return path for a missing req.orgId, returning success:true with an empty distribution/services array rather than erroring.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/dashboard/risk-distribution with a token that resolves no orgId",
+      "Call GET /api/dashboard/risk-areas under the same condition"
+    ],
+    "expectedResult": "Both return HTTP 200 with { success: true, data: { distribution: [] } } and { success: true, data: { services: [] } } respectively.",
+    "tags": ["smoke", "api", "edge-case"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

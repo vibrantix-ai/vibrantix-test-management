@@ -1,0 +1,125 @@
+[
+  {
+    "id": "INTG-SMK-001",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "Integration Hub",
+    "title": "Integration Hub page loads and renders the connector catalog without errors",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with integration.read permission"],
+    "steps": [
+      "Navigate to /integrations",
+      "Observe the page load"
+    ],
+    "expectedResult": "The page loads without console errors, the sidebar category list renders with badge counts, and at least the built-in connector cards (Google Drive, GitHub, AWS, Okta, Jira) are visible.",
+    "tags": ["smoke", "integration-hub"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SMK-002",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "Permission Gating",
+    "title": "A user without integration.read permission is blocked from /integrations by PermissionGate",
+    "description": "integrations/layout.jsx wraps all child routes in PermissionGate permission=\"integration.read\".",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A user role without the integration.read permission"],
+    "steps": [
+      "Log in as the restricted user",
+      "Navigate directly to /integrations via URL"
+    ],
+    "expectedResult": "The user is blocked from viewing the integrations catalog (redirected or shown an access-denied state) rather than seeing a blank or partially-rendered page.",
+    "tags": ["smoke", "rbac"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SMK-003",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "OAuth Connect",
+    "title": "Clicking 'Connect' on an OAuth connector card successfully redirects to the provider's authorization screen",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /integrations, click 'Connect' on any OAuth-based connector card (e.g. GitHub)",
+      "Observe the browser navigation"
+    ],
+    "expectedResult": "The browser navigates to the provider's real OAuth consent/authorization page with a valid client_id and redirect_uri, not an error page or broken link.",
+    "tags": ["smoke", "oauth"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SMK-004",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "Connector API",
+    "title": "GET /connectors responds 200 with a valid JWT and INTEGRATION_HUB VIEW permission",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /connectors with a valid org-scoped JWT"
+    ],
+    "expectedResult": "Response is 200 with { success: true, data: [...] } and no 5xx error, confirming the connector service and its DB connection are healthy.",
+    "tags": ["smoke", "api-health"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SMK-005",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "Category Filtering",
+    "title": "Selecting a sidebar category on the Integration Hub filters the visible connector cards without a full page reload",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /integrations, click a category in the sidebar (e.g. 'Identity & IAM')",
+      "Observe the rendered cards and badge counts"
+    ],
+    "expectedResult": "Only connectors matching the selected category render; the badge count next to the selected category matches the number of cards shown; no page reload/navigation occurs.",
+    "tags": ["smoke", "integration-hub"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SMK-006",
+    "module": "integrations",
+    "category": "smoke",
+    "subFeature": "Disconnect",
+    "title": "Disconnecting a connected integration succeeds and the card reflects a disconnected state",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An active, connected integration"],
+    "steps": [
+      "On /integrations, open the connected connector's menu and select 'Disconnect'",
+      "Confirm the disconnect action"
+    ],
+    "expectedResult": "The API call succeeds (200), the card immediately updates to a disconnected/not-connected visual state, and no error toast appears.",
+    "tags": ["smoke", "disconnect"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

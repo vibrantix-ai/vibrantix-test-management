@@ -1,0 +1,114 @@
+[
+  {
+    "id": "AIEV-REG-001",
+    "module": "ai-evidence",
+    "category": "regression",
+    "subFeature": "Permission Gating",
+    "title": "/ai-evidence/* must never regress to being reachable without evidence.read permission",
+    "description": "CP-1 (2026-07-22): AI Evidence previously had zero permission gating anywhere in the tree — upload, delete, and accept/reject-AI-suggestion actions were visible to any authenticated user. layout.jsx now wraps the route tree in PermissionGate permission='evidence.read' allowProjectGrant. This case must be re-run after any change to layout.jsx or PermissionGate.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/regression/ai-evidence-permissions.test.ts:5",
+    "preconditions": ["A user with no evidence.* permission and no project grant"],
+    "steps": [
+      "Navigate directly to /ai-evidence/upload and /ai-evidence/:evidenceId/review as the unprivileged user"
+    ],
+    "expectedResult": "Both routes remain blocked; no upload form, evidence data, or delete/accept/reject controls render.",
+    "tags": ["permission-gating", "rbac", "regression"],
+    "linkedDefect": "CP-1",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-REG-002",
+    "module": "ai-evidence",
+    "category": "regression",
+    "subFeature": "Confidence Scoring",
+    "title": "Confidence-score color thresholds disagree between the upload history list (>=75/>=50) and the review page (>=80/>=60) for the same evidence record",
+    "description": "upload/page.jsx colors the Avg AI Score badge green>=75%, yellow>=50%, red otherwise. [evidenceId]/review/page.jsx colors its own confidence badge green>=80%, yellow>=60%, red otherwise. The same underlying confidence_score can therefore render as one color on the list and a different color on the review page. This is an open inconsistency, not yet fixed — this case documents current (buggy) behavior and should be updated to assert the corrected single threshold once one screen is fixed to match the other.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted evidence item has confidence_score = 0.77 (falls in the 75-79 band)"],
+    "steps": [
+      "View the item's Avg AI Score badge color on /ai-evidence/upload",
+      "Open the same item's review page and view its confidence badge color"
+    ],
+    "expectedResult": "Current (defective) behavior: the list shows green (>=75) while the review page shows yellow (<80) for the identical 0.77 score. Flagged for remediation — the two thresholds should be unified.",
+    "tags": ["confidence-score", "ui-consistency", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-REG-003",
+    "module": "ai-evidence",
+    "category": "regression",
+    "subFeature": "Post-Review Persistence",
+    "title": "restoreEvidence's archived -> draft transition bypasses WorkflowTransitionService but must still leave a correct workflow history entry",
+    "description": "restoreEvidence applies the archived->draft change via a direct model update rather than through WorkflowTransitionService (per an in-code comment acknowledging this today bypasses the normal transition path). Regression guard: confirm this shortcut doesn't silently skip recording a WorkflowEntry, which would break audit-trail continuity for AI-assisted evidence.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted evidence item is archived"],
+    "steps": [
+      "Call POST /api/evidence/:evidenceId/restore",
+      "Fetch GET /api/evidence/:evidenceId/workflow/history"
+    ],
+    "expectedResult": "The document's status is 'draft' and the workflow history includes a discoverable entry for the archived->draft restore (either a WorkflowEntry or an equivalent audit record) — restore is not silently invisible in the audit trail.",
+    "tags": ["workflow", "audit-trail", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-REG-004",
+    "module": "ai-evidence",
+    "category": "regression",
+    "subFeature": "Post-Review Persistence",
+    "title": "AI-assisted drafts bypass the allowedUploadStatuses gate on deletePending, unlike manually uploaded drafts",
+    "description": "deletePending's allowedUploadStatuses check (requiring uploadStatus.status to be 'pending' or 'failed' for non-AI drafts) is skipped entirely when isAIAssisted===true, matching the frontend's Cancel/Delete handlers which always route AI drafts through deletePendingEvidence. Regression guard: confirm this intentional exception does not allow deleting an AI draft while its files are still actively 'uploading' in a way that orphans in-flight S3 writes without cleanup.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted draft has files with uploadStatus.status = 'uploading' (mid S3 upload)"],
+    "steps": [
+      "While the file-upload BullMQ job is still 'uploading' for this draft, call DELETE /api/evidence/upload/:evidenceId/pending"
+    ],
+    "expectedResult": "The delete either succeeds cleanly with no orphaned S3 objects left behind, or is correctly still blocked while upload is in-flight — document and assert whichever is the intended behavior so this does not silently regress into orphaned storage.",
+    "tags": ["data-integrity", "s3-upload", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-REG-005",
+    "module": "ai-evidence",
+    "category": "regression",
+    "subFeature": "Post-Review Persistence",
+    "title": "saveMappingChanges runs outside confirmAI's workflow transition — a mapping-save failure after a successful transition leaves evidence submitted without its intended control mappings",
+    "description": "The review page calls confirmAndUpdate (PUT .../ai/confirm) and saveMappingChanges (requirement/control mapping add/remove calls) as separate, non-transactional operations. If confirmAI succeeds (workflow transitions to submitted/assigned/closed) but the mapping Promise.all subsequently fails, the evidence is left in its new workflow state with no rollback and no distinguishing user-visible error indicating which half failed.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted draft has 2 requirement mappings selected on the review page", "The mapping-save API is stubbed to fail on the second call"],
+    "steps": [
+      "Click 'Send for Review' with the 2 mappings selected, while the mapping-save endpoint is forced to fail",
+      "Observe the UI's error state",
+      "Fetch the evidence document's workflow status and its requirement mappings"
+    ],
+    "expectedResult": "Current (defective) behavior: the evidence document shows status 'submitted'/'assigned' (transition succeeded) but is missing one or both intended requirement mappings, and the UI shows only a generic error toast that does not distinguish 'workflow transition succeeded, mapping save failed.' Flagged for remediation — either wrap both operations in a single transaction/compensating action, or surface a specific partial-failure message with a retry path for the mapping step alone.",
+    "tags": ["control-mapping", "data-integrity", "regression"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

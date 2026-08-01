@@ -1,0 +1,176 @@
+[
+  {
+    "id": "NOTF-SEC-001",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Socket.IO Room Isolation",
+    "title": "Cross-org user cannot join another organization's project room even with a validly-signed JWT",
+    "description": "join-project-room compares the target Project's organizationId to socket.orgId, which is derived exclusively from the verified JWT during the io.use auth middleware — the client-supplied organizationId in the connection auth payload is never trusted for this check.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Org A project P exists", "Valid JWT issued for a real user belonging to Org B"],
+    "steps": [
+      "Connect to Socket.IO with a valid Org B JWT",
+      "Emit join-project-room with { projectId: P._id } (Org A's project)"
+    ],
+    "expectedResult": "Server responds with 'project-room-join-denied'; the socket is never added to room project:{P._id}; no scan-progress or scan-completed event for Org A's project is ever delivered to this socket.",
+    "tags": ["idor", "multi-tenant", "socket.io", "owasp-a01"],
+    "requirement": "PLAC-012 hotfix",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-002",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Socket.IO Room Isolation",
+    "title": "Same-org user who is not a project member cannot join that project's room",
+    "description": "The T24 hardening upgrades the org-match check to a full project-membership check via computeProjectAccessForUser(); a user in the correct org but not assigned to the project (and not a project.admin) is denied.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Project P belongs to Org A", "A user in Org A who is NOT assigned to P and does not hold project.admin"],
+    "steps": [
+      "Connect to Socket.IO as this Org A, non-member user",
+      "Emit join-project-room with { projectId: P._id }"
+    ],
+    "expectedResult": "Server responds 'project-room-join-denied' — same-org membership alone is insufficient; the user must be an explicit project member or project admin to receive P's live scan events.",
+    "tags": ["access-control", "socket.io", "least-privilege"],
+    "requirement": "T24 project-membership hardening",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-003",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Client API Tenant Scoping",
+    "title": "GET /notifications/client and /notifications/unread-count ignore any client-supplied organization identifier and use only the JWT-derived req.orgId",
+    "description": "Both handlers pass req.orgId (set by the authenticate middleware from the verified token) directly into the Mongo filter; there is no organizationId read from query/body, so a forged query param cannot widen the scope.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Valid JWT for a user in Org A", "Notifications exist for the same user under a differently-scoped record in Org B (data anomaly / test fixture)"],
+    "steps": [
+      "As the Org A user, call GET /notifications/client?organizationId={OrgB_id} and GET /notifications/unread-count?organizationId={OrgB_id}"
+    ],
+    "expectedResult": "The forged organizationId query parameter is ignored; results are scoped strictly to req.orgId (Org A) from the JWT — no Org B notification data or count is returned.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-004",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Internal Endpoint Auth",
+    "title": "Internal notification endpoint fails closed (503) when INTERNAL_API_TOKEN is unconfigured, rather than accepting any request",
+    "description": "internalAuth() checks !INTERNAL_TOKEN first and returns 503 before any comparison. This must never fall through to allowing unauthenticated dispatch just because the env var is missing in a given deployment.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["A test deployment/config with both INTERNAL_API_TOKEN and INTERNAL_SERVICE_TOKEN unset"],
+    "steps": [
+      "POST /api/internal/notifications with no X-Internal-Token header and a fully valid body"
+    ],
+    "expectedResult": "503 'Internal endpoint not configured' — no notification is created, confirming the endpoint fails closed rather than open when unconfigured.",
+    "tags": ["fail-closed", "internal-api", "misconfiguration"],
+    "requirement": "OWASP API Top 10 - Security Misconfiguration",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-005",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Internal Endpoint Auth",
+    "title": "Internal endpoint token comparison uses timing-safe equality and length pre-check without leaking token length via response timing",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["INTERNAL_API_TOKEN configured to a known long value in a test environment"],
+    "steps": [
+      "Send repeated POST /api/internal/notifications requests with X-Internal-Token values of varying lengths and varying prefix-match lengths against the real token",
+      "Statistically compare response latency across attempts"
+    ],
+    "expectedResult": "crypto.timingSafeEqual combined with the explicit a.length !== b.length short-circuit means observable response timing does not meaningfully correlate with how many leading bytes of the guessed token were correct — no practical timing side channel for brute-forcing the token byte-by-byte.",
+    "tags": ["timing-attack", "internal-api"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-006",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Socket.IO Auth",
+    "title": "Socket.IO connection is rejected pre-handshake completion when no auth token is supplied",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["NODE_ENV=production or DEV_BYPASS not enabled"],
+    "steps": [
+      "Attempt to connect a Socket.IO client with no `auth.token` field set"
+    ],
+    "expectedResult": "The io.use() middleware calls next(new Error('No token provided')); the connection is refused and no 'connection' event fires for this socket, so it can join no rooms and receive no notifications or scan events.",
+    "tags": ["socket.io", "authentication"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-007",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Dev Bypass Hardening",
+    "title": "DEV_BYPASS cannot enable the Socket.IO auth bypass in a production environment",
+    "description": "core/socket.js computes DEV_BYPASS = process.env.DEV_BYPASS === 'true' && process.env.NODE_ENV !== 'production' at module load — the NODE_ENV guard must prevent the bypass (which assigns every socket the same DEV_ORG_ID and skips JWT verification) from ever activating in production regardless of how DEV_BYPASS is set.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["A build/runtime configured with NODE_ENV=production and DEV_BYPASS=true set simultaneously (misconfiguration scenario)"],
+    "steps": [
+      "Start the backend with NODE_ENV=production and DEV_BYPASS=true",
+      "Attempt to connect a Socket.IO client with no token, or with an invalid token"
+    ],
+    "expectedResult": "The connection is still rejected with a JWT verification error — DEV_BYPASS has no effect because NODE_ENV==='production', confirming the bypass cannot be accidentally left on in a production deployment.",
+    "tags": ["dev-bypass", "misconfiguration", "owasp-a05"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-SEC-008",
+    "module": "notifications",
+    "category": "security",
+    "subFeature": "Read/Delete Ownership",
+    "title": "An authenticated user cannot mark-read or delete another user's notification by guessing/enumerating its ObjectId",
+    "description": "Both markRead and deleteOne filter on { _id, targetUserId: String(userId) }; a syntactically valid ObjectId belonging to a different user's notification simply matches zero documents.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Notification N belongs to User A", "Valid JWT for unrelated User C"],
+    "steps": [
+      "As User C, call PUT /notifications/{N._id}/read",
+      "As User C, call DELETE /notifications/{N._id}"
+    ],
+    "expectedResult": "Both calls fail to affect N (404 on read, silent no-op on delete since deleteOne's filter matches nothing) — N remains unread and undeleted for User A.",
+    "tags": ["idor", "ownership", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

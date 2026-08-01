@@ -1,0 +1,74 @@
+[
+  {
+    "id": "PERF-SEC-001",
+    "module": "performance",
+    "category": "security",
+    "subFeature": "Resource Exhaustion",
+    "title": "Audit list endpoint does not clamp an attacker-controlled ?limit= parameter, enabling a resource-exhaustion DoS vector",
+    "description": "audit-assurance.controller.js:478-484 builds AuditAssurance.find(filter).sort(sort).skip(skip).limit(parseInt(limit)) — limit is parsed with parseInt() but never clamped to a maximum. A caller can request ?limit=999999 (or a very large number) and force the server to fetch, populate, and serialize the organization's entire audit collection in one request, repeatable at will.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Valid authenticated session with access to at least one organization's audits", "Organization with a large audit collection (10,000+ documents) for realistic impact"],
+    "steps": [
+      "Call GET /api/audits?limit=999999&page=1 as an authenticated user",
+      "Repeat the call concurrently from multiple sessions",
+      "Monitor server memory/CPU and response latency for other tenants' requests during the burst"
+    ],
+    "expectedResult": "Current known behavior: the request succeeds and returns the full collection with no server-side clamp, and repeated concurrent calls measurably degrade response times for other requests. This should be flagged as a resource-exhaustion risk requiring a hard server-side maximum (e.g. clamp to 100) independent of client input.",
+    "tags": ["dos", "pagination", "resource-exhaustion", "owasp-api4"],
+    "linkedDefect": "PERF-003",
+    "requirement": "OWASP API Security Top 10 - API4:2023 Unrestricted Resource Consumption",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-SEC-002",
+    "module": "performance",
+    "category": "security",
+    "subFeature": "Resource Exhaustion",
+    "title": "Vendor client-vendors list endpoint bypasses the shared pagination clamp helper, allowing an unbounded result set",
+    "description": "vendor-service's BaseRepository.findPaginated (BaseRepository.ts:69-99) correctly clamps limit to Math.min(100, requestedLimit), but ClientVendorRepository.findClientVendors (:315-357) implements its own custom $facet aggregation pipeline that does not call this shared helper and applies $skip/$limit directly from caller-supplied values with no clamp — the same service enforces the cap inconsistently depending on which repository method serves the request.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Valid authenticated session with vendor-management access", "Organization with a large client-vendors collection"],
+    "steps": [
+      "Call the client-vendors list endpoint with an oversized limit parameter (e.g. limit=100000)",
+      "Compare the number of documents returned against the 100-row cap enforced elsewhere in the same service via BaseRepository.findPaginated"
+    ],
+    "expectedResult": "Current known behavior: the client-vendors endpoint returns more than 100 rows when an oversized limit is supplied, inconsistent with the rest of the service. Flag as a gap requiring the $facet pipeline to apply the same clamp as BaseRepository.findPaginated.",
+    "tags": ["dos", "pagination", "resource-exhaustion", "owasp-api4"],
+    "requirement": "OWASP API Security Top 10 - API4:2023 Unrestricted Resource Consumption",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-SEC-003",
+    "module": "performance",
+    "category": "security",
+    "subFeature": "Amplified Resource Consumption",
+    "title": "Unbounded workflow-history fetch combined with per-entry lookups amplifies the cost of a single request",
+    "description": "Security-relevant framing of PERF-INT-002: getMappingWorkflowHistory (evidence-mapping.controller.js:1339-1350) has no limit/skip on the history fetch and performs one findById per returned entry. An attacker who can generate many workflow-history entries on a mapping they control (e.g. by repeatedly toggling a status they're permitted to change) can inflate the cost of every subsequent read of that mapping's history, i.e. a self-inflicted but externally triggerable amplification.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A mapping the test user has permission to repeatedly modify"],
+    "steps": [
+      "As a permitted user, script 500 rapid status-change round-trips on a single mapping to generate 500 WorkflowEntry records",
+      "Call GET .../mappings/:id/workflow-history and measure request duration and query count",
+      "Compare against a mapping with a normal (under 20) history length"
+    ],
+    "expectedResult": "Document the duration/query-count scaling between the two cases. Flag if the amplified case measurably exceeds a reasonable response-time budget (e.g. >2s), confirming the endpoint needs a history cap plus batched user resolution as remediation.",
+    "tags": ["dos", "n-plus-one", "resource-exhaustion", "owasp-api4"],
+    "requirement": "OWASP API Security Top 10 - API4:2023 Unrestricted Resource Consumption",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

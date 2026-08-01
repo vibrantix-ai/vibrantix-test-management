@@ -1,0 +1,182 @@
+[
+  {
+    "id": "AIEV-INT-001",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "AI Upload",
+    "title": "POST /api/evidence/upload/ai enqueues a BullMQ file-upload job and calls the AI service in parallel via Promise.allSettled",
+    "description": "uploadAI (evidence-upload.controller.js) creates the evidence draft, enqueues the 'process-upload' job on the 'file-upload' queue, and POSTs the buffered file to python-notebookAI-service's /api/v1/documents/extract-metadata-fast concurrently — neither path blocks the other.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/ai-evidence-upload.test.js:20",
+    "preconditions": ["Logged in as a user with evidence.create", "Project selected", "AI upload allowance not exhausted"],
+    "steps": [
+      "POST a single PDF to /api/evidence/upload/ai with a valid project context",
+      "Inspect the BullMQ 'file-upload' queue for a new 'process-upload' job referencing the created evidenceId",
+      "Inspect the mock/stub python-notebookAI-service call log for a concurrent POST to /api/v1/documents/extract-metadata-fast?organization_id=...&project_id=..."
+    ],
+    "expectedResult": "Response is 201 with the new evidenceId; a file-upload job exists for that evidence; the AI service was called with organization_id and project_id query params matching the caller's org/project.",
+    "tags": ["bullmq", "ai-classification", "s3-upload"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-002",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Error Handling",
+    "title": "AI extraction failure does not block evidence creation and is recorded as a failed processingStatus",
+    "description": "Because the AI call and S3 job run inside Promise.allSettled, an AI-side failure/timeout only sets aiAssistedUpload.processingStatus='failed' and aiAssistedUpload.aiSuggestions={error:true, message, statusCode, occurredAt} — the evidence draft itself is still created and the S3 upload still proceeds.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/ai-evidence-upload.test.js:55",
+    "preconditions": ["python-notebookAI-service stubbed to return a 500 or to hang past 120000ms"],
+    "steps": [
+      "POST a file to /api/evidence/upload/ai while the AI service stub is forced to error",
+      "Fetch GET /api/evidence/:evidenceId once the upload settles"
+    ],
+    "expectedResult": "Upload still returns 201; the evidence document shows aiAssistedUpload.processingStatus='failed' with a populated error message; files[] still progresses through the normal upload worker to 'completed'.",
+    "tags": ["ai-classification", "error-handling"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-003",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Post-Review Persistence",
+    "title": "confirmAI with action=send_for_review transitions draft -> submitted, then -> assigned when a valid assigneeId is supplied",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/ai-evidence-confirm.test.js:18",
+    "preconditions": ["An evidence draft exists in status 'draft' from a prior AI upload"],
+    "steps": [
+      "Call PUT /api/evidence/upload/:evidenceId/ai/confirm with action='send_for_review' and a valid assigneeId",
+      "Fetch the evidence document and its workflow history"
+    ],
+    "expectedResult": "Workflow history shows draft -> submitted -> assigned as two sequential WorkflowEntry records; final status is 'assigned'.",
+    "tags": ["workflow", "control-mapping"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-004",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Post-Review Persistence",
+    "title": "confirmAI's $set deliberately excludes files and uploadStatus so it does not race the still-running upload worker",
+    "description": "confirmAI's update payload intentionally omits files/uploadStatus fields, per an in-code comment, so that a confirm submitted while the S3 worker is still writing s3 keys for other files cannot clobber that write.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An evidence draft has 3 files still 'uploading' in the file-upload queue"],
+    "steps": [
+      "While the 3 files are still mid-upload (status 'uploading'), call PUT /api/evidence/upload/:evidenceId/ai/confirm with a title/category change",
+      "Allow the upload worker to finish writing s3 keys for all 3 files",
+      "Fetch the evidence document"
+    ],
+    "expectedResult": "The confirm's field changes (title/category) are applied; all 3 files still end up 'completed' with their s3 keys intact — neither write clobbers the other.",
+    "tags": ["s3-upload", "bullmq", "race-condition"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-005",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Upload Queue (BullMQ)",
+    "title": "file-upload job retries 3 times with exponential backoff starting at 5000ms before marking a file permanently failed",
+    "description": "addUploadJob's defaultJobOptions: attempts=3, backoff={type:'exponential', delay:5000}. worker.on('failed') only marks the file permanently failed once job.attemptsMade >= 3.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/evidence-upload-queue.test.js:30",
+    "preconditions": ["S3 PUT stubbed to fail on the first 2 attempts and succeed on the 3rd"],
+    "steps": [
+      "Enqueue a file-upload job for an evidence file",
+      "Observe attempt 1 and 2 fail against the stub, with backoff delays of ~5s then ~10s between attempts",
+      "Observe attempt 3 succeed"
+    ],
+    "expectedResult": "The file ends 'completed' after 3 attempts; had all 3 attempts failed, the file would be marked 'failed' and the overall evidence status recomputed to 'failed'.",
+    "tags": ["bullmq", "s3-upload"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-006",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Upload Queue (BullMQ)",
+    "title": "GET /api/evidence/upload/:evidenceId/upload-status reflects per-file and overall status through pending -> processing -> completed",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/evidence-upload-queue.test.js:52",
+    "steps": [
+      "Upload 2 files via /api/evidence/upload/ai (or bulk) and immediately poll GET /upload/:evidenceId/upload-status",
+      "Continue polling until the worker completes both files"
+    ],
+    "expectedResult": "Early poll shows overall status 'processing' with per-file statuses among pending/uploading; final poll shows overall 'completed' with both files 'completed', matching updateOverallStatus's recomputation logic.",
+    "tags": ["bullmq", "s3-upload"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-007",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "AI Billing",
+    "title": "AI upload allowance exhaustion returns 402 EM_AI_UPLOADS_EXHAUSTED before any evidence document is created",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/ai-evidence-billing.test.js:12",
+    "preconditions": ["Org has already consumed its annual AI-upload allowance (e.g. 50/50 used, non-unlimited plan)"],
+    "steps": [
+      "POST a file to /api/evidence/upload/ai"
+    ],
+    "expectedResult": "Request is rejected with 402 and error code EM_AI_UPLOADS_EXHAUSTED before any evidence document, S3 job, or AI service call is made — verified by asserting no new evidence document or queue job exists after the call.",
+    "tags": ["ai-classification", "billing"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AIEV-INT-008",
+    "module": "ai-evidence",
+    "category": "integration",
+    "subFeature": "Post-Review Persistence",
+    "title": "Evidence-type-specific parse jobs (vuln/patch/sbom) are enqueued only after the confirm workflow transition fires, not before",
+    "description": "confirmAI checks evidenceType and enqueues addVulnParseJob/addPatchParseJob/addSbomParseJob only after WorkflowTransitionService.transition succeeds — 'parsing is deferred until the user sends the evidence for review' per the controller comment.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An AI-assisted draft has evidenceType='vulnerability_scan_report'"],
+    "steps": [
+      "Call confirmAI with action='send_for_review' but force the workflow transition step to fail (e.g. invalid target state)",
+      "Inspect the vulnerability-report queue for a new job"
+    ],
+    "expectedResult": "No parse job is enqueued when the workflow transition fails; a parse job is enqueued only on a subsequent successful confirm call.",
+    "tags": ["bullmq", "workflow"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

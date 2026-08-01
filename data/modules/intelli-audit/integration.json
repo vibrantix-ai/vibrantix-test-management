@@ -1,0 +1,272 @@
+[
+  {
+    "id": "INTA-INT-001",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Framework Selection / Activation Prerequisites",
+    "title": "createIntelligentAudit rejects audit creation when the framework is not licensed for the project",
+    "description": "Licensing is checked independently of activation — a framework can be activated (ClientFramework exists) but not licensed for the current project's plan tier.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:730",
+    "preconditions": [
+      "A ComplianceFramework exists and is status='active'",
+      "isFrameworkLicensed(orgId, frameworkId, projectId) resolves to false for this org/project"
+    ],
+    "steps": [
+      "POST /api/intelligent-audits with a valid title, description, frameworkId, and projectId for the unlicensed framework"
+    ],
+    "expectedResult": "Response is 402 Payment Required with message 'Framework is not licensed for this project'; no IntelligentAudit document is created.",
+    "tags": ["licensing", "framework-activation", "phase-gate"],
+    "requirement": "ISO 27001 Clause 9.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-002",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Framework Selection / Activation Prerequisites",
+    "title": "createIntelligentAudit rejects a licensed framework that has not been activated for this project",
+    "description": "A framework can be org-licensed but never added as a ClientFramework for the specific project — Intelli Audit must not silently create an audit against an inactive project framework.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:731",
+    "preconditions": [
+      "Framework is licensed for the org/project",
+      "No ClientFramework document exists with status='active' for this project+framework"
+    ],
+    "steps": [
+      "POST /api/intelligent-audits for the licensed-but-not-activated framework"
+    ],
+    "expectedResult": "Response is 400 with message 'Framework must be activated for this project before starting Intelli Audit'.",
+    "tags": ["framework-activation", "phase-gate"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-003",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Framework Selection / Activation Prerequisites",
+    "title": "createIntelligentAudit blocks creation while the project's compliance catalogue reconciliation is incomplete",
+    "description": "reconcileFrameworkSeeding is called with autoFix, then re-checked; if actualRequirements/actualControls still fall short of expected after the fix attempt, audit creation must not proceed against a partial catalogue.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:743",
+    "steps": [
+      "Simulate a ClientFramework whose materialised client_requirements/client_controls are still being seeded (reconciliation reports actualRequirements < expectedRequirements after autoFix)",
+      "POST /api/intelligent-audits for that framework/project"
+    ],
+    "expectedResult": "Response is 503 Service Unavailable with message 'The project compliance catalogue is still being prepared. Reconcile the framework and try again.'",
+    "tags": ["framework-activation", "data-integrity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-004",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Plan Gating",
+    "title": "createIntelligentAudit enforces the sessionsPerYear plan limit and blocks a new audit once exhausted",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:776",
+    "preconditions": [
+      "Org's moduleConfig.intelliAudit.sessionsPerYear is set to a finite number (not -1)",
+      "Org already has that many non-archived IntelligentAudit documents created since Jan 1 of the current year"
+    ],
+    "steps": [
+      "POST /api/intelligent-audits to create one more audit for the same org"
+    ],
+    "expectedResult": "Response is 402 with errorCode 'IA_SESSIONS_EXHAUSTED' and a message naming the limit; no new audit document or credit debit occurs.",
+    "tags": ["billing", "plan-gate"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-005",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Plan Gating",
+    "title": "AI credits are debited on audit creation and refunded if the create() call fails after the debit",
+    "description": "ledger.debit runs before IntelligentAudit.create(); if create() throws (e.g. a validation error), the controller must refund the same amount via ledger.refund with reason 'intelli_audit_create_failed' rather than leaving the org short-charged.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:804",
+    "preconditions": ["isPricingAiCreditsV1Enabled() is true", "Org has at least aiCreditsPerSession credits available"],
+    "steps": [
+      "Force IntelligentAudit.create() to throw (e.g. inject a duplicate _id collision) after the credits ledger has already been debited",
+      "Observe the org's AI credit balance before and after the failed request"
+    ],
+    "expectedResult": "The request fails with the underlying create error, but the credit ledger balance is restored to its pre-debit value via an automatic refund.",
+    "tags": ["billing", "ai-credits", "error-handling"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-006",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Audit Scope Customisation",
+    "title": "addControlToPhase2 rejects a requirementId that is not an active leaf requirement of the audit's own framework",
+    "description": "Manually adding a control to the AI-suggested plan must validate the requirement against the audit's frameworkId, not just any framework's catalogue, and must reject non-leaf/inactive requirements.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:1886",
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/2/controls with a requirementId that belongs to a different framework than audit.frameworkId"
+    ],
+    "expectedResult": "Response is 400 'requirementId is not an active leaf requirement in the audit framework'; recommendedControls is unchanged.",
+    "tags": ["scope-customisation", "phase2"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-007",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Audit Scope Customisation",
+    "title": "addControlToPhase2 rejects adding a control that already exists in the recommended list",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:1896",
+    "preconditions": ["The audit's phase2.recommendedControls already contains an entry for requirementId X (as frameworkRequirementId or legacy uclRequirementId)"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/2/controls with requirementId=X again"
+    ],
+    "expectedResult": "Response is 409 Conflict 'Control already exists in Phase 2'; no duplicate entry is pushed and totalControlsCount is unchanged.",
+    "tags": ["scope-customisation", "phase2", "duplicate-detection"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-008",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "AI Plan Generation",
+    "title": "completePhase2 is blocked while recommendationGeneration.status is not 'ready'",
+    "description": "Guards against a user completing Phase 2 while the AI recommendation call to the Python IACR service is still pending or previously failed.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:1819",
+    "preconditions": ["Phase 2 is active", "phaseStatus.phase2.recommendationGeneration.status is 'pending' or 'failed'"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/2/complete"
+    ],
+    "expectedResult": "Response is 400 'Control recommendations are not ready. Retry generation before completing Phase 2.'; Phase 3 is not activated.",
+    "tags": ["ai-plan", "phase2", "phase-gate"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-009",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "AI Plan Generation",
+    "title": "completePhase2 is blocked when every recommended control has been deselected",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:1822",
+    "preconditions": ["recommendationGeneration.status='ready'", "All recommendedControls[].isSelected=false"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/2/complete"
+    ],
+    "expectedResult": "Response is 400 'Select at least one canonical framework requirement before completing Phase 2'.",
+    "tags": ["scope-customisation", "phase2", "phase-gate"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-010",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Evidence Gap Analysis",
+    "title": "runGapAnalysis returns 403 IA_GAP_ANALYSIS_LOCKED when the org's plan does not include gap analysis",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:3431",
+    "preconditions": ["req.moduleConfig.intelliAudit.gapAnalysis is false (e.g. org is on the base plan)", "Phase 3 is completed for the audit"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/4/analyze"
+    ],
+    "expectedResult": "Response is 403 with errorCode 'IA_GAP_ANALYSIS_LOCKED' and message referencing an upgrade to Scale or Enterprise; phaseStatus.phase4.gaps is left unchanged.",
+    "tags": ["billing", "plan-gate", "gap-analysis"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-011",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Evidence Gap Analysis",
+    "title": "runGapAnalysis rejects execution before Phase 3 is completed",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:3434",
+    "preconditions": ["gapAnalysis is enabled on the plan", "phaseStatus.phase3.isCompleted is false"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/4/analyze while Phase 3 evidence collection is still in progress"
+    ],
+    "expectedResult": "Response is 400 'Phase 3 must be completed first'; no gaps are generated.",
+    "tags": ["gap-analysis", "phase-gate"],
+    "requirement": "ISO 27001 Clause 9.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-INT-012",
+    "module": "intelli-audit",
+    "category": "integration",
+    "subFeature": "Evidence Gap Analysis",
+    "title": "runGapAnalysis flags a control with zero evidence attachments as a 'Missing Evidence' gap with riskScore contribution 3",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.controller.js:3454",
+    "preconditions": ["Phase 3 control has evidenceAttachments=[] and assessmentStatus != 'Not Started'"],
+    "steps": [
+      "POST /api/intelligent-audits/:auditId/phase/4/analyze"
+    ],
+    "expectedResult": "The returned gap for that control includes 'Missing Evidence' in gapTypes and the base riskScore reflects the +3 contribution before any other signal is added.",
+    "tags": ["gap-analysis", "evidence"],
+    "requirement": "ISO 27001 Clause 9.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

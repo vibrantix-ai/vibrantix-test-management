@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ONBD-REG-001",
+    "module": "onboarding",
+    "category": "regression",
+    "subFeature": "Platform Tour",
+    "title": "Platform tour status/update must stay backed by PlatformTourState, not the dead OnboardingState.platformTourByUser array",
+    "description": "onboarding.controller.js currently defines exports.getPlatformTourStatus and exports.updatePlatformTourStatus twice (lines 48-103 use OnboardingState.platformTourByUser; lines 139-188 use the separate PlatformTourState collection). Because module.exports assignments are overwritten in file order, only the second pair is actually wired to the routes — the first pair and the platformTourByUser schema field are dead code today. Any future edit that removes the second definitions (e.g. during a refactor) would silently revert live behavior to the unused array-based implementation.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Read onboarding.controller.js top to bottom and confirm there are two exports.getPlatformTourStatus/updatePlatformTourStatus definitions",
+      "Call POST /api/v1/onboarding/platform-tour/update with { introDone: true }",
+      "Query the platform_tour_state collection directly for this user, and separately query onboarding_state.platformTourByUser for the same org"
+    ],
+    "expectedResult": "A document is written/updated in platform_tour_state keyed by userId; onboarding_state.platformTourByUser remains empty/unused for this call — confirming the second (live) definition is what actually executes. This test should fail loudly if a future change makes the first definition the live one again.",
+    "tags": ["dead-code", "regression-guard", "platform-tour"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-REG-002",
+    "module": "onboarding",
+    "category": "regression",
+    "subFeature": "Setup Health Score",
+    "title": "Setup health score weights must remain {10,20,30,15,0}+25 summing to exactly 100",
+    "description": "setup-health.service.js WEIGHTS plus the firstScanAt +25 bonus are the only inputs to setupHealthScore, and SetupChecklist.jsx's auto-hide condition (>=100) depends on this total being reachable. A future rebalance of any weight without also updating the auto-hide threshold or the firstScanAt bonus would either make 100% unreachable or reachable without a real cloud scan.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Sum WEIGHTS['step-1'] + WEIGHTS['step-2'] + WEIGHTS['step-3'] + WEIGHTS['step-4'] + WEIGHTS['step-5']",
+      "Add the firstScanAt bonus (25) to that sum"
+    ],
+    "expectedResult": "The step-only sum is 75 and the total with firstScanAt is exactly 100 — any deviation should fail this regression check and prompt a review of SetupChecklist's auto-hide threshold.",
+    "tags": ["regression-guard", "setup-health-score"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-REG-003",
+    "module": "onboarding",
+    "category": "regression",
+    "subFeature": "Step Sequencing",
+    "title": "Landing on /onboarding/step-5 directly must not leave the wizard in a step-5-done/currentStep-step-1 loop",
+    "description": "Regression guard for the interaction between Step5Page's unconditional mount-time completeStep('step-5') and nextStep()'s first-missing-step recomputation (see ONBD-E2E-003). If step-5's auto-complete is ever made conditional on steps 1-4, or if nextStep() logic changes, this case should be re-verified rather than silently passing on stale assumptions.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "As a fresh org (completedSteps = []), navigate directly to /onboarding/step-5",
+      "GET /api/v1/onboarding/state immediately after"
+    ],
+    "expectedResult": "completedSteps includes 'step-5' and currentStep is 'step-1' — confirming the known inconsistency still exists as documented, so any fix is deliberate and re-tested rather than an accidental regression in either direction.",
+    "tags": ["regression-guard", "step-sequencing", "edge-case"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

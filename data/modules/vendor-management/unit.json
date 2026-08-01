@@ -1,0 +1,187 @@
+[
+  {
+    "id": "VEND-UNIT-001",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Trust Score Computation",
+    "title": "calculateOverallScore applies the weighted category formula",
+    "description": "TrustScoreService.recalculate documents the algorithm as Security×0.30 + Compliance×0.30 + Performance×0.20 + Financial×0.20 (CATEGORY_WEIGHTS in trust-score.schema.ts). Verify the pure function produces this exact weighted sum, not a simple average.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Unit test harness with no DB dependency"],
+    "steps": [
+      "Call calculateOverallScore(security=80, compliance=60, performance=40, financial=90)",
+      "Compute expected = 80*0.30 + 60*0.30 + 40*0.20 + 90*0.20 = 24+18+8+18 = 68"
+    ],
+    "expectedResult": "Function returns 68, confirming the weighted formula (not an unweighted average of 67.5) is applied exactly as documented.",
+    "tags": ["trust-score", "scoring-formula"],
+    "requirement": "VM-11.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-002",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Trust Score Computation",
+    "title": "recalculate() resolves each category score with assessment > evidence-average > default(50) precedence",
+    "description": "TrustScoreService.recalculate's resolveScore() checks categoryScoresFromAssessment first, falls back to avgEvidenceScores, and finally defaults to 50 when neither source has data for a category.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Vendor has one closed assessment with score.categoryScores.security = 75",
+      "Vendor has two closed evidence items in category 'compliance' with verificationScore 80 and 60 (average 70)",
+      "Vendor has no assessment or evidence data for 'financial'"
+    ],
+    "steps": [
+      "Call trustScoreService.recalculate(orgId, vendorId)",
+      "Inspect the persisted security, compliance, and financial component scores"
+    ],
+    "expectedResult": "security = 75 (from assessment), compliance = 70 (rounded average of 80/60 from evidence), financial = 50 (default fallback, no data source available).",
+    "tags": ["trust-score", "scoring-formula"],
+    "requirement": "VM-11.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-003",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "S3 Upload Security",
+    "title": "S3Service.validateFile rejects disallowed MIME types, empty files, and oversized files",
+    "description": "s3.service.ts enforces ALLOWED_MIME_TYPES whitelist, a minimum size > 0, and MAX_FILE_SIZE = 500 MB.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call S3Service.validateFile('application/x-msdownload', 1024) — a non-whitelisted MIME type",
+      "Call S3Service.validateFile('application/pdf', 0) — an empty file",
+      "Call S3Service.validateFile('application/pdf', 600 * 1024 * 1024) — a 600 MB file"
+    ],
+    "expectedResult": "All three calls return { valid: false } with a descriptive error: unsupported type, 'File is empty.', and a size-limit message citing the 500 MB cap respectively.",
+    "tags": ["s3-upload", "file-validation"],
+    "requirement": "ISO 27001 Annex A.8.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-004",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "S3 Upload Security",
+    "title": "S3Service.generateKey sanitizes filenames and normalizes the category segment",
+    "description": "generateKey() strips characters outside [a-zA-Z0-9.\\-_] from the filename, collapses repeated underscores, truncates to 200 chars, and lowercases/hyphenates the category into the vendors/{vendorId}/evidence/{category}/{year}/{month}/{ts}-{filename} pattern.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call S3Service.generateKey('v1', 'Technical Document!!', 'my report (final)#2.pdf')",
+      "Inspect the returned key"
+    ],
+    "expectedResult": "The category segment becomes 'technical-document' (lowercased, spaces to hyphens, punctuation stripped) and the filename segment becomes 'my_report_final_2.pdf' (special chars replaced with underscore, no double underscores), embedded under vendors/v1/evidence/technical-document/{year}/{month}/{ts}-....",
+    "tags": ["s3-upload", "key-generation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-005",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Workflow State Machine",
+    "title": "isValidTransition/getAllowedTransitions enforce the vendor_evidence state machine exactly as defined in FEATURE_WORKFLOWS",
+    "description": "feature-workflows.ts defines vendor_evidence transitions including draft→assigned, needs_revision→re_assign, and archived→draft/assigned restore paths. There is deliberately no draft→closed shortcut.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call isValidTransition('vendor_evidence', 'draft', 'closed') — an illegal shortcut",
+      "Call isValidTransition('vendor_evidence', 'needs_revision', 're_assign') — a legal edge",
+      "Call getAllowedTransitions('vendor_evidence', 'archived')"
+    ],
+    "expectedResult": "First call returns false (draft must go through assigned → under_review → closed). Second call returns true. Third call returns exactly ['draft', 'assigned'] per the defined restore paths.",
+    "tags": ["workflow", "state-machine"],
+    "requirement": "spec §5.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-006",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Workflow State Machine",
+    "title": "WorkflowTransitionService.transition rejects an invalid edge and reports the allowed list in the thrown error",
+    "description": "WorkflowTransitionService.transition() calls isValidTransition() and, on failure, throws AppError.workflowTransitionInvalid(currentState, targetState, allowed) so API consumers can render valid next-state options.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A vendor_assessment document exists with status = 'closed' (terminal for this entity type)"],
+    "steps": [
+      "Call workflowTransitionService.transition('vendor_assessment', id, COLLECTIONS.VENDOR_ASSESSMENTS, 'in_progress', userId, orgId)"
+    ],
+    "expectedResult": "Throws an error whose payload includes currentState='closed', attemptedState='in_progress', and allowedTransitions=[] (closed has no outbound edges for vendor_assessment) — no document mutation occurs and no workflow_entries row is inserted.",
+    "tags": ["workflow", "state-machine"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-007",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Questionnaire Template Versioning",
+    "title": "QuestionnaireTemplateService.update strips status/publishedAt/publishedBy and auto-increments minorVersion on every draft save",
+    "description": "VM-022 fix: update() deliberately deletes any client-supplied status/publishedAt/publishedBy from the payload (those are workflow-managed) and sets payload.minorVersion = (doc.minorVersion ?? 0) + 1 unconditionally.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A draft questionnaire template exists with minorVersion = 2"],
+    "steps": [
+      "Call questionnaireTemplateService.update(orgId, id, userId, { name: 'Updated name', status: 'active' })"
+    ],
+    "expectedResult": "The saved document has minorVersion = 3 and status remains 'draft' — the client-supplied status:'active' is silently dropped rather than causing a workflow-transition error or an unintended state change.",
+    "tags": ["questionnaire", "template-versioning"],
+    "requirement": "VM-022",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-UNIT-008",
+    "module": "vendor-management",
+    "category": "unit",
+    "subFeature": "Trust Network Data Sharing",
+    "title": "resolveEffectivePermissions applies a per-partner override only while enabled and not expired",
+    "description": "TrustNetworkService.resolveEffectivePermissions merges config.dataPermissions with partner.permissionOverride.overrides, but only when override.enabled is true and override.expiresAt (if set) is still in the future; otherwise it falls back to the org's global defaultSharingLevel/dataPermissions.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org config has defaultSharingLevel = 'basic'",
+      "Partner has a permissionOverride with sharingLevel = 'full' and expiresAt set to yesterday"
+    ],
+    "steps": [
+      "Call resolveEffectivePermissions(config, partnerOrgId)"
+    ],
+    "expectedResult": "Returned sharingLevel is 'basic' (global default) — the expired override is ignored, not applied. Re-running with expiresAt set to tomorrow returns sharingLevel = 'full'.",
+    "tags": ["trust-network", "permissions"],
+    "requirement": "spec §9.9",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

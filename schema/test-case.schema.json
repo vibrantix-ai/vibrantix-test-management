@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vibrantix.internal/test-management/test-case.schema.json",
+  "title": "Vibrantix Test Case",
+  "description": "One entry in a data/modules/<slug>/<category>.json test case array.",
+  "type": "object",
+  "required": ["id", "module", "category", "title", "priority", "type", "steps", "expectedResult", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable unique ID. Convention: <MODULE-PREFIX>-<CATEGORY-CODE>-<3-digit sequence>, e.g. EVID-E2E-001. Never renumber/reuse an existing ID once published — deprecate instead.",
+      "pattern": "^[A-Z0-9]+-[A-Z0-9]+-[0-9]{3}$"
+    },
+    "module": {
+      "type": "string",
+      "description": "Module slug, must match the containing folder name in data/modules/ and the slug in data/manifest.json."
+    },
+    "category": {
+      "type": "string",
+      "description": "Must match the containing filename (without .json) and be one of manifest.json's categories list.",
+      "enum": ["unit", "integration", "e2e", "security", "smoke", "sanity", "regression", "performance", "accessibility"]
+    },
+    "subFeature": {
+      "type": "string",
+      "description": "Optional finer-grained grouping within the module, e.g. 'Evidence Upload', 'Review Workflow'."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short imperative summary of what is being verified."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional longer explanation of intent/context, especially the WHY if non-obvious."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"],
+      "description": "P0=blocker/release-gating, P1=critical, P2=major, P3=minor."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["manual", "automated", "both"],
+      "description": "Execution mode this test case is written for."
+    },
+    "automationStatus": {
+      "type": "string",
+      "enum": ["automated", "not_automated", "planned", "flaky"],
+      "description": "Real-world automation state, independent of 'type' (a case can be designed for automation but not yet automated)."
+    },
+    "automationRef": {
+      "type": "string",
+      "description": "Optional pointer to the automated spec, e.g. 'test-framework/tests/e2e/evidence-management.spec.ts:42'."
+    },
+    "preconditions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "State that must exist before step 1 (roles, seed data, flags)."
+    },
+    "steps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Ordered actions to perform."
+    },
+    "testData": {
+      "type": "string",
+      "description": "Optional concrete input values/payloads used by the steps."
+    },
+    "expectedResult": {
+      "type": "string",
+      "description": "Observable pass/fail criterion."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Free-form labels for cross-cutting filtering, e.g. 'rbac', 'multi-tenant', 'idor', 'iso27001'."
+    },
+    "requirement": {
+      "type": "string",
+      "description": "Optional traceability reference, e.g. 'ISO 27001 Annex A.8.15' or a user story ID."
+    },
+    "linkedDefect": {
+      "type": "string",
+      "description": "Optional QA tracker defect ID this case guards against regressing, e.g. 'EV-014'."
+    },
+    "owner": {
+      "type": "string",
+      "description": "Team or role responsible for maintaining this case, e.g. 'SDET', 'QA', 'Security'."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "draft", "deprecated"],
+      "description": "deprecated cases are kept for history but excluded from default views/exports."
+    },
+    "createdAt": { "type": "string", "format": "date" },
+    "updatedAt": { "type": "string", "format": "date" }
+  }
+}

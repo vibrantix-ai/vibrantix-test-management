@@ -1,0 +1,106 @@
+[
+  {
+    "id": "SUPP-SMK-001",
+    "module": "support",
+    "category": "smoke",
+    "subFeature": "Ticket Listing",
+    "title": "/support loads and renders the ticket table (or empty state) without a runtime error",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Log in and navigate to /support"
+    ],
+    "expectedResult": "Page renders the 'User Support' header, search/filter bar, and either a populated ticket table or the 'No support tickets yet' empty state — no unhandled exception or blank screen.",
+    "tags": ["smoke"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SMK-002",
+    "module": "support",
+    "category": "smoke",
+    "subFeature": "Bug Report Creation",
+    "title": "Submitting a minimal valid bug report succeeds end-to-end",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A project is selected"],
+    "steps": [
+      "Open the Report a Bug modal",
+      "Enter a 20-character description with no screenshot",
+      "Click Submit Report"
+    ],
+    "expectedResult": "A success toast appears referencing a generated ticket number, and POST /bug-reports responds 201.",
+    "tags": ["smoke", "bug-report-creation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SMK-003",
+    "module": "support",
+    "category": "smoke",
+    "subFeature": "Backend Routes",
+    "title": "Core bug-report routes are mounted and reachable",
+    "description": "Confirms bug-report.routes.js is wired into the Express app and none of its core routes 404.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "With a valid auth token, call GET /bug-reports",
+      "Call GET /bug-reports/all",
+      "Call POST /bug-reports/webhook/jira with an empty body"
+    ],
+    "expectedResult": "GET /bug-reports returns 200 (own tickets). GET /bug-reports/all returns either 200 (if permitted) or 403 (if not) — never 404. The webhook route responds 401 (secret missing/mismatched), never 404, confirming it is registered ahead of the `router.use(authenticate)` line.",
+    "tags": ["smoke", "routing"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SMK-004",
+    "module": "support",
+    "category": "smoke",
+    "subFeature": "Reopen / Close Workflow",
+    "title": "Row action menu shows the correct Reopen/Close option for the ticket's current status",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["One ticket with status Open and one with status Closed exist"],
+    "steps": [
+      "Open the action menu (⋮) on the Open ticket's row",
+      "Open the action menu on the Closed ticket's row"
+    ],
+    "expectedResult": "The Open ticket's menu shows 'View Details' and 'Close' (no 'Re-Open'); the Closed ticket's menu shows 'View Details' and 'Re-Open' (no 'Close') — clicking either does not throw.",
+    "tags": ["smoke", "reopen-close-workflow"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SMK-005",
+    "module": "support",
+    "category": "smoke",
+    "subFeature": "Comment Thread",
+    "title": "Opening a ticket's detail drawer loads the comment thread without error",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An existing ticket, synced or unsynced"],
+    "steps": [
+      "Click a ticket row to open the detail drawer"
+    ],
+    "expectedResult": "The Comments section renders — either the fetched comment list, or 'No comments yet. Start the conversation below.' for an unsynced/commentless ticket — with no console error or spinner stuck indefinitely.",
+    "tags": ["smoke", "comments"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

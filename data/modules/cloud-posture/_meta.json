@@ -1,0 +1,10 @@
+{
+  "slug": "cloud-posture",
+  "name": "Cloud Posture",
+  "scope": "feature",
+  "routes": [
+    "/cloud-posture"
+  ],
+  "qaAgent": "Cloud_Posture_QA_Agent",
+  "description": "Multi-cloud scanning via Prowler, posture dashboard, service drill-down, control auto-mapping."
+}

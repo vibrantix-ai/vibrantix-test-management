@@ -1,0 +1,8 @@
+{
+  "slug": "performance",
+  "name": "Performance",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "Performance_QA_Agent",
+  "description": "Core Web Vitals, API latency SLAs, N+1 queries, cache hit-rate, queue throughput."
+}

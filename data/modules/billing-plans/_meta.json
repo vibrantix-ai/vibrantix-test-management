@@ -1,0 +1,11 @@
+{
+  "slug": "billing-plans",
+  "name": "Billing & Plans",
+  "scope": "feature",
+  "routes": [
+    "/billing",
+    "/billing-plans"
+  ],
+  "qaAgent": "Billing_Plans_QA_Agent",
+  "description": "Plan comparison, Stripe checkout, feature gates, seat limits, invoices."
+}

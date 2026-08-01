@@ -1,0 +1,92 @@
+[
+  {
+    "id": "AUDT-REG-001",
+    "module": "audit-assurance",
+    "category": "regression",
+    "subFeature": "CAR Lifecycle",
+    "title": "CAR verify() does not regress to allowing a double-verify race (guard for fixed defect CD-003)",
+    "description": "CD-003 ('CAR verify() race condition — read-check-update without atomic lock') was marked fixed by replacing the read-check-update pattern with a single conditional findOneAndUpdate (corrective-action.service.js:789-860). This regression case guards against a future refactor reintroducing a non-atomic read-then-write.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR exists with status='verification_pending'"],
+    "steps": [
+      "Fire two concurrent verify() calls from two different, valid verifiers against the same CAR"
+    ],
+    "expectedResult": "Exactly one call succeeds and transitions the CAR to a terminal verification outcome; the losing call receives a conflict response rather than both succeeding and appending two verificationHistory entries with contradictory outcomes.",
+    "tags": ["regression", "race-condition", "car-lifecycle"],
+    "linkedDefect": "CD-003",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-REG-002",
+    "module": "audit-assurance",
+    "category": "regression",
+    "subFeature": "Audit Status State Machine",
+    "title": "Closed audit cannot be reverted to draft via direct PATCH (guard for fixed defect H-001, pending re-verification)",
+    "description": "H-001 ('No audit status state machine — closed -> draft possible via direct PATCH') was marked fixed by routing status changes through changeStatus() (audit-assurance.controller.js:608). However, AUDIT_TRANSITIONS itself (audit.model.js:253-259) has a separate, since-discovered enum mismatch (see AUDT-UNIT-007: 'active' vs 'in_progress', missing 'archived') — this case re-verifies the original H-001 fix still holds independent of that separate issue.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An audit exists with status='closed'"],
+    "steps": [
+      "Call PATCH /api/audit-assurance/:auditId with { status: 'draft' } directly"
+    ],
+    "expectedResult": "The request is rejected because changeStatus()'s AUDIT_TRANSITIONS map has no outgoing edges from 'closed' (closed: []). The audit's status remains 'closed'. Note: if this test fails alongside AUDT-UNIT-007's finding on 'in_progress', re-verify whether changeStatus() is genuinely called on this code path or bypassed.",
+    "tags": ["regression", "state-machine", "audit-lifecycle"],
+    "linkedDefect": "H-001",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-REG-003",
+    "module": "audit-assurance",
+    "category": "regression",
+    "subFeature": "Audit Schema",
+    "title": "Duplicate field definitions in audit.model.js do not cause inconsistent persisted values for isoVersion/auditObjective/recurrence",
+    "description": "Live defect M-005: isoVersion, auditObjective, and recurrence are each defined twice in audit.model.js (lines 122-140 and again at 193-214). Mongoose typically lets the later definition win, but this guard verifies persistence is actually consistent rather than silently dropping updates to whichever definition doesn't win.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Create an audit and set isoVersion='2022', auditObjective='Test objective', recurrence='annual'",
+      "Reload the audit from the database and inspect these three fields"
+    ],
+    "expectedResult": "All three fields persist and read back exactly as set, with no field silently reverting to a default from the duplicate (losing) schema definition. Flag for remediation regardless of pass/fail: remove the duplicate field blocks in audit.model.js.",
+    "tags": ["regression", "schema-duplication"],
+    "linkedDefect": "M-005",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-REG-004",
+    "module": "audit-assurance",
+    "category": "regression",
+    "subFeature": "Scope Item SoA",
+    "title": "Marking a scope item 'not_applicable' still requires no justification and creates no SoA entry (guard that D-24 remains open)",
+    "description": "Live defect D-24 (open): setting a scope item's status to 'not_applicable' requires no justification text and creates no corresponding Statement of Applicability entry, contrary to ISO 27001 Clause 6.1.3(c) which requires justification for exclusions.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A scope item exists with status='in_progress'"],
+    "steps": [
+      "Set the scope item's status to 'not_applicable' with no justification text entered",
+      "Check the project's Statement of Applicability for a corresponding entry"
+    ],
+    "expectedResult": "Current behavior: the status change is accepted with no justification required, and no SoA entry is created or updated. This test intentionally documents D-24 is still open; re-classify to 'fixed' outcome once justification is enforced and an SoA entry is generated.",
+    "tags": ["regression", "soa", "iso27001"],
+    "requirement": "ISO 27001:2022 Clause 6.1.3(c)",
+    "linkedDefect": "D-24",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

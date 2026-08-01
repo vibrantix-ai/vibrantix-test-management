@@ -1,0 +1,157 @@
+[
+  {
+    "id": "INTG-UNIT-001",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "Credential Masking",
+    "title": "getConnector() masks every string credential field to only the last 4 characters",
+    "description": "ConnectorService.getConnector() builds maskedCredentials by replacing all but the trailing 4 characters of each string credential with '*'. Values of length <= 4 are fully masked as '****'.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Integration document with credentials.accessToken = 'ya29.a0AfH6...xyz9' (length > 4)"],
+    "steps": [
+      "Call ConnectorService.getConnector(integrationId, user) directly with a mocked config containing credentials {accessToken, refreshToken, apiKey: 'abcd'}",
+      "Inspect the returned maskedCredentials object"
+    ],
+    "expectedResult": "accessToken/refreshToken show '*' repeated for (length-4) characters followed by the real last 4 characters; apiKey ('abcd', length 4) is fully masked to '****'. Raw values never appear in the returned object.",
+    "tags": ["credential-security", "masking"],
+    "requirement": "ISO 27001 Annex A.8.20",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-002",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "OAuth State",
+    "title": "startOAuthFlow() generates a 32-byte cryptographically random hex state token",
+    "description": "ConnectorService.startOAuthFlow uses crypto.randomBytes(32).toString('hex') for the CSRF state parameter, keyed in Redis as oauth-state:<state> with a 10-minute TTL bound to integrationId/organizationId/userId/integrationType.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call startOAuthFlow() twice for the same connector/user",
+      "Compare the two returned state values",
+      "Inspect the Redis key written for each call"
+    ],
+    "expectedResult": "Each call returns a distinct 64-character hex string; the Redis entry oauth-state:<state> stores integrationId, organizationId, userId and integrationType with a TTL of exactly 600000ms.",
+    "tags": ["oauth", "csrf"],
+    "requirement": "ISO 27001 Annex A.8.20",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-003",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "Webhook Signature Verification",
+    "title": "verifyWebhookSignature() computes the correct HMAC-SHA256 for each connector type's header scheme",
+    "description": "webhook.routes.ts verifyWebhookSignature() branches per connectorType: GitHub uses x-hub-signature-256 = 'sha256=' + hmac, Slack prefixes the HMAC input with 'v0:<timestamp>:' and rejects timestamps more than 300s old, the generic fallback accepts either raw or 'sha256='-prefixed digest.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Compute HMAC-SHA256 of a sample payload with a known secret for github, slack, and the generic/default branch",
+      "Call verifyWebhookSignature() with matching and non-matching signature headers for each branch",
+      "For slack, also call it with a timestamp older than 300 seconds"
+    ],
+    "expectedResult": "Matching signatures return true for each connector type; a wrong signature returns false; a Slack request with a stale timestamp (>300s) is rejected as a replay attempt regardless of signature validity.",
+    "tags": ["webhook", "hmac", "replay-protection"],
+    "requirement": "ISO 27001 Annex A.8.20",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-004",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "OAuth Token Refresh",
+    "title": "ensureValidToken() refreshes the access token only when within the 5-minute expiry buffer",
+    "description": "OAuthConnector.ensureValidToken() compares creds.expiryDate against Date.now() + a 5-minute buffer before deciding to call refreshToken(). Connectors with no expiryDate (e.g. GitHub) are treated as never expiring.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call ensureValidToken() with expiryDate 10 minutes in the future",
+      "Call it again with expiryDate 2 minutes in the future (inside the 5-minute buffer)",
+      "Call it with expiryDate undefined and no refreshToken"
+    ],
+    "expectedResult": "Case 1 returns the existing accessToken without calling refreshToken(). Case 2 calls refreshToken(refreshToken) and returns the new token. Case 3 (no expiry) returns the existing token without attempting a refresh.",
+    "tags": ["oauth", "token-refresh"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-005",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "Google Drive File Listing",
+    "title": "GoogleDriveConnector.listFiles() builds a Drive query scoped to the given folder and excludes trashed files",
+    "description": "listFiles() always appends 'trashed = false' and \"'<folderId>' in parents\" to the Drive API q parameter, and clamps pageSize to a maximum of 100.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call listFiles({ folderId: 'abc123', pageSize: 500 })",
+      "Inspect the constructed query string sent to the Drive API"
+    ],
+    "expectedResult": "The q parameter includes \"'abc123' in parents and trashed = false\"; pageSize sent to Google is clamped to 100, not 500.",
+    "tags": ["google-drive", "query-building"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-006",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "Integration Hub Catalog UI",
+    "title": "AllIntegrationsContent category filter and count badges only count connectors matching categoryKey",
+    "description": "countByCategory() and the filtered/activeConnectors/inactiveConnectors derivations in AllIntegrationsContent.jsx must reflect only connectors whose categoryKey matches the selected sidebar item, or the 'all' bucket.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Render AllIntegrationsContent with a mixed catalog (identity_iam, cloud_infrastructure, productivity_collaboration types, some isEnabled=true)",
+      "Click the 'Identity & IAM' sidebar category",
+      "Read the badge count next to each sidebar item and the number of cards rendered"
+    ],
+    "expectedResult": "Only connectors with categoryKey === 'identity_iam' render as cards; the sidebar badge count for that category equals the number of matching connectors; the 'All Integrations' badge always equals the full catalog length.",
+    "tags": ["integration-hub", "category-filter"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-UNIT-007",
+    "module": "integrations",
+    "category": "unit",
+    "subFeature": "Catalog Status Derivation",
+    "title": "GenericIntegrationCard derives enabled/needsReauth state correctly from catalogData flags",
+    "description": "initialStatus.enabled requires isConnected && connectionStatus === 'active' && !tokenExpired; needsReauth is true if tokenExpired OR connectionStatus is 'error' or 'pending'.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Render GenericIntegrationCard with catalogData { isConnected: true, connectionStatus: 'active', tokenExpired: true }",
+      "Render again with { isConnected: true, connectionStatus: 'error', tokenExpired: false }"
+    ],
+    "expectedResult": "Both cases render as NOT enabled (tokenExpired or error state overrides connected+active) and both set needsReauth = true, surfacing a reconnect prompt instead of a healthy 'connected' badge.",
+    "tags": ["integration-hub", "health-monitoring"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

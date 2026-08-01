@@ -1,0 +1,104 @@
+[
+  {
+    "id": "SUPP-SAN-001",
+    "module": "support",
+    "category": "sanity",
+    "subFeature": "Bug Report Creation",
+    "title": "Description length boundary: exactly 20 characters is accepted, 19 is rejected",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "POST /bug-reports with a description of exactly 20 characters",
+      "POST /bug-reports with a description of exactly 19 characters"
+    ],
+    "expectedResult": "The 20-character request returns 201; the 19-character request returns 400, confirming the isLength({min:20}) boundary is inclusive at 20.",
+    "tags": ["sanity", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SAN-002",
+    "module": "support",
+    "category": "sanity",
+    "subFeature": "Ticket Listing",
+    "title": "Status badge colors match the BUG_STATUSES config (Open=blue, In Progress=orange, Closed=green)",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "View the ticket table with at least one ticket in each of the three statuses"
+    ],
+    "expectedResult": "Open renders a blue badge, In Progress an orange badge, Closed a green badge — matching both the table column render() and the drawer's status section.",
+    "tags": ["sanity", "ui"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SAN-003",
+    "module": "support",
+    "category": "sanity",
+    "subFeature": "Ticket Listing",
+    "title": "Ticket column falls back to jiraKey when ticketNumber is missing, and shows '—' when both are absent",
+    "description": "The Ticket column render() evaluates `record.ticketNumber || record.jiraKey` and returns '—' only if neither exists — since ticketNumber is always generated at creation time in the current code path, this mainly guards against legacy/malformed records.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "View a record with ticketNumber set",
+      "View a (seeded/legacy) record with ticketNumber null but jiraKey set",
+      "View a record with both null"
+    ],
+    "expectedResult": "First row shows the ticketNumber; second row shows the jiraKey instead; third row shows '—'.",
+    "tags": ["sanity", "ui"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SAN-004",
+    "module": "support",
+    "category": "sanity",
+    "subFeature": "Ticket Listing",
+    "title": "Pagination control only appears when total ticket count exceeds 10",
+    "description": "SupportPage renders <Pagination> only when `total > 10`, regardless of the current page size selection.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "View /support for an org/user with <= 10 total tickets",
+      "View /support for an org/user with 11+ total tickets"
+    ],
+    "expectedResult": "Pagination is hidden in the first case and visible with correct page count in the second case.",
+    "tags": ["sanity", "pagination"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-SAN-005",
+    "module": "support",
+    "category": "sanity",
+    "subFeature": "Permission Gating",
+    "title": "A user without bug-report.read_all sees only a single unlabeled ticket list, never the tab control",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User without bug-report.read_all"],
+    "steps": [
+      "Log in as the permission-less user and open /support"
+    ],
+    "expectedResult": "No 'My Tickets' / 'All Tickets' Tabs component is rendered at all (canReadAll is falsy, so the entire Tabs Box is conditionally omitted) — the page goes straight to the filter bar and table, scoped to the user's own tickets.",
+    "tags": ["sanity", "rbac"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

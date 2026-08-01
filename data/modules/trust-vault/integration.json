@@ -1,0 +1,160 @@
+[
+  {
+    "id": "TRVT-INT-001",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Workflow Transitions",
+    "title": "POST /certifications/:id/transition rejects an invalid target state with 422 and surfaces allowedTransitions",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/certification-transition.test.ts",
+    "preconditions": ["A certification exists in 'draft' status"],
+    "steps": [
+      "Call POST /certifications/:id/transition with body { targetState: 'revoked' } while the cert is in 'draft'"
+    ],
+    "expectedResult": "Response is 422 with body.error = 'Invalid transition: draft → revoked for certification' and body.details/allowedTransitions containing ['assigned'].",
+    "tags": ["workflow", "api-contract"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-002",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Share Links",
+    "title": "Share link creation is rejected for an archived certification",
+    "description": "ShareLinkService.create explicitly checks cert.status === 'archived' and returns 400 'Cannot share an archived certification' before touching the entitlement/quota logic.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/share-link-create.test.ts",
+    "preconditions": ["A certification exists with status 'archived'"],
+    "steps": [
+      "Call POST /share-links with entityType='certification' and entityId = the archived cert's id"
+    ],
+    "expectedResult": "Response is 400 with error 'Cannot share an archived certification'; no ShareLink document is created.",
+    "tags": ["share-link", "workflow-guard"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-003",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Expiry Alerting",
+    "title": "runExpiryCheck acquires a distributed Redis lock and a concurrent second invocation is skipped",
+    "description": "ExpiryAlertService.runExpiryCheck uses redisService.setNx('trust-vault:lock:expiry-check', '1', 5min) before processing organizations, preventing duplicate alert runs across multiple service pods.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/expiry-check-lock.test.ts",
+    "preconditions": ["Redis is available and the lock key is not currently held"],
+    "steps": [
+      "Invoke runExpiryCheck() and, before it completes, invoke runExpiryCheck() a second time concurrently from a separate service instance/process",
+      "Observe the return values of both calls"
+    ],
+    "expectedResult": "The first call proceeds and returns { processed: N, alertsSent: M }. The second, concurrent call returns immediately with { processed: 0, alertsSent: 0 } because the lock is held — no duplicate alert emails/webhooks are sent for the same organizations.",
+    "tags": ["expiry", "distributed-lock", "cron"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-004",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Framework Mapping",
+    "title": "GET /framework-mappings?certificationId= reflects a mapping immediately after POST /framework-mappings",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/framework-mapping.test.ts",
+    "preconditions": ["An active certification exists", "An activated compliance framework with at least 3 controls exists for the org"],
+    "steps": [
+      "POST /framework-mappings with { certificationId, frameworkId, scopeType: 'partial', includedControlIds: [ctrl1, ctrl2] }",
+      "GET /framework-mappings?certificationId={certificationId} immediately after"
+    ],
+    "expectedResult": "The GET response includes the newly created mapping with scopeType='partial' and includedControlIds containing exactly [ctrl1, ctrl2], with no caching delay.",
+    "tags": ["framework-mapping", "api-contract"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-005",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Workflow Transitions",
+    "title": "Non-transactional fallback path compensates by reverting entity status if the workflow_entries audit write fails",
+    "description": "WorkflowTransitionService.transition() falls back to a non-transactional path when MongoDB transactions are unsupported (e.g. Atlas M0). If the entity status update succeeds but the subsequent workflow_entries insertOne throws, the service attempts a compensating updateOne to revert status back to currentState and logs a CRITICAL message either way.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Test double configured to simulate an unsupported-transaction MongoDB error, and to fail the subsequent workflow_entries insertOne"],
+    "steps": [
+      "Force db.client.startSession()/withTransaction to throw an 'OperationNotSupportedInTransaction' error",
+      "Force the workflow_entries insertOne call to reject",
+      "Call transition('certification', certId, 'active', userId)",
+      "Inspect the certification's status field and the logger output afterward"
+    ],
+    "expectedResult": "The thrown error message is 'Audit trail write failed during non-transactional transition; entity state may have been reverted' (statusCode 500). The certification's status in the DB is reverted back to its pre-transition value (compensating revert succeeded), and a CRITICAL log entry documents both the failure and the successful revert.",
+    "tags": ["workflow", "data-integrity", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-006",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "Risk Webhooks",
+    "title": "Expiring and revoked certifications fire non-blocking risk webhooks to risk-management-service",
+    "description": "ExpiryAlertService.fireRiskWebhooks / fireRiskWebhooksForRevoked call riskWebhookService.fireEventAsync('/internal/trust-vault-risks/events', ...) for cert_expiring, cert_expired, and cert_revoked event types, and are designed to never throw even if the downstream call fails.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/risk-webhook.test.ts",
+    "preconditions": ["An organization has one certification expiring in 5 days (urgent) and one certification with status='revoked'"],
+    "steps": [
+      "Run generateAlertsForOrganization(orgId) followed by the internal fireRiskWebhooks/fireRiskWebhooksForRevoked calls",
+      "Inspect the outbound calls captured by a mock of risk-management-service's /internal/trust-vault-risks/events endpoint",
+      "Simulate risk-management-service returning a 500 on this call and re-run"
+    ],
+    "expectedResult": "Two webhook events are fired: eventType 'cert_expiring' (severity 'high', matching urgent alert level) and eventType 'cert_revoked' (severity 'critical'). When the downstream call fails with 500, runExpiryCheck still completes normally and returns a valid summary — the webhook failure is swallowed, not propagated.",
+    "tags": ["risk-webhook", "cross-service", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-INT-007",
+    "module": "trust-vault",
+    "category": "integration",
+    "subFeature": "My Reviews",
+    "title": "GET /workflow/my-reviews resolves the caller's identity by email fallback when the JWT subject is not a Mongo ObjectId",
+    "description": "workflow.routes.ts checks /^[0-9a-fA-F]{24}$/.test(rawUserId) first; if the Keycloak 'sub' claim is a UUID (not a 24-hex ObjectId), it falls back to looking up client_users by request.user.email to resolve the internal userId used for the assignment aggregation.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "trust-vault-service/tests/integration/my-reviews-identity.test.ts",
+    "preconditions": ["A user's Keycloak JWT 'sub' is a UUID string, not a 24-hex Mongo ObjectId", "That user's email exists in client_users and has one certification assigned to them"],
+    "steps": [
+      "Call GET /workflow/my-reviews with a JWT whose userId claim is a non-ObjectId UUID"
+    ],
+    "expectedResult": "The endpoint successfully resolves the internal userId via the client_users email lookup and returns the one assigned certification in data — it does not return an empty array or 500.",
+    "tags": ["workflow", "identity-resolution"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "slug": "integrations",
+  "name": "Integrations",
+  "scope": "feature",
+  "routes": [
+    "/integrations"
+  ],
+  "qaAgent": "Integrations_QA_Agent",
+  "description": "Integration hub, OAuth flows, Google Drive sync, connection health, credential security."
+}

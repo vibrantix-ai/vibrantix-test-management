@@ -1,0 +1,123 @@
+[
+  {
+    "id": "VEND-INT-001",
+    "module": "vendor-management",
+    "category": "integration",
+    "subFeature": "Trust Score Computation",
+    "title": "Closing an assessment triggers TrustScoreService.recalculate as a fire-and-forget side effect",
+    "description": "AssessmentService.transition, when targetState === 'closed', calls `void trustScoreService.recalculate(organizationId, doc.vendorId.toString(), userId).catch(...)` — the transition response returns before recalculation necessarily completes, so this integration point must be tested for eventual consistency, not synchronous completion.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "automationRef": "vendor-service/tests/integration/assessment-trustscore.spec.ts",
+    "preconditions": ["An assessment in under_review with all responses accepted, for a vendor with an existing trust score document"],
+    "steps": [
+      "Call the transition endpoint to close the assessment",
+      "Poll GET /trust-score/:vendorId until lastRecalculatedAt updates or a timeout elapses"
+    ],
+    "expectedResult": "lastRecalculatedAt on the vendor's trust score document advances to a timestamp after the transition call, and a new trust-score-history entry with snapshotReason='recalculation' and triggeredBy=userId is written — confirming the fire-and-forget call actually executes rather than being silently dropped by an unhandled rejection.",
+    "tags": ["trust-score", "assessment-governance", "async-side-effect"],
+    "requirement": "V-22",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-INT-002",
+    "module": "vendor-management",
+    "category": "integration",
+    "subFeature": "Analytics Data Accuracy",
+    "title": "vendor_assessment_closed and vendor_trust_score_recalculated PCL events are emitted with the correct organizationId/vendorId payload",
+    "description": "eventBridgeService.emit() is called from both AssessmentService.transition (on close) and TrustScoreService.recalculate. These events feed the Project Compliance Lookup (PCL) pipeline that other modules (dashboard, GRC framework) read from — a malformed or missing event silently breaks cross-module analytics without an obvious error.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Event bridge test harness capturing emitted events"],
+    "steps": [
+      "Close an assessment and capture the eventBridgeService.emit call",
+      "Independently trigger a trust score recalculation and capture its emit call"
+    ],
+    "expectedResult": "Two distinct events are captured: { eventType: 'vendor_assessment_closed', organizationId, vendorId, occurredAt } and { eventType: 'vendor_trust_score_recalculated', organizationId, vendorId, metadata: { overallScore, riskLevel }, occurredAt } — both with the correct, matching organizationId and vendorId for the test fixtures (not swapped or stale from a prior test run).",
+    "tags": ["analytics", "pcl-events", "cross-module"],
+    "requirement": "VM-12.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-INT-003",
+    "module": "vendor-management",
+    "category": "integration",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "assertProjectAccess correctly calls out to vibrantix-backend's project-scope endpoint and honors both allow and deny responses",
+    "description": "project-scope.ts's projectScopeClient.getScope(userId, organizationId) is an HTTP call to vibrantix-backend. This integration test verifies the real contract (not a mock): a project admin gets isProjectAdmin=true (bypasses filtering), a project member gets their projectIds populated, and a non-member gets a scope that does NOT include the target project.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "vibrantix-backend project-scope endpoint reachable in the test environment",
+      "Three seeded users: a project admin, a project member of project X, and a user who is a member of project Y only"
+    ],
+    "steps": [
+      "As the project X member, call assertProjectAccess for project X — expect no throw",
+      "As the project Y-only user, call assertProjectAccess for project X — expect AppError.forbidden",
+      "As the project admin, call assertProjectAccess for project X — expect no throw regardless of explicit membership"
+    ],
+    "expectedResult": "Each call resolves exactly as described — no cross-project data leaks and admin bypass works only for genuinely admin-scoped users, matching vibrantix-backend's resolveProjectScope contract.",
+    "tags": ["multi-tenant", "cross-service", "rbac"],
+    "requirement": "PLAC-006",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-INT-004",
+    "module": "vendor-management",
+    "category": "integration",
+    "subFeature": "Evidence Lifecycle",
+    "title": "Replacing vendor requirement mappings fires vendor_requirement_mapping_changed to sync compliance-frameworks coverage",
+    "description": "PUT /evidence/:id/requirement-mappings diffs old vs new requirementCodes/UCL control ids and, only when there's an actual change, calls firePclEvent('vendor_requirement_mapping_changed', orgId, { vendorId, projectId, addedRequirementCodes, removedRequirementCodes, addedRequirementUcls, removedRequirementUcls }) against vibrantix-backend's /api/internal/pcl/events.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An evidence document currently mapped to framework requirement codes ['A.5.19', 'A.5.20']"],
+    "steps": [
+      "Call PUT /evidence/:id/requirement-mappings replacing the mapping with ['A.5.19', 'A.5.22'] (drop A.5.20, add A.5.22)",
+      "Inspect the PCL event fired to vibrantix-backend"
+    ],
+    "expectedResult": "The event payload's addedRequirementCodes contains 'A.5.22' and removedRequirementCodes contains 'A.5.20' — 'A.5.19' (unchanged) appears in neither list, confirming the diff logic only reports the actual delta rather than the full new/old sets.",
+    "tags": ["analytics", "pcl-events", "cross-module"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-INT-005",
+    "module": "vendor-management",
+    "category": "integration",
+    "subFeature": "Trust Network Data Sharing",
+    "title": "Approving a Trust Network access request creates an auto-reciprocal pending request on the requester's own config",
+    "description": "TrustNetworkService.respondToRequest, on approval, fire-and-forgets a check of the requester's own trust network config: if the requester has sharingEnabled and is not already a partner/pending with the approver, it creates a reciprocal AccessRequest with requestReason:'auto-reciprocal' on the REQUESTER's config so the approving org can request access back.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org B has sent a pending access request to Org A",
+      "Org B's own trust network config has sharingEnabled = true and no existing relationship with Org A"
+    ],
+    "steps": [
+      "As Org A, approve Org B's pending access request",
+      "Fetch Org B's own trust network config's pendingRequests"
+    ],
+    "expectedResult": "Org B's config now contains a new pendingRequests entry with requestingOrgId = Org A's id, requestedBy='system', requestReason='auto-reciprocal', status='pending' — created automatically without any explicit action from Org A beyond the original approval.",
+    "tags": ["trust-network", "cross-org", "async-side-effect"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

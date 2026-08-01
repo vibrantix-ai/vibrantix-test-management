@@ -1,0 +1,176 @@
+[
+  {
+    "id": "AUDT-INT-001",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "CAR Creation",
+    "title": "POST /:auditId/corrective-actions issues unique carReference under concurrent creation requests",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An active audit exists", "Caller has audit.update permission"],
+    "steps": [
+      "Fire 10 concurrent POST /api/audit-assurance/:auditId/corrective-actions requests against the same audit",
+      "Query the resulting CAR documents' carReference values"
+    ],
+    "expectedResult": "All 10 CARs are created with distinct carReference values (e.g. CAR-0001..CAR-0010 pattern) and no 500/duplicate-key error is surfaced to any caller.",
+    "tags": ["race-condition", "car-lifecycle"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-002",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Segregation of Duties",
+    "title": "Same user cannot submit-verification and then verify their own CAR end-to-end via the API",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/integration/audit-assurance.spec.ts",
+    "preconditions": ["A CAR exists with status='remediation_in_progress', assignedTo=userA"],
+    "steps": [
+      "As userA, POST /:auditId/corrective-actions/:carId/submit-verification",
+      "As userA, POST /:auditId/corrective-actions/:carId/verify with outcome='passed'"
+    ],
+    "expectedResult": "The submit-verification call succeeds (status becomes 'verification_pending'). The subsequent verify call by the same userA is rejected 403 'Verifier cannot be the same as the assignee (segregation of duties)'; status remains 'verification_pending'.",
+    "tags": ["segregation-of-duties", "car-lifecycle"],
+    "requirement": "ISO 27001:2022 Clause 10.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-003",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Global Findings Search",
+    "title": "GET /api/audit-assurance/findings/search returns org-scoped results capped at 20 per page",
+    "description": "searchFindingsGlobal (findings.controller.js:357) is registered ahead of the :auditId-scoped routes at audit-assurance.routes.js:374 and caps page size at Math.min(20, requestedLimit).",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has 30+ findings across multiple audits"],
+    "steps": [
+      "As an org user, call GET /api/audit-assurance/findings/search?limit=100",
+      "Inspect the returned page size and whether any finding from a different org appears"
+    ],
+    "expectedResult": "Response returns at most 20 findings regardless of the requested limit, and every returned finding belongs to the caller's organization.",
+    "tags": ["pagination", "multi-tenant"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-004",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Audit Deletion",
+    "title": "Deleting an audit orphans its findings and CARs with no cascade check",
+    "description": "Live defect H-002 in the Audit Assurance QA tracker: deleteAudit() performs no cascade check for existing AuditNonConformance rows (findings/CARs) referencing the audit before deleting it.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An audit exists with at least one open finding and one open CAR"],
+    "steps": [
+      "As a user with audit.delete permission, call DELETE /api/audit-assurance/:auditId",
+      "Query AuditNonConformance for documents where auditId equals the deleted audit's id"
+    ],
+    "expectedResult": "Current behavior: the audit is deleted successfully and its findings/CARs remain in the database, now referencing a nonexistent auditId (orphaned) with no warning returned to the caller. Flag for remediation: deleteAudit() should either block deletion when open findings/CARs exist or cascade-soft-delete them.",
+    "tags": ["data-integrity", "cascade-delete"],
+    "linkedDefect": "H-002",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-005",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Management Review",
+    "title": "GET /:auditId/management-reviews/input-data aggregates current CAR and finding state for the audit",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Audit has a mix of open and closed findings/CARs"],
+    "steps": [
+      "Call GET /api/audit-assurance/:auditId/management-reviews/input-data"
+    ],
+    "expectedResult": "Response includes counts/details reflecting the audit's current findings and CAR states so a management review meeting has accurate ISO 27001 Clause 9.3 input data to review.",
+    "tags": ["management-review", "iso27001"],
+    "requirement": "ISO 27001:2022 Clause 9.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-006",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Findings State Machine",
+    "title": "PATCH finding allows a direct open->closed status change with no transition validation",
+    "description": "updateFinding (findings.controller.js:255-311) writes req.body.status directly onto the document via FIELD_MAP with no check that the new value is a legal transition from the current status — unlike CARs, which have (a partial) CAR_VALID_TRANSITIONS check.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A finding exists with status='open', recordType='finding'"],
+    "steps": [
+      "As a user with audit.update permission, call PATCH /:auditId/findings/:findingId with { status: 'closed' } in a single request, skipping any intermediate review/remediation state"
+    ],
+    "expectedResult": "Current behavior: the request succeeds and the finding's status jumps directly from 'open' to 'closed' with no server-side rejection. Flag for remediation: introduce a transition map for finding status analogous to CAR_VALID_TRANSITIONS.",
+    "tags": ["state-machine", "findings"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-007",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "CAR Escalation",
+    "title": "POST /corrective-actions/escalate bumps escalationLevel monotonically based on daysOverdue thresholds",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR exists past its targetClosureDate by an amount exceeding the 'manager' threshold in CAR_ESCALATION_THRESHOLDS_DAYS"],
+    "steps": [
+      "Call POST /api/audit-assurance/:auditId/corrective-actions/escalate"
+    ],
+    "expectedResult": "The overdue CAR's escalationLevel moves from 'none'/'auditor' up to 'manager' (matching the configured threshold), and escalationLevel never moves backward on a subsequent call if the CAR becomes less overdue relative to a stale snapshot.",
+    "tags": ["escalation", "car-lifecycle"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-INT-008",
+    "module": "audit-assurance",
+    "category": "integration",
+    "subFeature": "Soft Delete",
+    "title": "Mixed soft-delete conventions across audit_scope_items/audit_findings/audit_nonconformances produce inconsistent visibility of deleted records",
+    "description": "Live defect H-003 (in-progress): audit_scope_items uses both isDeleted and deletedAt; the legacy audit_findings collection uses only isDeleted with no equivalent pre-find auto-filter hook; only audit_nonconformances is standardized on deletedAt with the pre(/^find/) hook.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A soft-deleted document exists in each of AuditScopeItem, legacy AuditFinding, and AuditNonConformance"],
+    "steps": [
+      "Query each of the three collections/models using their respective default list method with no explicit deletedAt/isDeleted filter",
+      "Compare whether each correctly excludes its soft-deleted document"
+    ],
+    "expectedResult": "AuditNonConformance correctly excludes the soft-deleted row via its automatic pre-find hook. AuditScopeItem and the legacy AuditFinding model require the caller to remember the correct field name manually — document any query path that omits this and would leak a soft-deleted record.",
+    "tags": ["soft-delete", "data-integrity"],
+    "linkedDefect": "H-003",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

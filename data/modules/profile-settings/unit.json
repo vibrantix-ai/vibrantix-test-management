@@ -1,0 +1,137 @@
+[
+  {
+    "id": "PROF-UNIT-001",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Name Validation",
+    "title": "Suspicious-word check matches case-insensitively and ignores surrounding whitespace",
+    "description": "profile/page.jsx's handleSaveProfile() builds isInvalid(v) as SUSPICIOUS_WORDS.has(v.trim().toLowerCase()) against a fixed Set (test, admin, dummy, sample, demo, fake, example, default, placeholder, etc.). Verifies the trim+lowercase normalisation actually catches padded/mixed-case variants, not just exact lowercase matches.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["isInvalid()/SUSPICIOUS_WORDS logic extracted or tested in isolation from ProfilePage"],
+    "steps": [
+      "Call isInvalid('  Test  ')",
+      "Call isInvalid('ADMIN')",
+      "Call isInvalid('DeMo')"
+    ],
+    "expectedResult": "All three calls return true — whitespace padding and casing do not defeat the suspicious-word check.",
+    "tags": ["validation", "name-validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-UNIT-002",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Name Validation",
+    "title": "Suspicious-word check is exact-match, not substring — legitimate names containing a banned word are not flagged",
+    "description": "isInvalid() uses SUSPICIOUS_WORDS.has(v.trim().toLowerCase()), a Set membership test against the whole trimmed value — not a .includes()/regex substring test. A name like 'Newton' (contains 'new') or 'Sampson' (contains 'sample'... no, contains 'samp') must not be rejected just because a banned word appears as a substring.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "steps": [
+      "Call isInvalid('Newton')",
+      "Call isInvalid('Updatedeep')",
+      "Call isInvalid('Demography')"
+    ],
+    "expectedResult": "All three calls return false — the check only rejects the banned words as complete values, never as substrings of a longer legitimate name.",
+    "tags": ["validation", "name-validation", "false-positive"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-UNIT-003",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Display Helpers",
+    "title": "getUserDisplayName() falls back through fullName -> firstName+lastName -> name -> email in priority order",
+    "description": "profile/page.jsx's getUserDisplayName(u): returns u.fullName if present, else `${firstName} ${lastName}`.trim() if either is present, else u.name, else u.email, else ''.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "planned",
+    "steps": [
+      "Call getUserDisplayName({ fullName: 'A B', firstName: 'X', email: 'x@y.com' }) — expect 'A B'",
+      "Call getUserDisplayName({ firstName: 'Jane', lastName: 'Doe', email: 'j@d.com' }) — expect 'Jane Doe'",
+      "Call getUserDisplayName({ name: 'Legacy Name', email: 'l@n.com' }) — expect 'Legacy Name'",
+      "Call getUserDisplayName({ email: 'only@email.com' }) — expect 'only@email.com'",
+      "Call getUserDisplayName(null) — expect ''"
+    ],
+    "expectedResult": "Each call returns exactly the value from the highest-priority source available, matching the documented fallback order.",
+    "tags": ["helper-function"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-UNIT-004",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Display Helpers",
+    "title": "getDepartmentName() handles a populated department object, a plain string, and an absent field",
+    "description": "profile/page.jsx's getDepartmentName(u): returns '' if !u?.department, u.department.name if department is an object, otherwise the raw string value.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "planned",
+    "steps": [
+      "Call getDepartmentName({ department: { name: 'Engineering' } }) — expect 'Engineering'",
+      "Call getDepartmentName({ department: 'Finance' }) — expect 'Finance'",
+      "Call getDepartmentName({}) — expect ''"
+    ],
+    "expectedResult": "All three cases return the documented value with no thrown error.",
+    "tags": ["helper-function"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-UNIT-005",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Profile Persistence",
+    "title": "updateMe's conditional $set construction skips an empty-string firstName/lastName rather than clearing it",
+    "description": "user.controller.js exports.updateMe builds its Mongo $set with `...(firstName && { firstName })` — a spread guarded by JS truthiness, so an empty string '' (falsy) is silently omitted from the update instead of clearing the stored name. This is a controller-level safety net independent of any frontend validation, and should be covered directly against the update-object-building logic.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["updateMe's $set-building logic tested with a mocked User.findByIdAndUpdate, or the update object construction extracted for direct unit testing"],
+    "steps": [
+      "Invoke the update-object builder with firstName: '' and lastName: 'Smith'",
+      "Inspect the resulting $set payload"
+    ],
+    "expectedResult": "The $set payload contains lastName: 'Smith' but does NOT contain a firstName key at all — an empty string never reaches the database as a cleared value.",
+    "tags": ["profile-form", "edge-case"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROF-UNIT-006",
+    "module": "profile-settings",
+    "category": "unit",
+    "subFeature": "Password Change",
+    "title": "changeOwnPassword rejects when newPassword equals oldPassword before any Keycloak call is made",
+    "description": "user.controller.js exports.changeOwnPassword checks `if (newPassword === oldPassword) throw AppError.badRequest(...)` as its very first statement, ahead of the User lookup and the verifyUserPassword() Keycloak ROPC call — so this guard is cheap and short-circuits before any network I/O.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["verifyUserPassword and setUserPassword mocked so the test can assert they were never invoked"],
+    "steps": [
+      "Call changeOwnPassword with oldPassword === newPassword",
+      "Assert the thrown error and that verifyUserPassword/setUserPassword were never called"
+    ],
+    "expectedResult": "A 400 AppError 'New password must be different from the current password' is thrown, and no Keycloak API calls occur.",
+    "tags": ["password-change", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

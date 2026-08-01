@@ -1,0 +1,220 @@
+[
+  {
+    "id": "RISK-UNIT-001",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Scoring",
+    "title": "calculateRiskLevel() maps score to level using the canonical 20/15/10/5 thresholds",
+    "description": "risk-management-service/src/utils/validation.ts calculateRiskLevel() is the single source of truth for score-to-level mapping used by RiskScoreSchema's transform. Verifies boundary values on both sides of each threshold.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/utils/validation.ts:592",
+    "steps": [
+      "Call calculateRiskLevel(20) and calculateRiskLevel(19)",
+      "Call calculateRiskLevel(15) and calculateRiskLevel(14)",
+      "Call calculateRiskLevel(10) and calculateRiskLevel(9)",
+      "Call calculateRiskLevel(5) and calculateRiskLevel(4)"
+    ],
+    "expectedResult": "Returns 'critical' for >=20, 'high' for 15-19, 'medium' for 10-14, 'low' for 5-9, 'info' for <5 — with no off-by-one at any boundary.",
+    "tags": ["scoring", "unit"],
+    "requirement": "ISO 27001 Clause 6.1.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-002",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Scoring",
+    "title": "RiskScoreSchema always derives score/level server-side, ignoring any client-supplied score or level",
+    "description": "RiskScoreSchema.transform() in validation.ts recomputes score = likelihood * impact and level = calculateRiskLevel(score) unconditionally, so a client cannot forge a lower risk level by sending a mismatched score/level alongside likelihood/impact.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Parse RiskScoreSchema with { likelihood: 5, impact: 5, score: 1, level: 'info' }"
+    ],
+    "expectedResult": "Parsed output has score=25 and level='critical' — the forged score/level inputs are discarded, not honored.",
+    "tags": ["scoring", "integrity", "unit"],
+    "requirement": "ISO 27001 Clause 8.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-003",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Module Risk Auto-Promotion",
+    "title": "ModuleRiskService.severityToScore() uses different level thresholds than calculateRiskLevel()",
+    "description": "ModuleRiskService.severityToScore() and BaseIntegrationService.severityToScore() classify a score>=20 as critical, >=12 as high, >=6 as medium, else low (no 'info' tier) — this differs from validation.ts calculateRiskLevel()'s 20/15/10/5 thresholds used for manually-scored risks. A 'high' severity module risk (4x4=16) promotes as level 'high' under this formula but would be 'high' under calculateRiskLevel too (15-19), while a 'medium' severity module risk (3x3=9) promotes as 'medium' here but would be 'low' under calculateRiskLevel (5-9). Documents the discrepancy so auto-promoted and manually-scored risks of the same score aren't silently misclassified against each other.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call ModuleRiskService['severityToScore']('medium') → expect {likelihood:3, impact:3, score:9, level:'medium'}",
+      "Compare against calculateRiskLevel(9) from validation.ts → expect 'low'"
+    ],
+    "expectedResult": "Confirms the two scoring formulas disagree at score=9 (medium via module-risk promotion vs low via manual assessment). Flagged for product decision on whether promotion severity should use the same thresholds as manual assessment.",
+    "tags": ["scoring", "consistency", "module-risk"],
+    "requirement": "ISO 27001 Clause 6.1.2",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-004",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Lifecycle Phase Transitions",
+    "title": "isValidPhaseTransition() rejects skipping identification straight to mitigation",
+    "description": "RiskRegisterService.isValidPhaseTransition() (private) defines the RMF phase graph: identification -> [assessment, closure]; assessment -> [identification, mitigation, monitoring, closure]; mitigation -> [assessment, monitoring, closure]; monitoring -> [mitigation, closure]; closure -> [monitoring]. A risk must pass through assessment before mitigation.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:716",
+    "preconditions": ["Risk currently in phase 'identification'"],
+    "steps": [
+      "Call movePhase with targetPhase='mitigation' while risk.phase='identification'"
+    ],
+    "expectedResult": "Request fails with 400 'Invalid phase transition from identification to mitigation'.",
+    "tags": ["lifecycle", "state-machine"],
+    "requirement": "ISO 27001 Clause 8.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-005",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Lifecycle Phase Transitions",
+    "title": "closure phase can only re-enter monitoring, never directly back to mitigation",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Risk currently in phase 'closure'"],
+    "steps": [
+      "Call movePhase with targetPhase='mitigation' while risk.phase='closure'",
+      "Call movePhase with targetPhase='monitoring' while risk.phase='closure'"
+    ],
+    "expectedResult": "The first call is rejected (400, invalid transition); the second succeeds — closure can only reopen into monitoring, matching the documented 'Can reopen from closure' transition table.",
+    "tags": ["lifecycle", "state-machine"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-006",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Acceptance",
+    "title": "AcceptanceRequestSchema rejects a justification shorter than 50 characters",
+    "description": "AcceptanceRequestSchema.justification enforces min(50) with the explicit message 'Justification must be at least 50 characters to constitute adequate documented rationale' — same rule applies to RenewalRequestSchema.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/utils/validation.ts:442",
+    "steps": [
+      "Parse AcceptanceRequestSchema with justification='Too short', validUntil=<future date>, approverIds=[<valid ObjectId>]"
+    ],
+    "expectedResult": "Zod validation fails with a message referencing the 50-character minimum; POST /risks/:riskId/acceptance/request returns 400 with field-level details.",
+    "tags": ["acceptance", "validation"],
+    "requirement": "ISO 27001 Annex A.5.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-007",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Acceptance",
+    "title": "AcceptanceRequestSchema requires at least one and at most ten approverIds",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Parse AcceptanceRequestSchema with approverIds=[] (empty array)",
+      "Parse AcceptanceRequestSchema with 11 distinct valid ObjectId strings in approverIds"
+    ],
+    "expectedResult": "Both parses fail validation — empty approverIds violates min(1), 11 entries violates max(10).",
+    "tags": ["acceptance", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-008",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Escalation",
+    "title": "EscalateRiskRequestSchema clamps escalation level to 1-3 and defaults to 1",
+    "description": "EscalateRiskRequestSchema requires reason min(10) chars and level is an int between 1 and 3, defaulting to 1 when omitted — matching the L1/L2/L3 escalation tiers shown in GovernanceMetrics.escalatedRisks.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Parse EscalateRiskRequestSchema omitting 'level' with a valid reason of 10+ characters",
+      "Parse EscalateRiskRequestSchema with level=4"
+    ],
+    "expectedResult": "First parse succeeds with level defaulted to 1; second parse fails because 4 is outside the 1-3 range.",
+    "tags": ["escalation", "validation", "governance"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-009",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Risk Code Generation",
+    "title": "generateRiskCode() returns null when no projectId is supplied instead of falling back to a misleading project",
+    "description": "A prior implementation fell back to 'the org's earliest-created project' when projectId was absent, silently producing a riskCode that implied the wrong origin. The current generateRiskCode() in utils/riskCode.ts returns null in that case and never throws.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/utils/riskCode.ts:16",
+    "steps": [
+      "Call generateRiskCode(db, undefined, organizationId)"
+    ],
+    "expectedResult": "Function resolves to null (not a throw, not a code derived from an unrelated project).",
+    "tags": ["risk-code", "data-integrity"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-UNIT-010",
+    "module": "risk-register",
+    "category": "unit",
+    "subFeature": "Governance Review Scheduling",
+    "title": "notificationWindowMs() returns a shorter dedup window than the review interval so a missed run is never permanently silenced",
+    "description": "review-scheduler.job.ts intentionally sizes the dedup window shorter than each reviewFrequency interval (Monthly=25d vs a ~30d cycle, Quarterly=80d, Semi-Annual=170d, Annual=350d) so a skipped daily job run doesn't leave the notification suppressed forever.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/jobs/review-scheduler.job.ts:66",
+    "steps": [
+      "Call notificationWindowMs('Monthly'), ('Quarterly'), ('Semi-Annual'), ('Annual'), and an unrecognized string"
+    ],
+    "expectedResult": "Returns 25/80/170/350 days in ms respectively, and falls back to the Annual (350-day) window for any unrecognized frequency string.",
+    "tags": ["governance", "review-schedule"],
+    "requirement": "ISO 27001 Clause 9.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

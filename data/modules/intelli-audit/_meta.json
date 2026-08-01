@@ -1,0 +1,10 @@
+{
+  "slug": "intelli-audit",
+  "name": "Intelli Audit",
+  "scope": "feature",
+  "routes": [
+    "/intelli-audit"
+  ],
+  "qaAgent": "Intelli_Audit_QA_Agent",
+  "description": "AI audit plan generation, scope customisation, scheduling, plan-to-audit handoff."
+}

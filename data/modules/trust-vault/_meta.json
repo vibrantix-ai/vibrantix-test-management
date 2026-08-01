@@ -1,0 +1,10 @@
+{
+  "slug": "trust-vault",
+  "name": "Trust Vault",
+  "scope": "feature",
+  "routes": [
+    "/trust-vault"
+  ],
+  "qaAgent": "Trust_Vault_QA_Agent",
+  "description": "Certification lifecycle, share links, Trust Network sharing, vault health scoring."
+}

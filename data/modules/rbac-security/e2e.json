@@ -1,0 +1,139 @@
+[
+  {
+    "id": "RBAC-E2E-001",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Project-Level Access Control",
+    "title": "A freshly invited NORMAL_USER with no project assignment sees a near-empty workspace until added to a project",
+    "description": "End-to-end proof of the 2026-07-19 design (systemRoles.js, loadPermissions.js:44): NORMAL_USER holds zero org-wide permissions by design; all operational access flows from ProjectMember rows.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A user is invited to the organization with the default NORMAL_USER role", "The user has not been added to any project yet"],
+    "steps": [
+      "Complete the invite/registration flow and log in as this user",
+      "Observe the sidebar/nav and dashboard",
+      "Attempt to navigate directly to /evidence-management via URL"
+    ],
+    "expectedResult": "Sidebar shows no operational module nav items (no evidence/policy/audit/risk/vendor entries); dashboard shows an empty/onboarding state. Direct navigation to /evidence-management renders PermissionGate's Access Denied page, not the evidence list.",
+    "tags": ["rbac", "plac", "e2e", "zero-trust-default"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-E2E-002",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Project-Level Access Control",
+    "title": "Adding a user as a Project Member grants operational access strictly within that project",
+    "description": "Verifies systemProjectRoles.js's PROJECT_ADMIN_MODULE_PERMISSIONS grant (evidence, policy, compliance, scan, smart_compliance, audit, pre_audit, cfrs, workflow) actually surfaces in the UI for the assigned project and nowhere else.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org admin has created Project A and Project B", "User U currently has no project memberships"],
+    "steps": [
+      "As org admin, add User U to Project A with the system 'Project Member' role",
+      "Log in as User U, switch active project to Project A, navigate to Evidence Management, and upload an evidence item",
+      "Switch active project selector to Project B (or attempt direct navigation while B is selected)"
+    ],
+    "expectedResult": "Within Project A, User U can view/create evidence as expected. With Project B selected/targeted, the evidence list is empty or the page shows Access Denied — User U has no ProjectMember row on Project B.",
+    "tags": ["rbac", "plac", "e2e", "multi-project-isolation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-E2E-003",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Frontend Route Guards",
+    "title": "PermissionGate renders the full 403 page for an org-only route even though Next.js middleware allows the authenticated session through",
+    "description": "vibrantix-client-panel/src/middleware.js only enforces session-level auth (getToken); feature-level RBAC is PermissionGate's job (components/common/PermissionGate.jsx). A NORMAL_USER with no org-only permissions must be blocked at the PermissionGate layer, not the middleware layer.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "planned",
+    "preconditions": ["Logged in as a NORMAL_USER with no role.read/organization.update permissions"],
+    "steps": [
+      "While authenticated, manually type the URL /organization/roles into the browser address bar",
+      "Observe the resulting page"
+    ],
+    "expectedResult": "The request is NOT redirected to /auth/login (middleware sees a valid session and lets it through) — instead PermissionGate's AccessDeniedPage renders ('You don't have permission to view this page'), confirming the two-layer guard (session vs. feature) works as designed.",
+    "tags": ["rbac", "e2e", "route-guard"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-E2E-004",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Catalog Separation",
+    "title": "Attempting to grant a project-scoped permission through the org-level Custom Role UI surfaces a visible error, not a silent failure",
+    "description": "Backend rejection (utils/catalogSeparation.js) must be surfaced to the admin in the Roles UI, not swallowed as a generic failed-save toast that leaves the admin unsure whether the role was partially saved.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as an org admin on /organization/roles", "Creating a new Custom Role"],
+    "steps": [
+      "Open 'Create Custom Role', name it, and in the permission grid select 'Evidence: Create' (a project-scoped permission) alongside 'User: Read' (org-only)",
+      "Click Save"
+    ],
+    "expectedResult": "Save fails with a clear, specific error message referencing the disallowed permission(s) (surfacing the backend's 'These permissions are not allowed here: evidence.create'), and the role is not partially created.",
+    "tags": ["rbac", "plac", "e2e", "catalog-separation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-E2E-005",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "MSSP Portal Boundary",
+    "title": "An MSSP provider user is confined to the Partner Portal shell end-to-end, front and back",
+    "description": "Combines client middleware.js's isMssp redirect logic (portalMode==='mssp') with backend enforcePortalBoundary (portalBoundary.js) — both layers must agree so a provider session can never reach customer operational pages either by UI navigation or direct API call.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User's organization.kind === 'mssp_provider' and MsspProvider.status === 'active'"],
+    "steps": [
+      "Log in as the MSSP provider user via the shared Keycloak SSO",
+      "Observe post-login landing route",
+      "Manually navigate to /evidence-management or /dashboard"
+    ],
+    "expectedResult": "Login lands on /mssp/dashboard (or the configured Partner Portal URL). Manual navigation to a customer route redirects back to the MSSP destination; any direct API call to a customer-only endpoint (e.g. /api/evidence) independently returns 403 PORTAL_BOUNDARY_DENIED from the backend even if the frontend redirect were somehow bypassed.",
+    "tags": ["rbac", "e2e", "mssp", "multi-tenant"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-E2E-006",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Access Revocation",
+    "title": "Removing a user's project membership takes effect on their very next request, unlike an org-level role change",
+    "description": "augmentPermissionsWithProjectGrant.js queries ProjectMember.findOne live on every request (never cached) — project-level revocation is immediate. This is a deliberate contrast to loadPermissions.js's Redis-cached org-level role resolution, which can lag up to the cache TTL after a role/permission change.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User U is an active ProjectMember of Project A with evidence.create access", "User U has an active session"],
+    "steps": [
+      "As User U, confirm you can open 'Upload Evidence' on Project A",
+      "As org admin (in a separate session), remove User U's ProjectMember row from Project A",
+      "Without User U logging out, immediately retry the same evidence upload action"
+    ],
+    "expectedResult": "The very next request after removal is denied (403) — the project-scoped grant is re-resolved fresh every request via a live DB query, so there is no multi-hour staleness window for this specific revocation (in contrast to org-level role/permission changes, which can remain cached).",
+    "tags": ["rbac", "plac", "e2e", "access-revocation"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

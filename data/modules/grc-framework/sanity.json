@@ -1,0 +1,105 @@
+[
+  {
+    "id": "GRCF-SAN-001",
+    "module": "grc-framework",
+    "category": "sanity",
+    "subFeature": "Framework Catalog API",
+    "title": "GET /compliance-frameworks catalog list still returns a well-formed pagination object post-deploy",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "GET /compliance-frameworks/?limit=500&status=active"
+    ],
+    "expectedResult": "200 response with data[] and pagination{ page, limit, total, pages } all present and numeric — no schema drift on the shared catalog endpoint other modules (Smart Compliance, Vendor, Policy) also depend on.",
+    "tags": ["sanity", "api-contract"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SAN-002",
+    "module": "grc-framework",
+    "category": "sanity",
+    "subFeature": "Available Frameworks Flags",
+    "title": "available-frameworks entries still carry isAdded and isLicensed flags after a deploy",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "GET /compliance-frameworks/projects/:projectId/available-frameworks",
+      "Inspect one entry from the frameworks array"
+    ],
+    "expectedResult": "Each entry has boolean isAdded and isLicensed fields (not undefined), plus controlCount — the two flags FrameworksManager.jsx relies on to decide Activate/Deactivate/Upgrade Required button state.",
+    "tags": ["sanity", "licensing"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SAN-003",
+    "module": "grc-framework",
+    "category": "sanity",
+    "subFeature": "Permission Gating",
+    "title": "Activate/Deactivate buttons remain permission-gated after UI changes",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has compliance.read but neither compliance.create nor compliance.delete"],
+    "steps": [
+      "Open /grc-framework as this user",
+      "Inspect an active and an inactive framework tile"
+    ],
+    "expectedResult": "Neither Activate nor Deactivate buttons are rendered for this user (PermissionHide hides them) — 'View Compliance Map' remains visible if applicable.",
+    "tags": ["sanity", "rbac"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SAN-004",
+    "module": "grc-framework",
+    "category": "sanity",
+    "subFeature": "Control Sort Order",
+    "title": "Controls within a domain remain naturally sorted (A.5.2 before A.5.10) after any compliance-map change",
+    "description": "controlsByDomain sorts requirementCode with localeCompare(..., {numeric:true}) specifically to avoid lexicographic ordering putting A.5.10 before A.5.2.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A domain contains at least controls A.5.2, A.5.9 and A.5.10"],
+    "steps": [
+      "Open the compliance map for a framework with this domain",
+      "Expand the domain and read the control order"
+    ],
+    "expectedResult": "Order is A.5.2, A.5.9, A.5.10 — not A.5.10, A.5.2, A.5.9 (which a plain string sort would produce).",
+    "tags": ["sanity", "sorting"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "GRCF-SAN-005",
+    "module": "grc-framework",
+    "category": "sanity",
+    "subFeature": "Framework Catalog",
+    "title": "Refresh button is disabled while loading and when no project is selected",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open /grc-framework with no project selected",
+      "Observe the Refresh button state",
+      "Select a project and observe the button state during the initial data load"
+    ],
+    "expectedResult": "Refresh is disabled (isDisabled={!projectId || loading}) in both states, preventing a call to refreshProjectSummary with an undefined projectId.",
+    "tags": ["sanity", "ui-state"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

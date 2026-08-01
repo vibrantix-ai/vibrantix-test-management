@@ -1,0 +1,47 @@
+[
+  {
+    "id": "SUPP-PERF-001",
+    "module": "support",
+    "category": "performance",
+    "subFeature": "Background Sync",
+    "title": "Every ticket-list page load fans out one Jira API call per unsynced/active ticket on that page, with no debounce across repeated fetches",
+    "description": "triggerBackgroundSync() is invoked from BOTH listMyBugReports and listAllBugReports on every single request, and loops sequentially over (a) all reports without a jiraKey (createIssue call each) and (b) all non-Closed reports with a jiraKey (getIssueStatus call each) for the current page of results. There is no last-synced timestamp, lock, or in-flight guard — a user rapidly clicking 'Refresh' or a dashboard polling /bug-reports on an interval will trigger a fresh, fully overlapping batch of Jira API calls every time, proportional to page size (up to 100 per request).",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A page of 50-100 bug reports, most with jiraKey set and status != Closed"],
+    "steps": [
+      "Call GET /bug-reports?limit=100 for a page with ~80 active synced tickets",
+      "Immediately call it again 3 more times within 2 seconds (simulating a user mashing Refresh)",
+      "Count outbound Jira getIssueStatus calls made during this window"
+    ],
+    "expectedResult": "Current behavior: each of the 4 requests independently schedules its own full sequential sync pass (~80 Jira calls each = ~320 total), with no coalescing or minimum-sync-interval guard — this should be flagged as a Jira rate-limit/latency risk under concurrent or polling usage and considered for a per-report min-sync-interval or a queue-based approach instead of per-request setImmediate fan-out.",
+    "tags": ["jira-sync", "background-sync", "rate-limiting"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-PERF-002",
+    "module": "support",
+    "category": "performance",
+    "subFeature": "Background Sync",
+    "title": "Background sync processes tickets sequentially (for...of with await) rather than in parallel, extending total sync time linearly with page size",
+    "description": "Both loops inside triggerBackgroundSync() (`for (const report of unsynced)` and `for (const report of active)`) await each Jira call one at a time rather than using Promise.all/allSettled. Because this runs inside setImmediate it never blocks the HTTP response, but it does mean a page of N active tickets takes roughly N times a single getIssueStatus round-trip to fully settle, keeping stale statuses visible longer on large pages and increasing the odds that a second overlapping sync (see SUPP-PERF-001) starts before the first finishes.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A page of 100 active synced tickets (the max allowed limit)"],
+    "steps": [
+      "Call GET /bug-reports/all?limit=100 for a page of 100 active tickets with a mocked Jira getIssueStatus averaging 200ms latency",
+      "Measure wall-clock time from request receipt until all 100 background syncs have completed"
+    ],
+    "expectedResult": "Current behavior: total background sync time is approximately 100 x 200ms = ~20s (sequential), versus roughly 200ms-2s if batched/parallelized with reasonable concurrency — flagged as an optimization opportunity, not a functional defect, since it doesn't affect the already-returned page response.",
+    "tags": ["jira-sync", "background-sync", "concurrency"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

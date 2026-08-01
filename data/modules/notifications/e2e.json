@@ -1,0 +1,152 @@
+[
+  {
+    "id": "NOTF-E2E-001",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Real-Time Delivery",
+    "title": "User receives a live bell notification when assigned a task, without reloading the browser",
+    "description": "Covers the full path: assignment action (e.g. audit requirement assignment) -> notificationService.notifyAssignment() -> POST /notifications/send -> dispatch() -> BullMQ/socket -> NotificationContext's socket.on('notification') handler prepends it to state.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User A and User B both logged in, User B's browser session is idle on any page", "User A has permission to assign audit requirements to User B"],
+    "steps": [
+      "As User A, assign an audit requirement to User B",
+      "Without User B refreshing the page, observe the bell icon in User B's Navbar"
+    ],
+    "expectedResult": "Within a few seconds the bell badge count increments by 1 and opening NotificationMenu shows the new 'Task Assigned' entry with the correct title, without any manual refresh.",
+    "tags": ["socket.io", "real-time", "bell-badge"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-002",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Read/Unread State",
+    "title": "Clicking a notification marks it read, removes the unread highlight, and decrements the bell badge",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has at least 2 unread notifications, one with navigateTo set"],
+    "steps": [
+      "Open NotificationMenu and note the bell badge count",
+      "Click the unread notification that has a navigateTo value"
+    ],
+    "expectedResult": "PUT /notifications/{id}/read fires, the browser navigates to navigateTo (window.location.href), and on return the bell badge count is one less than before and that item's row no longer has the unread (blue) background.",
+    "tags": ["read-state", "navigation", "bell-badge"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-003",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Read/Unread State",
+    "title": "Mark-all-read clears the bell badge and every NotificationMenu row loses its unread highlight in the same session",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has 5+ unread notifications visible in NotificationMenu"],
+    "steps": [
+      "Open NotificationMenu",
+      "Trigger 'mark all read' (PUT /notifications/mark-all-read)"
+    ],
+    "expectedResult": "Bell badge disappears (or shows 0), and all rows in NotificationMenu immediately show the read (transparent) background without needing to reopen the menu or refresh.",
+    "tags": ["mark-all-read", "bell-badge"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-004",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Delete Notification",
+    "title": "Deleting a notification removes it from the menu immediately and does not corrupt the unread count",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has at least 3 notifications: 1 unread, 2 read"],
+    "steps": [
+      "Open NotificationMenu",
+      "Click the delete (X) icon on the unread notification"
+    ],
+    "expectedResult": "The item disappears from the list without a page reload, DELETE /notifications/{id} is called, and the bell badge count decreases by 1 (since the deleted item was unread) rather than staying stale or going negative.",
+    "tags": ["delete", "bell-badge"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-005",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Socket Reconnection",
+    "title": "Socket reconnects and rejoins the active project room after a transient network drop",
+    "description": "NotificationContext configures reconnection: true, reconnectionAttempts: 5. On 'reconnect' it re-emits 'join-project-room' for the currently selected project so scan events resume without the user re-selecting the project.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A cloud posture scan is actively running for the selected project", "User's browser socket connection can be interrupted (e.g. via devtools network throttling/offline toggle)"],
+    "steps": [
+      "While a scan is running and scan-progress events are visibly updating, briefly force the browser offline for ~10 seconds, then restore connectivity",
+      "Observe the console 'reconnect' log and subsequent scan-progress updates"
+    ],
+    "expectedResult": "The client reconnects, automatically re-emits join-project-room for the selected project, receives 'project-room-joined' again, and scan-progress updates resume without requiring a manual page refresh or project reselection.",
+    "tags": ["socket.io", "reconnection", "scan-progress"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-006",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "Multi-Tab Sync",
+    "title": "Marking a notification read in one tab is not reflected in a second open tab until the 60-second poll fires",
+    "description": "NotificationContext has no BroadcastChannel/localStorage-event sync between tabs — each tab holds independent React state, and the only cross-tab reconciliation is the 60s setInterval(fetchNotifications) poll (NOTIF-010). This documents the real, current multi-tab gap rather than an assumed instant-sync behavior.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Same user logged into the same org/project in two browser tabs, both showing the same unread notification"],
+    "steps": [
+      "In Tab 1, click the unread notification to mark it read",
+      "Immediately (within a few seconds) check the bell badge and NotificationMenu state in Tab 2"
+    ],
+    "expectedResult": "Tab 2 still shows the notification as unread and the bell badge unchanged immediately after Tab 1's action; Tab 2 only reflects the read state after its next 60-second poll interval elapses (or a manual refresh). This is expected current behavior, not a crash — flagged so a future push-based cross-tab sync isn't silently assumed to already exist.",
+    "tags": ["multi-tab", "cross-tab-sync", "gap"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "NOTF-E2E-007",
+    "module": "notifications",
+    "category": "e2e",
+    "subFeature": "NotificationMenu Rendering",
+    "title": "Empty inbox renders 'No notifications' instead of a blank or errored menu",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A freshly onboarded user/org with zero notifications ever dispatched"],
+    "steps": [
+      "Log in as the fresh user",
+      "Open NotificationMenu from the Navbar bell icon"
+    ],
+    "expectedResult": "MenuList renders a single 'No notifications' row (gray text), no console errors from mapping over an empty array, and the bell shows no badge.",
+    "tags": ["empty-state", "ui"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

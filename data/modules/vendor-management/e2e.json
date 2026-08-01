@@ -1,0 +1,177 @@
+[
+  {
+    "id": "VEND-E2E-001",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Assessment Governance",
+    "title": "Full assessment lifecycle: template-based creation through vendor submission to closure auto-recalculates trust score",
+    "description": "Exercises AssessmentService.create (template linkage), sendLink (not_started→assigned), the vendor portal submit flow (→under_review), and transition to closed, which per AssessmentService.transition also fires trustScoreService.recalculate(orgId, vendorId, userId) fire-and-forget.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An active questionnaire template exists with at least 2 questions",
+      "A vendor exists in the org with a bootstrapped trust score of 50/medium"
+    ],
+    "steps": [
+      "Create an assessment from the template for the vendor",
+      "Call sendLink with a vendorEmail — confirm status moves not_started → assigned and a magic link + 6-digit passcode are generated",
+      "As the vendor (via the portal token), verify the passcode, answer all questions, and call /submit",
+      "As an org reviewer, open the review queue, accept every question response",
+      "Observe the assessment auto-transition to closed once all responses are reviewed"
+    ],
+    "expectedResult": "Assessment status ends at 'closed' with a computed score.overallScore/passedThreshold, reviewedBy/reviewedAt stamped, and the vendor's trust score document is recalculated (overallScore, riskLevel, and a new trust-score-history entry with snapshotReason='recalculation') within the same test run without manual triggering.",
+    "tags": ["assessment-governance", "trust-score", "workflow"],
+    "requirement": "VM-7.1 / VM-11.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-002",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Evidence Lifecycle",
+    "title": "Vendor uploads evidence via the portal against a question; it flows through the standard review workflow to a verified status",
+    "description": "Exercises the vendor-portal evidence upload endpoint (which calls the shared evidenceUploadService.uploadManual under a portal sentinel user), the assessment's questionResponses.evidenceIds linkage, and the org side reviewing that same evidence through EvidenceService.transition (assigned → under_review → closed sets verification.status='verified').",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A vendor portal token for an in-progress assessment with at least one file-upload-eligible question"],
+    "steps": [
+      "As the vendor, upload a PDF via POST /vendor-portal/assessment/:token/evidence/upload with a questionId",
+      "Reload the portal GET endpoint and confirm the question's `evidence` array now contains the uploaded file",
+      "As an org admin, find the same evidence item in /evidence, assign it to a reviewer, transition assigned → under_review, then under_review → closed"
+    ],
+    "expectedResult": "The evidence document's verification.status becomes 'verified' with verifiedBy/verifiedAt stamped, and the vendor portal view (re-fetched) still shows the file under the original question with hasFile=true.",
+    "tags": ["evidence-lifecycle", "vendor-portal", "workflow"],
+    "requirement": "VM-8.4",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-003",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Trust Network Data Sharing",
+    "title": "Auto-approve Trust Network access request instantly flips the requester's client_vendor row without any manual action",
+    "description": "TrustNetworkService.createAccessRequest auto-approves when targetConfig.sharingEnabled && !targetConfig.requireApproval, directly inserting a TrustedPartner and fire-and-forgetting an update to the REQUESTER's own client_vendor.trustNetworkStatus from 'pending' to 'approved' via clientVendorRepository.updateTrustNetworkStatus.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org A's Trust Network config has sharingEnabled = true, requireApproval = false",
+      "Org B has a client_vendor row pointing at Org A with trustNetworkStatus = 'pending' (created via the 'Add as Vendor' flow)"
+    ],
+    "steps": [
+      "As Org B, call createAccessRequest against Org A's org id with a set of dataCategories",
+      "Poll Org B's vendor detail page for Org A's trust passport tab"
+    ],
+    "expectedResult": "The access request response returns status='approved', autoApprove=true immediately (no pending state). Within the same test, Org B's client_vendor.trustNetworkStatus for Org A settles to 'approved' and the Trust Passport tab becomes active, without any reviewer action on Org A's side.",
+    "tags": ["trust-network", "auto-approve"],
+    "requirement": "VM-11.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-004",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Questionnaire Governance",
+    "title": "Reviewer request-revision auto-transitions the assessment back to the vendor, then auto-closes once all responses are finalised",
+    "description": "AssessmentService.reviewQuestion computes 'unreviewed' across questionResponses; when none remain unreviewed and at least one has reviewAction='request_revision' it auto-transitions to in_progress, but once the vendor resubmits and every response is accept/reject it auto-transitions to closed and computes the score.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An assessment in under_review with 3 answered questions"],
+    "steps": [
+      "As reviewer, accept question 1, accept question 2, and request_revision on question 3 with feedback",
+      "Observe the assessment's status after the third reviewQuestion call",
+      "As the vendor, resave question 3 with a new answer and call /submit",
+      "As reviewer, accept question 3"
+    ],
+    "expectedResult": "After step 2 the assessment status is 'in_progress' (sent back to vendor) and the 'Revision Requested' banner would show for question 3. After step 4, all 3 responses are accept/reject with none unreviewed, so the assessment auto-transitions to 'closed' and score.overallScore is computed.",
+    "tags": ["questionnaire-governance", "workflow", "review"],
+    "requirement": "spec §9.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-005",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Template Versioning",
+    "title": "editActive() forks a new questionnaire template version while assessments already created retain their original snapshot",
+    "description": "QuestionnaireTemplateService.editActive atomically deprecates the old active doc (isLatest:false) and inserts a new doc at version+1, isLatest:true, previousVersionId pointing back. Assessments created earlier stored their own copy of questions[] at creation time (AssessmentService.create merges tpl.questions at creation), so they are unaffected by the fork.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An active questionnaire template v1 with 5 questions",
+      "An assessment already created from template v1 (its own questions[] snapshot stored on the assessment doc)"
+    ],
+    "steps": [
+      "Call editActive on the template, adding a 6th question and removing question 2",
+      "Verify the template list shows v1 as 'deprecated' and a new v2 as 'active'",
+      "Re-open the assessment created before the fork"
+    ],
+    "expectedResult": "The template catalog shows exactly one active version (v2, 5 questions net) and one deprecated version (v1). The pre-existing assessment's questions array is unchanged — it still shows its original 5 questions, including the one now removed from v2, proving assessments are decoupled from template edits after creation.",
+    "tags": ["template-versioning", "questionnaire-governance"],
+    "requirement": "VM-10.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-006",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Vendor Offboarding",
+    "title": "Vendor Offboarding page is feature-flagged off and redirects to the engagement page instead of exposing offboarding UI",
+    "description": "The /vendors/offboarding page hard-codes OFFBOARDING_ENABLED = false and, in a useLayoutEffect (fires before paint), calls router.replace('/vendors/engagement') — the component intentionally renders null when the flag is off, after all hooks have already run in a fixed order.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with vendor.read permission"],
+    "steps": [
+      "Navigate directly to /vendors/offboarding via URL",
+      "Observe the resulting page and URL"
+    ],
+    "expectedResult": "The browser is redirected to /vendors/engagement without ever flashing the offboarding table/stats UI, and no offboarding-specific network calls (getOffboardingProcesses) are visibly rendered to the user. Confirms the disabled feature is fully gated, not just hidden behind a broken link.",
+    "tags": ["vendor-offboarding", "feature-flag"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-E2E-007",
+    "module": "vendor-management",
+    "category": "e2e",
+    "subFeature": "Assessment Governance",
+    "title": "Extending the due date of an overdue assessment automatically restores its pre-overdue workflow status",
+    "description": "AssessmentService.update, when safe.dueDate is supplied and existingDoc.status === 'overdue' and the new due date is in the future, looks up the last workflow_entries row with newState='overdue' to find previousState, then calls workflowService.transition back to that state (defaulting to 'assigned' if no history row is found).",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["overdueAssessmentJob has already flipped an 'in_progress' assessment to 'overdue' because its dueDate passed"],
+    "steps": [
+      "As an org admin, edit the overdue assessment and set a new dueDate 14 days in the future",
+      "Reload the assessment"
+    ],
+    "expectedResult": "The assessment's status is restored to 'in_progress' (its state immediately before the job marked it overdue), not left at 'overdue' and not reset to 'not_started' — the workflow_entries history correctly informed the restore target.",
+    "tags": ["assessment-governance", "workflow", "overdue"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

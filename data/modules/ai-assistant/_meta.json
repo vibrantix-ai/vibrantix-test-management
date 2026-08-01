@@ -1,0 +1,10 @@
+{
+  "slug": "ai-assistant",
+  "name": "AI Assistant",
+  "scope": "feature",
+  "routes": [
+    "/assistant"
+  ],
+  "qaAgent": "AI_Assistant_QA_Agent",
+  "description": "RAG pipeline, tenant-scoped retrieval, citation accuracy, streaming responses."
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "ui-ux",
+  "name": "UI/UX Consistency",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "UI_UX_QA_Agent",
+  "description": "Design-system compliance, dark mode fidelity, accessibility baseline, responsive layout."
+}

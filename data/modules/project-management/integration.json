@@ -1,0 +1,156 @@
+[
+  {
+    "id": "PROJ-INT-001",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Project-Mode Billing",
+    "title": "Creating a project in a project-mode-billing org auto-provisions a SubscriptionProject and a Project Admin ProjectMember row",
+    "description": "_provisionProjectBillingIfNeeded (project.controller.js) is called right after Project.createWithCode succeeds. For an org with billingMode:'project', it calls subscriptionService.provisionProjectSubscription, then — if the creator belongs to the org and is active — consumes a 'users' quota unit and creates a ProjectMember row for the creator with the system PROJECT_ADMIN role.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/project-billing-access.test.js",
+    "preconditions": ["Organization.billingMode = 'project'", "subscriptionPlanId supplied in the create request"],
+    "steps": [
+      "Call POST /projects/:orgId with { name: 'Billed Project', subscriptionPlanId: <validPlanId> } as the creator user"
+    ],
+    "expectedResult": "A SubscriptionProject row exists for the new project with the given plan; a ProjectMember row exists linking the creator to the project with projectRoleId resolved to the system PROJECT_ADMIN role; grantBillingAdminsProjectAccess has additionally granted org billing admins access to the new project.",
+    "tags": ["billing", "project-mode"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-002",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Project-Mode Billing",
+    "title": "A billing provisioning failure during project creation rolls back the project, its ProjectMember row, and the consumed quota",
+    "description": "The catch block in _provisionProjectBillingIfNeeded runs Promise.allSettled to delete the SubscriptionProject, ProjectMember rows, and the Project itself, and release the consumed 'projects' quota unit, then re-throws — 'Project-mode tenants must never retain a project without its billing row.'",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Organization.billingMode = 'project'", "subscriptionService.provisionProjectSubscription is stubbed to throw"],
+    "steps": [
+      "Call POST /projects/:orgId with a valid body and subscriptionPlanId while the subscription provisioning call is forced to fail",
+      "After the request returns its error response, query for the project by name and for any SubscriptionProject/ProjectMember rows referencing it"
+    ],
+    "expectedResult": "The API call fails with the underlying provisioning error; no Project, SubscriptionProject, or ProjectMember document exists afterward, and the org's consumed 'projects' quota has been released back (net zero change).",
+    "tags": ["billing", "rollback", "project-mode"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-003",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Project Listing",
+    "title": "listByOrg attaches teamPreview/teamCount via a single batched ProjectMember query, not one query per project",
+    "description": "listByOrg (project.controller.js) fetches ProjectMember.find({ projectId: { $in: projects.map(...) } }) exactly once regardless of how many projects are returned, then groups results into a Map keyed by projectId — avoiding the N+1 pattern the old embedded project.team field previously required.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has 10 active projects, each with 1-3 ProjectMember rows"],
+    "steps": [
+      "Instrument/spy on ProjectMember.find calls",
+      "Call GET /api/projects/:orgId?limit=20"
+    ],
+    "expectedResult": "ProjectMember.find is called exactly once for the whole request (not 10 times); every returned project has a correct teamCount and a teamPreview array capped at 3 entries with firstName/lastName/avatar populated.",
+    "tags": ["performance", "n-plus-one"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-004",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Project Dashboard",
+    "title": "Dashboard aggregation scopes to resolveProjectIdsScope for a non-admin caller",
+    "description": "exports.dashboard (project.controller.js) explicitly casts orgId to a real ObjectId for the aggregate $match (aggregate() does not auto-cast strings, unlike find()), and merges in resolveProjectIdsScope's project _id restriction for non-admins before running totalStats/statusStats aggregations.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has 5 active projects; the calling user is a ProjectMember of only 2 of them and holds no project.admin"],
+    "steps": [
+      "As this user, call GET /api/projects/:orgId/dashboard"
+    ],
+    "expectedResult": "totalStats.totalProjects and statusStats counts reflect only the 2 projects the user is a member of — the other 3 org projects are excluded entirely from every aggregated number, and the call does not throw despite orgId being a string in the request.",
+    "tags": ["dashboard", "plac", "aggregation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-005",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Project Team Quota",
+    "title": "addTeamMember consumes a 'users' quota unit only for project-mode orgs, never for org-mode orgs",
+    "description": "addTeamMember checks isPricingV1Enabled(project.organizationId) AND org.billingMode === 'project' before calling quota.consume('users', 1, { projectId }). Org-mode orgs already counted this user once at User.create() time via user.controller.js, so this must stay gated to avoid double-counting.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two orgs: Org A (billingMode:'project'), Org B (billingMode:'org' / default)"],
+    "steps": [
+      "Add a new team member to a project in Org A and record the 'users' quota usage before/after",
+      "Add a new team member to a project in Org B and record the 'users' quota usage before/after"
+    ],
+    "expectedResult": "Org A's 'users' quota usage increments by 1 after the add. Org B's 'users' quota usage is unchanged by the add (it was already incremented when the user account was created).",
+    "tags": ["billing", "quota"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-006",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "My Projects / Selector Feed",
+    "title": "listProjectsForUser returns every active org project for an admin bypass and only ProjectMember rows for everyone else",
+    "description": "listProjectsForUser (projectAccess.js) is the source of GET /users/me/projects, which drives the frontend ProjectSelector and projectSlice.fetchProjects. computeProjectAccessForUser's isProjectAdmin short-circuit returns all active org projects with empty permissions/extraPermissions; a non-admin instead gets only their ProjectMember-backed projects fully annotated with resolved permissions.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
+    "preconditions": ["Org has 4 active projects and 1 archived project", "Test user A holds project.admin; Test user B is a ProjectMember of exactly 1 of the 4 active projects"],
+    "steps": [
+      "Call listProjectsForUser({ userId: userA, organizationId })",
+      "Call listProjectsForUser({ userId: userB, organizationId })"
+    ],
+    "expectedResult": "userA's result contains all 4 active projects (not the archived one), each with isProjectRoleAdmin:false and empty permissions arrays (admin bypass doesn't need per-project grants). userB's result contains exactly 1 project, annotated with their real projectRoleId and fully-resolved permissions.",
+    "tags": ["project-selector", "plac"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-INT-007",
+    "module": "project-management",
+    "category": "integration",
+    "subFeature": "Idempotent Creation",
+    "title": "A duplicate-key race on creationRequestId during concurrent retries still resolves to exactly one project and releases the extra quota reservation",
+    "description": "If two requests bearing the same Idempotency-Key race past findIdempotentProject's initial check, the unique compound index unique_project_creation_request on {organizationId, creationRequestId} causes the second Project.createWithCode to throw code 11000; the catch path releases the just-consumed quota unit and re-resolves to the winning project via findIdempotentProject before responding 200 with idempotentReplay:true.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/integration/project-creation-idempotency.test.js",
+    "steps": [
+      "Fire two concurrent POST /projects/:orgId requests with an identical Idempotency-Key and identical body",
+      "Inspect the org's 'projects' quota usage and the Project collection afterward"
+    ],
+    "expectedResult": "Exactly one Project document exists; the org's 'projects' quota was net-incremented by exactly 1 (not 2); one response is 201 and the other is 200 with idempotentReplay:true referencing the same project _id.",
+    "tags": ["idempotency", "race-condition", "quota"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "slug": "ai-evidence",
+  "name": "AI Evidence",
+  "scope": "feature",
+  "routes": [
+    "/ai-evidence"
+  ],
+  "qaAgent": "AI_Evidence_QA_Agent",
+  "description": "AI-assisted upload, classification suggestions, review/override, S3 + BullMQ pipeline."
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "api-contract-e2e",
+  "name": "API Contract & Cross-Service E2E",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "API_Contract_E2E_QA_Agent",
+  "description": "The 5 critical cross-service E2E flows, API contract stability, error propagation."
+}

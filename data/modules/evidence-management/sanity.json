@@ -1,0 +1,131 @@
+[
+  {
+    "id": "EVID-SAN-001",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Evidence List",
+    "title": "Evidence list loads with counts matching the seeded org's evidence records",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a seeded test org admin", "Org has a known, fixed number of evidence items across at least 2 statuses"],
+    "steps": [
+      "Log in as the seeded org admin",
+      "Navigate to /evidence-management",
+      "Read the total evidence count shown on the list header/stats card"
+    ],
+    "expectedResult": "Displayed total count equals the known seeded evidence record count for the org, and the list rows rendered match that count (pagination accounted for).",
+    "tags": ["sanity", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "EVID-SAN-002",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Evidence Upload",
+    "title": "Upload dialog opens and closes cleanly without leaving residual UI state",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /evidence-management, click 'Upload Evidence'",
+      "Confirm the dialog renders with file picker and control-mapping selector",
+      "Close the dialog via the close/cancel control without submitting",
+      "Reopen the dialog"
+    ],
+    "expectedResult": "Dialog closes with no error toast and no orphaned backdrop/scroll-lock. Reopening shows a fresh, empty form with no leftover file selection or field values from the previous attempt.",
+    "tags": ["sanity", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "EVID-SAN-003",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Control Mapping",
+    "title": "Control mapping dropdown populates with controls from the org's active framework",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["ISO 27001 framework activated for the project"],
+    "steps": [
+      "Open the Upload Evidence dialog on /evidence-management",
+      "Click the control-mapping dropdown/selector"
+    ],
+    "expectedResult": "Dropdown populates with a non-empty list of controls belonging to the project's active framework (e.g. ISO 27001 Annex A controls), with no loading spinner stuck and no empty-list error state.",
+    "tags": ["sanity", "control-mapping", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "EVID-SAN-004",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Review Workflow",
+    "title": "Review queue shows pending items for the seeded org",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Seeded org has at least one evidence item in 'Pending Review' status"],
+    "steps": [
+      "Log in as a reviewer for the seeded org",
+      "Navigate to the evidence review queue (My Reviews)"
+    ],
+    "expectedResult": "The review queue lists the seeded pending item(s) with status 'Pending Review', correct title, and correct control mapping visible — queue is not empty and does not error.",
+    "tags": ["sanity", "review-workflow", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "EVID-SAN-005",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Evidence Download",
+    "title": "Download link on an approved evidence item returns a working file",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Seeded org has at least one evidence item in 'Approved' status with an uploaded file"],
+    "steps": [
+      "Open an approved evidence item's detail page",
+      "Click the 'Download' link/button for the attached file",
+      "Confirm the file downloads or opens"
+    ],
+    "expectedResult": "A presigned download URL is issued and the file downloads successfully with the correct original filename; no 403/404/expired-link error is shown.",
+    "tags": ["sanity", "s3-download", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "EVID-SAN-006",
+    "module": "evidence-management",
+    "category": "sanity",
+    "subFeature": "Filtering",
+    "title": "Filtering evidence list by framework returns non-empty results for a seeded org",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Seeded org has evidence mapped to controls under an activated framework (e.g. ISO 27001)"],
+    "steps": [
+      "Navigate to /evidence-management",
+      "Apply the framework filter and select the org's activated framework (e.g. ISO 27001)"
+    ],
+    "expectedResult": "The filtered list returns at least one evidence item mapped to that framework's controls; the list is not empty and no filter-related console/API error occurs.",
+    "tags": ["sanity", "filter", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

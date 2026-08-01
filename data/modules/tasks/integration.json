@@ -1,0 +1,189 @@
+[
+  {
+    "id": "TASK-INT-001",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Aggregation",
+    "title": "getMyTasks merges 8 internal MongoDB sources and 3 microservice fan-outs into one unified list",
+    "description": "tasks.service.js getMyTasks(): 8 internal sources run via Promise.all (AuditScopeItem, AuditNonConformance, WorkflowEntry-evidence, WorkflowEntry-policy, EvidenceRequest, Finding, ManagementReview, ContinuousImprovement) plus a 9th (AuditAssurance lead/secondary auditor). 3 microservices (vendor-service, risk-management-service, trust-vault-service) are fanned out via Promise.allSettled to GET /internal/tasks.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": [
+      "A test user has at least one open item in every one of the 9 internal entity types and in all 3 microservices"
+    ],
+    "steps": [
+      "Seed one open task per entity type for the test user across all data sources",
+      "Call GET /api/tasks with no filters"
+    ],
+    "expectedResult": "The response's data.tasks array contains one entry per seeded item (order aside), each shaped as a UnifiedTask with sourceModule correctly set to one of: audit, evidence, policy, cloud-posture, management-review, continuous-improvement, vendor, risk, trust-vault. data.total equals the seeded count.",
+    "tags": ["aggregation", "cross-module"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-002",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Partial Failure Handling",
+    "title": "GET /api/tasks returns 200 with _partial=['risk'] when only risk-management-service is unreachable",
+    "description": "The 3 microservice calls use Promise.allSettled, not Promise.all, so one rejected promise never fails the other two or the internal sources. logServiceFailure logs err.code (network-level, e.g. ECONNREFUSED) vs err.response.status (HTTP-level) distinctly.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "linkedDefect": "TK-001",
+    "preconditions": [
+      "risk-management-service is stopped or RISK_SERVICE_URL points to an unreachable host",
+      "vendor-service and trust-vault-service are healthy and reachable"
+    ],
+    "steps": [
+      "Call GET /api/tasks for a user with open tasks in vendor, trust-vault, and at least one internal source"
+    ],
+    "expectedResult": "Response is 200 (not 500). data.tasks includes vendor/trust-vault/internal tasks but no risk tasks. data._partial equals ['risk'] exactly (not the other two services).",
+    "tags": ["resilience", "microservice", "partial-failure"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-003",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Partial Failure Handling",
+    "title": "GET /api/tasks still returns 200 with internal-only tasks when all 3 microservices are unreachable simultaneously",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["vendor-service, risk-management-service, and trust-vault-service are all stopped or timing out"],
+    "steps": [
+      "Call GET /api/tasks for a user with open internal-module tasks only"
+    ],
+    "expectedResult": "Response is 200. data._partial contains all three: 'vendor', 'risk', 'trust-vault' (order matches the Promise.allSettled array order). data.tasks contains only the internal-source tasks — the endpoint never hard-fails just because every fan-out call timed out (5000ms axios timeout on each).",
+    "tags": ["resilience", "microservice", "partial-failure"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-004",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Multi-Tenant Scoping",
+    "title": "WorkflowEntry evidence/policy tasks are excluded when the underlying Evidence/Policy document belongs to a different organization",
+    "description": "Regression guard for TK-009 (fixed): WorkflowEntry has no organizationId field of its own, so fetchWorkflowEntries() aggregates by entityType + assignedTo first, then POST-filters the resulting entityIds against the Evidence or Policy collection (whichever WORKFLOW_ENTITY_MODEL maps to) with organizationId: orgId, keeping only entityIds present in that org-scoped set.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "linkedDefect": "TK-009",
+    "preconditions": [
+      "User U belongs to Org A",
+      "A WorkflowEntry assigns U to review an Evidence document that actually belongs to Org B (simulating a stale/cross-tenant assignment)",
+      "A second WorkflowEntry assigns U to review an Evidence document that genuinely belongs to Org A"
+    ],
+    "steps": [
+      "Call GET /api/tasks as user U with orgId = Org A"
+    ],
+    "expectedResult": "Only the Org A evidence review task appears in the response. The Org B evidence review task is silently dropped by the post-filter — it must never surface, confirming no cross-tenant evidence/policy task leak.",
+    "tags": ["multi-tenant", "idor", "workflow", "regression"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-005",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Aggregation",
+    "title": "AuditScopeItem dual-path lookup does not produce a duplicate task when both the direct assignee field and a WorkflowEntry both point to the same item",
+    "description": "getMyTasks's AuditScopeItem query builds directDocs from the direct assignee field, then computes wfEntityIds by filtering out any entityId already in directIds, so a scope item that has BOTH a direct assignee AND a matching WorkflowEntry is only returned once (from directDocs).",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": [
+      "An AuditScopeItem has assignee = user U (direct field) AND a WorkflowEntry with entityType='audit_scope_item', metadata.assignedTo = U, status='assigned' pointing at the same scope item"
+    ],
+    "steps": [
+      "Call GET /api/tasks as user U"
+    ],
+    "expectedResult": "The scope item appears exactly once in data.tasks, not twice.",
+    "tags": ["aggregation", "audit", "dedup"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-006",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Filtering",
+    "title": "sourceModule + priority + search + assignmentType filters compose correctly (AND semantics)",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": [
+      "User has: an audit task priority=high assignmentType=owner matching search term 'ISO'; a risk task priority=high assignmentType=owner NOT matching the search term; an audit task priority=low assignmentType=owner matching the search term"
+    ],
+    "steps": [
+      "Call GET /api/tasks?sourceModule=audit&priority=high&search=ISO&assignmentType=owner"
+    ],
+    "expectedResult": "Only the single task satisfying all four predicates simultaneously (audit module AND priority=high AND title contains 'iso' case-insensitively AND assignmentType=owner) is returned; the other two tasks (wrong module, wrong priority/no match) are excluded.",
+    "tags": ["filter", "combination"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-007",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Filtering",
+    "title": "dueBefore filter includes tasks due on/before the given ISO date and excludes tasks with no dueDate",
+    "description": "tasks.service.js: `if (dueBefore) filtered = filtered.filter(t => t.dueDate && new Date(t.dueDate).getTime() <= beforeTs)` — note the `t.dueDate &&` guard means a task with no dueDate at all (e.g. any EvidenceRequest task, which always has dueDate=undefined per normaliseEvidenceRequest) can never match a dueBefore filter, however lenient.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Task A: dueDate = 2026-08-01",
+      "Task B: dueDate = 2026-08-10",
+      "Task C (an EvidenceRequest task): dueDate = undefined"
+    ],
+    "steps": [
+      "Call GET /api/tasks?dueBefore=2026-08-05T00:00:00.000Z"
+    ],
+    "expectedResult": "Only Task A is returned. Task B is excluded (due after the cutoff). Task C is excluded regardless of the cutoff value because it has no dueDate to compare.",
+    "tags": ["filter", "due-date"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-INT-008",
+    "module": "tasks",
+    "category": "integration",
+    "subFeature": "Tab Counts",
+    "title": "GET /api/tasks/tab-counts runs owner and review queries in parallel and de-duplicates _partial across both",
+    "description": "tasks.routes.js: tab-counts issues two independent getMyTasks calls (assignmentType='owner' and 'review') via Promise.allSettled, and merges each result's _partial array through a Set so a microservice outage that affects both calls (it always will, since it's the same downstream dependency) is reported once, not twice, in the combined _partial.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["vendor-service is unreachable", "The user has both owner and review tasks"],
+    "steps": [
+      "Call GET /api/tasks/tab-counts"
+    ],
+    "expectedResult": "Response 200. data.owner.total and data.review.total each reflect only non-vendor tasks (or whatever internal counts remain). data._partial equals ['vendor'] — a single entry, not ['vendor','vendor'] — even though both the owner and review sub-calls independently failed to reach vendor-service.",
+    "tags": ["tab-counts", "partial-failure", "dedup"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

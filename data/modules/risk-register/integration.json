@@ -1,0 +1,208 @@
+[
+  {
+    "id": "RISK-INT-001",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Module Risk Triage",
+    "title": "A critical Prowler cloud-posture finding auto-promotes to a risk register entry",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Cloud posture scan ingestion pipeline running against risk-management-service"],
+    "steps": [
+      "Trigger a Prowler scan result ingestion containing a CRITICAL severity finding",
+      "Wait for the module-risk-triage worker to process the event"
+    ],
+    "expectedResult": "A new Risk entry is created in risk-register with source='cloud-posture', inherited severity mapped correctly, and a link back to the originating finding.",
+    "tags": ["auto-promotion", "cloud-posture"],
+    "requirement": "ISO 27001 Clause 6.1.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-002",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Treatment Plan",
+    "title": "Closing a treatment plan recalculates residual risk score",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open a risk with inherent score 20 and an approved treatment plan in progress",
+      "Mark the treatment plan as completed"
+    ],
+    "expectedResult": "Residual risk score is recalculated using the post-treatment likelihood/impact values and displayed on the risk detail page.",
+    "tags": ["treatment", "scoring"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-003",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Lifecycle Phase Transitions",
+    "title": "Moving a risk's phase to mitigation auto-advances treatment.status from not_started to in_progress",
+    "description": "RiskRegisterService.movePhase() has a PHASE_STATUS_FORWARD map (mitigation->in_progress, monitoring->completed, closure->completed) that fires only when the current treatment.status is still 'not_started', keeping treatment status in sync with RMF phase without requiring a separate manual update.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:663",
+    "preconditions": ["Risk in phase 'assessment' with treatment.status='not_started'"],
+    "steps": [
+      "POST /risks/:riskId/phase with targetPhase='mitigation'",
+      "Fetch the risk again via GET /risks/:riskId"
+    ],
+    "expectedResult": "risk.phase is 'mitigation' and risk.treatment.status has been auto-set to 'in_progress' without a separate treatment update call.",
+    "tags": ["lifecycle", "treatment", "auto-sync"],
+    "requirement": "ISO 27001 Clause 8.3",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-004",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Lifecycle Phase Transitions",
+    "title": "Regressing a risk's phase back to identification resets treatment progress to 0 and status to not_started",
+    "description": "movePhase()'s REGRESSION_PHASES logic (identification, assessment) resets an in-flight treatment when the risk is moved backward, preventing a stale 'in_progress' or 'completed' treatment status from surviving a re-opened risk.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Risk in phase 'mitigation' with treatment.status='in_progress' and treatment.progress=60"],
+    "steps": [
+      "POST /risks/:riskId/phase with targetPhase='assessment' and a regression note",
+      "Fetch the risk and inspect treatment.status and treatment.progress"
+    ],
+    "expectedResult": "treatment.status is reset to 'not_started' and treatment.progress is reset to 0.",
+    "tags": ["lifecycle", "treatment", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-005",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Treatment Plan",
+    "title": "Milestone progress reaching 100% auto-completes the treatment plan and sets completedDate",
+    "description": "updateMilestoneProgress() checks risk.treatment.progress after each milestone update: >=100 -> status='completed' + completedDate=now; 0<progress<100 -> status='in_progress'; progress=0 while status='completed' -> reverts to 'not_started'.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:924",
+    "preconditions": ["Risk has a treatment plan with one open milestone at 80% progress"],
+    "steps": [
+      "PUT /risks/:riskId/treatment/progress with the milestone's progress set to 100"
+    ],
+    "expectedResult": "risk.treatment.status becomes 'completed' and risk.treatment.completedDate is populated, computed from the milestone update rather than a separate treatment PUT.",
+    "tags": ["treatment", "milestones", "auto-sync"],
+    "requirement": "ISO 27001 Clause 10.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-006",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Risk Acceptance",
+    "title": "Only a user named in acceptance.approvers can process the acceptance decision",
+    "description": "processAcceptanceDecision() checks existingRisk.acceptance.approvers.some(a => a.userId === user.userId) after confirming a pending request exists, and returns 403 'You are not authorized to approve this request' for any authenticated user with risk.approve permission who isn't on the named approver list — the authority-matrix enforcement point.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:1313",
+    "preconditions": [
+      "Risk has acceptance.status='pending' with approverIds=[UserA]",
+      "UserB holds the risk.approve permission but is not in approverIds"
+    ],
+    "steps": [
+      "As UserB, PUT /risks/:riskId/acceptance/approve with decision='approved'"
+    ],
+    "expectedResult": "Request is rejected with 403 'You are not authorized to approve this request' even though UserB has the risk.approve permission — permission alone does not satisfy the named-approver authority check.",
+    "tags": ["acceptance", "authority-matrix", "rbac"],
+    "requirement": "ISO 27001 Annex A.5.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-007",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Evidence Freshness",
+    "title": "Uploading evidence attaches its ID to the risk's evidenceIds array and is retrievable from the risk detail response",
+    "description": "EvidenceService.uploadEvidence() writes the file to S3, creates a RiskEvidence record, then calls addEvidenceToRisk() to push the new evidence's ObjectId onto risk.evidenceIds — linking evidence to the risk it substantiates.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["S3 credentials configured for risk-management-service", "An existing risk with no evidence"],
+    "steps": [
+      "Upload a document-type evidence file scoped to the risk",
+      "GET /risks/:riskId and inspect evidenceIds"
+    ],
+    "expectedResult": "The new evidence's ObjectId appears in risk.evidenceIds, and GET evidence-by-risk returns the uploaded item with freshnessConfig defaults (freshDays=30, agingDays=60, staleDays=90) applied.",
+    "tags": ["evidence", "linkage"],
+    "requirement": "ISO 27001 Annex A.5.12",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-008",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Module Risk Triage",
+    "title": "Promotion is blocked with 409 when the source finding is no longer an active material failure",
+    "description": "ModuleRiskService.promote() re-validates moduleRisk.sourceState==='active', currentSignal.status==='FAIL', and policyDecision.material===true immediately before insert — even if the candidate was pending when the triage list was fetched — closing a race where the underlying finding resolved between page load and the analyst's promote click.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "risk-management-service/src/services/ModuleRiskService.ts:201",
+    "preconditions": ["A pending module risk whose sourceState has since transitioned to 'resolved' (e.g. the Prowler check passed on rescan)"],
+    "steps": [
+      "POST /organizations/:orgId/module-risks/:id/promote with the stale candidate's id and matching projectId"
+    ],
+    "expectedResult": "Request fails with 409 'Cannot promote: the source finding is no longer an active material failure' — no risk is created in the register.",
+    "tags": ["module-risk-triage", "auto-promotion", "race-condition"],
+    "requirement": "ISO 27001 Clause 6.1.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-INT-009",
+    "module": "risk-register",
+    "category": "integration",
+    "subFeature": "Compliance Bridge",
+    "title": "Updating a risk's framework/UCL control mappings enqueues a compliance-sync snapshot",
+    "description": "updateFrameworkMappings() and updateUclMappings() both call RiskComplianceBridgeService.notifyMappingSnapshot() with the current set of requirementDocIds/uclIds after every mapping write, keeping the compliance-frameworks module's coverage view in sync with risk-driven control mappings.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A risk mapped to zero controls", "compliance-frameworks module reachable"],
+    "steps": [
+      "PUT /risks/:riskId/mappings/frameworks with one requirement carrying a requirementDocId",
+      "Inspect the compliance-frameworks side for a corresponding mapping snapshot event"
+    ],
+    "expectedResult": "A mapping-snapshot notification is dispatched referencing the new requirementDocId, without requiring a manual compliance-map recalculation trigger.",
+    "tags": ["compliance-bridge", "cross-module"],
+    "requirement": "ISO 27001 Clause 9.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

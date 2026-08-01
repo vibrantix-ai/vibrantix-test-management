@@ -1,0 +1,105 @@
+[
+  {
+    "id": "RBAC-SAN-001",
+    "module": "rbac-security",
+    "category": "sanity",
+    "subFeature": "Authentication",
+    "title": "Standard Keycloak login issues a session and GET /api/client/users/me resolves permissions without error",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["A seeded test user with a real role exists in the target environment"],
+    "steps": [
+      "Log in through the standard Keycloak OAuth flow",
+      "Call GET /api/client/users/me"
+    ],
+    "expectedResult": "200 OK with a well-formed user object including a permissions array (possibly empty for NORMAL_USER) and roleIds populated — no 401/500.",
+    "tags": ["rbac", "sanity", "post-deploy"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-SAN-002",
+    "module": "rbac-security",
+    "category": "sanity",
+    "subFeature": "SUPERADMIN Access",
+    "title": "Org Admin (SUPERADMIN) can open every top-level module without a 403",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as an org's SUPERADMIN (Org Admin)"],
+    "steps": [
+      "Visit each top-level nav module in turn: Evidence, Policy, Audit, Risk, Vendors, Trust Vault, GRC Framework, Organization, Billing"
+    ],
+    "expectedResult": "Every page renders its normal content with no Access Denied page and no 403 API responses in the network tab.",
+    "tags": ["rbac", "sanity", "post-deploy"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-SAN-003",
+    "module": "rbac-security",
+    "category": "sanity",
+    "subFeature": "Safe Failure Mode",
+    "title": "A user with zero permissions gets 403, never 500, on a permission-gated route",
+    "description": "loadPermissions.js's catch block (line 306-314) degrades to an empty permission Set on any resolution error rather than crashing the request; requirePermission then produces a clean 403.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User with NORMAL_USER role and no project memberships"],
+    "steps": [
+      "As this user, call GET /api/evidence"
+    ],
+    "expectedResult": "403 Forbidden with the standard {success:false, message:'Missing permission: evidence.read'} shape — never a 500 or an unhandled exception.",
+    "tags": ["rbac", "sanity", "resilience"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-SAN-004",
+    "module": "rbac-security",
+    "category": "sanity",
+    "subFeature": "Keycloak Connectivity",
+    "title": "JWKS endpoint is reachable and getJwksClient() initializes without throwing in the target environment",
+    "description": "authenticate.js:12-22. If KEYCLOAK_ISSUER is misconfigured or unreachable, every real (non-bypass) authenticated request fails with 401 'Authentication service unavailable' — a fast, environment-level sanity check before running any deeper RBAC suite.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "GET ${KEYCLOAK_ISSUER}/protocol/openid-connect/certs directly",
+      "Send one authenticated request with a real Bearer token through vibrantix-backend"
+    ],
+    "expectedResult": "The JWKS endpoint returns a valid key set (200, JSON with 'keys' array). The authenticated request succeeds without an 'auth.jwks.unavailable' or 'auth.jwks.error' log entry.",
+    "tags": ["rbac", "sanity", "keycloak", "post-deploy"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RBAC-SAN-005",
+    "module": "rbac-security",
+    "category": "sanity",
+    "subFeature": "Token Expiry",
+    "title": "An expired JWT returns a clean 401, not a crash or silent pass-through",
+    "description": "authenticate.js:252-262 explicitly catches jwt TokenExpiredError and returns 401 'Token expired'.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": [
+      "Send a request with a Bearer token whose exp claim is in the past"
+    ],
+    "expectedResult": "401 {success:false, message:'Token expired'} — request never reaches loadPermissions or any controller.",
+    "tags": ["rbac", "sanity", "jwt"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

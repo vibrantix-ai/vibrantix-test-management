@@ -1,0 +1,107 @@
+[
+  {
+    "id": "CPVT-SAN-001",
+    "module": "compliance-vault",
+    "category": "sanity",
+    "subFeature": "Data Consistency",
+    "title": "Evidence item counts are identical whether queried via the org-scoped or project-scoped evidence endpoint",
+    "description": "Sanity check that GET /api/evidence/organization/:orgId and the sum of GET /api/evidence/project/:projectId across all of the org's projects agree in count — since compliance-vault has no data of its own, any vault-hub total must reconcile with evidence-management's totals exactly.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An org with evidence items spread across 2+ projects"],
+    "steps": [
+      "Call GET /api/evidence/organization/:orgId and note the total count",
+      "Call GET /api/evidence/project/:projectId for each project in the org and sum the counts"
+    ],
+    "expectedResult": "The two totals match exactly (accounting for isLatest/status filtering being applied consistently in both) — no drift between the two views of the same underlying collection.",
+    "tags": ["sanity", "data-consistency"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-SAN-002",
+    "module": "compliance-vault",
+    "category": "sanity",
+    "subFeature": "Google Drive Integration",
+    "title": "The working Google Drive detail page at /evidence-management/gdrive loads successfully as a sanity baseline before testing the broken compliance-vault deep link",
+    "description": "Establishes that the real, existing gdrive integration page (src/app/(private)/evidence-management/gdrive/page.jsx) is itself functional, isolating the defect in CPVT-E2E-002 to the URL construction in GoogleDriveIntegrationCard.js rather than a broader Google Drive integration outage.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate directly to /evidence-management/gdrive"
+    ],
+    "expectedResult": "Page loads successfully showing Google Drive sync/folder status — confirming the underlying integration works and the only issue is the incorrect '/compliance-vault/...' link target used elsewhere in the app.",
+    "tags": ["sanity", "google-drive"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-SAN-003",
+    "module": "compliance-vault",
+    "category": "sanity",
+    "subFeature": "Default Status",
+    "title": "A newly-created evidence item defaults to status 'draft' regardless of which UI surface initiated the upload",
+    "description": "evidence.model.js's status field default is 'draft' (line ~49-54) except when sourceType is audit/intelli_audit/corrective_action, which start at 'closed' per the comment at line 41. Sanity check that this default holds true for a manual upload, since any vault-facing upload path (were one to exist) would reuse the same model.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Upload a new evidence item with sourceType='manual_upload' and no explicit status override",
+      "Fetch the created item and inspect its status field"
+    ],
+    "expectedResult": "status === 'draft'.",
+    "tags": ["sanity", "data-integrity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-SAN-004",
+    "module": "compliance-vault",
+    "category": "sanity",
+    "subFeature": "Audit Trail",
+    "title": "A single file download produces exactly one 'data.export.download' activity log entry, not a duplicate per click",
+    "description": "Sanity check paired with CPVT-INT-004 — guards against a double-fire bug (e.g. React StrictMode double-invoking an effect, or a retry-on-slow-network path) inflating a vault-style audit trail with phantom access records.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Click 'Download' once on an evidence file attachment",
+      "Query the activity log for 'data.export.download' events tied to this evidenceId/fileId/user/timestamp window"
+    ],
+    "expectedResult": "Exactly one matching activity log entry exists, not two or more.",
+    "tags": ["sanity", "audit-trail"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-SAN-005",
+    "module": "compliance-vault",
+    "category": "sanity",
+    "subFeature": "Empty State",
+    "title": "A user with evidence.read but zero accessible evidence items sees an empty state, not an error",
+    "description": "Sanity check for a fresh project/org with no evidence yet uploaded — since compliance-vault would display this same data, its (currently non-existent) hub must not crash on an empty array response.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A freshly-created project with no evidence uploaded"],
+    "steps": [
+      "As a member of the fresh project with evidence.read, call GET /api/evidence/project/:projectId"
+    ],
+    "expectedResult": "200 OK with an empty array — no error, no null-pointer-style failure downstream in any consuming UI.",
+    "tags": ["sanity", "empty-state"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

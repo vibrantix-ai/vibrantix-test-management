@@ -1,0 +1,230 @@
+[
+  {
+    "id": "PERF-PERF-001",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "API Latency SLA",
+    "title": "Evidence list endpoint (GET /api/evidence) meets P50/P95/P99 latency budget under populated-field load",
+    "description": "listEvidence (evidence.controller.js:114-119) runs Evidence.find(filter).sort().skip().limit().populate('category').populate('subCategory') on every page, repeated at :538-540, :616-618 and :1004-1010 for the org/project/assigned variants. Each populate is an extra round trip per page, so latency should be budgeted against a realistic organization with 10k+ evidence documents, not an empty dev DB.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Organization seeded with 10,000+ Evidence documents across 20+ categories/subCategories",
+      "Load test tool (k6/artillery) configured against staging vibrantix-backend"
+    ],
+    "steps": [
+      "Run 50 concurrent virtual users issuing GET /api/evidence?page=1&limit=20 for 5 minutes",
+      "Repeat against getEvidenceByProjectId and getMyAssignedEvidence variants",
+      "Collect P50/P95/P99 response time from the load test report"
+    ],
+    "expectedResult": "P50 <= 200ms, P95 <= 600ms, P99 <= 1200ms for all three endpoint variants. Any variant exceeding budget is flagged with the specific populate() call contributing the most added latency (compare against a populate-free control run).",
+    "tags": ["api-latency", "mongoose-populate", "slo"],
+    "requirement": "Performance Budget - API Tier 1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-002",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Large Table Rendering",
+    "title": "Findings Register table does not DOM-blow when an audit has 1000+ findings",
+    "description": "FindingsRegisterTab.jsx:423-430 renders <CustomTable data={findings} .../> with no pagination prop. CustomTable.jsx defaults pagination=false (line 36) and at line 126/437 returns/renders the full sortedData array when pagination is false. auditAssuranceService.getFindings(auditId, params) (auditAssuranceService.js:591-592) has no default limit, so the client fetches and renders every finding for the audit in one unpaginated, unvirtualized pass (~8 columns per row per findingsColumns). No virtualization library (react-window/react-virtual/tanstack-virtual) exists in package.json.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An audit seeded with 1,200 AuditNonConformance/Finding records",
+      "Chrome DevTools Performance panel or Playwright + CDP tracing available"
+    ],
+    "steps": [
+      "Navigate to /audit-assurance-2/[auditId] and open the Findings Register tab",
+      "Record DOM node count, main-thread long tasks, and Time-to-Interactive during initial render",
+      "Scroll through the full list and record scripting/rendering time per frame"
+    ],
+    "expectedResult": "Current known behavior: all 1,200 rows mount as real DOM nodes (no windowing), producing a measurable long task on initial render. Document the actual TTI/long-task numbers as a baseline and flag for remediation (add pagination or a virtualization library) if TTI exceeds 3s or any single long task exceeds 200ms.",
+    "tags": ["dom-blow", "virtualization", "core-web-vitals"],
+    "linkedDefect": "PERF-001",
+    "requirement": "Performance Budget - Large Table Rendering",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-003",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Redis Cache Invalidation",
+    "title": "Executive dashboard KPI cache serves stale data for up to 60s after underlying risk/vendor/compliance writes, with no active invalidation path",
+    "description": "dashboard-cache.js getCache/setCache (lines 42-55) key KPI responses as exec-dash:{orgId}:{endpoint}:{md5(params)} with a 60s setex TTL (EXEC_DASH_CACHE_TTL), used across risk-board.controller.js, vendor-board.controller.js, framework-board.controller.js, compliance-board.controller.js, audit-board.controller.js and resource-board.controller.js (60+ call sites). clearCache() is defined (lines 58-65) but a repo-wide search finds zero call sites — no write path invalidates a KPI cache entry when the underlying risk/vendor/compliance record changes.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Org with an active risk-board KPI query cached from a prior request"],
+    "steps": [
+      "Call GET /api/executive-dashboard/risk-board to warm the cache",
+      "Immediately create/close a Risk that changes the KPI's underlying count",
+      "Re-call GET /api/executive-dashboard/risk-board within 5 seconds of the write",
+      "Wait until >60s have elapsed since the original cache warm and call it again"
+    ],
+    "expectedResult": "Current known behavior: the immediate re-call within 5 seconds returns the stale pre-write KPI value (cache hit, no invalidation). The call after TTL expiry returns the correct updated value. This stale-read window should be flagged as a gap requiring write-path invalidation via the existing but unused clearCache().",
+    "tags": ["redis-cache", "cache-invalidation", "dashboard"],
+    "linkedDefect": "PERF-002",
+    "requirement": "Performance Budget - Cache Correctness",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-004",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "BullMQ Queue Throughput",
+    "title": "evidence-risk-notify queue (concurrency=1) becomes a serialization bottleneck under burst evidence uploads",
+    "description": "vibrantix-connector-service's evidence pipeline (src/queues/index.ts:23-45) chains evidence-ingest (conc=5) -> evidence-validate (conc=10) -> evidence-normalize (conc=10) -> evidence-deduplicate (conc=10) -> evidence-store (conc=5) -> evidence-map (conc=10) -> evidence-risk-notify (conc=1, maxRetries=2). The final stage's concurrency of 1 (wired in pipeline.worker.ts:1670) means every evidence item funnels through a single-worker queue regardless of how parallel the upstream stages are.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["BullMQ + Redis available in a load-test environment", "Bulk upload of 500 evidence files queued in a burst"],
+    "steps": [
+      "Trigger a batch upload of 500 evidence files within a 60-second window",
+      "Record per-queue waiting/active/completed counts every 5 seconds via queue.getWaitingCount()/getActiveCount() for all 9 queues",
+      "Compare end-to-end time-to-risk-notification against the time-to-store for the same batch"
+    ],
+    "expectedResult": "evidence-store/evidence-map queues drain at their configured concurrency, but evidence-risk-notify's waiting count grows and drains strictly one job at a time, becoming the long pole for end-to-end completion. Document the observed throughput ceiling (jobs/minute) for evidence-risk-notify and flag if it causes the full pipeline's P95 completion time to exceed the 5-minute batch-processing budget.",
+    "tags": ["bullmq", "queue-throughput", "evidence-pipeline"],
+    "requirement": "Performance Budget - Queue Throughput",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-005",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "MongoDB Indexing",
+    "title": "Risk list queries have no local Mongoose schema or explicit index coverage in vibrantix-backend and trigger the slow-query monitor at scale",
+    "description": "There is no Mongoose model for Risk in vibrantix-backend; the risks collection is accessed only via the raw driver (mongoose.connection.collection('risks')) in dashboard-metrics/index.js:75, risk-board.controller.js:12 and executive-intelligence.controller.js:59. No schema-level indexes are declared for this collection in this repo (it depends entirely on out-of-band indexes, if any, plus the default _id index). database.js:20-40 registers a global slowQueryMonitor plugin logging trace.db.slow_query when a query exceeds SLOW_QUERY_THRESHOLD_MS (default 100ms) — this is real infrastructure to assert against.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Organization seeded with 50,000+ risk documents",
+      "Access to application logs for trace.db.slow_query entries"
+    ],
+    "steps": [
+      "Run db.risks.getIndexes() against the seeded collection and record the actual index set",
+      "Call the risk-board endpoint and dashboard-metrics endpoint filtering/sorting by organizationId + status + createdAt",
+      "Grep application logs for trace.db.slow_query entries emitted during the calls"
+    ],
+    "expectedResult": "If no compound index exists on {organizationId, status, createdAt} (or equivalent), the query triggers a collection scan and a trace.db.slow_query log line above the 100ms threshold. Document the actual index set found and the query's measured duration; flag missing indexes for remediation.",
+    "tags": ["mongodb-index", "slow-query", "risk-register"],
+    "requirement": "Performance Budget - Index Coverage",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-006",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Cold Start",
+    "title": "First authenticated page load for a brand-new user (JIT provisioning path) is measurably slower than a returning user's cached path",
+    "description": "loadPermissions.js's JIT provisioning path (lines 332-386, jitCreateUser) runs Organization.findById + Role.findOne + User.create + a re-findById before the first request can proceed — on top of the unconditional Organization.findById (line 155) that runs on every request regardless of Redis authz-cache hit. A returning user instead hits getAuthzCache (line 175) and skips most of this.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["A brand-new Keycloak user who has never authenticated against vibrantix-backend before", "A returning user with a warm Redis authz cache entry"],
+    "steps": [
+      "Measure time-to-first-byte and total time-to-interactive for the new user's very first authenticated request to /dashboard",
+      "Measure the same metrics for a returning user's first request in a new session (cache still warm from a prior session)",
+      "Compare the two"
+    ],
+    "expectedResult": "The JIT-provisioned first login is measurably slower than the warm-cache returning-user path; document the delta in milliseconds. Flag if the new-user cold-start TTFB exceeds 1500ms, as this directly affects first-impression onboarding performance.",
+    "tags": ["cold-start", "jit-provisioning", "auth"],
+    "requirement": "Performance Budget - Cold Start",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-007",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Socket.IO Backpressure",
+    "title": "Socket.IO scan-progress relay has no debounce/batching and can flood project rooms under concurrent multi-project Prowler scans",
+    "description": "socket.js relays Redis pub/sub scan-progress messages (channel prowler-{env}:scan:progress:{projectId}) directly via io.to(room).emit(event, data) at lines 271 and 299 — one emit per pub/sub message, with no debounce, batching, or rate limit. Under several concurrent cloud scans each publishing frequent progress updates, this is unbounded emit volume per project room.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["10+ concurrent Prowler scans running across different projects, each publishing progress updates at high frequency", "A test Socket.IO client subscribed to each project:{projectId} room"],
+    "steps": [
+      "Simulate 10 concurrent scans each publishing a progress message to Redis every 200ms for 2 minutes",
+      "Measure client-side message receipt rate, delivery latency, and any dropped/backlogged messages per room",
+      "Measure server CPU/event-loop lag on vibrantix-backend during the burst"
+    ],
+    "expectedResult": "Document the observed emit rate per room and any client-side backlog or delayed delivery. Flag if event-loop lag exceeds 50ms sustained, or if any client observes message delivery delayed by more than 2 seconds versus publish time, as evidence that debouncing/batching is needed on the relay path.",
+    "tags": ["socket-io", "backpressure", "cloud-posture"],
+    "requirement": "Performance Budget - Realtime Backpressure",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-008",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Backend Memory Growth",
+    "title": "In-memory entitlement/credit-ledger caches grow unbounded over process lifetime across multi-tenant load",
+    "description": "ledger.service.js:26 declares a module-level const _balanceCache = new Map() keyed by orgId:org / orgId:project, with TTL-checked entries (line 57) that are only overwritten on next access or explicitly invalidated (lines 109, 134, 147) — never proactively pruned when expired-but-untouched. entitlement/resolver.service.js:32 has the identical pattern (_cache, lines 125/164/197/203/247), cleared only via a full bus.on(TIER_CONFIG_CHANGED, () => _cache.clear()) event or explicit per-key delete — no periodic sweep of stale keys.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": ["Load test capable of simulating requests from 5,000+ distinct organizations/projects over a sustained run", "Node.js process heap snapshot tooling (--inspect / clinic.js)"],
+    "steps": [
+      "Run a sustained 2-hour load test simulating traffic from 5,000 distinct orgId/projectId combinations, each touched once",
+      "Take heap snapshots at 0, 1, and 2 hours and measure the retained size of _balanceCache and the entitlement resolver's _cache",
+      "Confirm whether Map size grows monotonically with distinct org/project count rather than plateauing"
+    ],
+    "expectedResult": "Document the Map sizes at each snapshot. If size grows roughly linearly with distinct orgId/projectId count touched (rather than stabilizing near active-tenant count), flag as an unbounded in-memory cache growth risk requiring a periodic eviction sweep or LRU cap.",
+    "tags": ["memory-leak", "in-memory-cache", "multi-tenant"],
+    "requirement": "Performance Budget - Memory Stability",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PERF-PERF-009",
+    "module": "performance",
+    "category": "performance",
+    "subFeature": "Core Web Vitals",
+    "title": "Audit Assurance pages using plain <img> instead of next/image show measurable LCP/CLS regression versus optimized pages",
+    "description": "next.config.js:96-98 configures images.formats: ['image/webp','image/avif'] for next/image, but ConfiguredRequirementsContent.jsx and CreateTemplateAuditPage.jsx (both under audit-assurance-2) use plain <img> tags directly, bypassing that optimization and any built-in layout-shift reservation next/image provides.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Lighthouse or WebPageTest access against a staging build", "Test project with configured requirements/templates populated with real images"],
+    "steps": [
+      "Run Lighthouse against /audit-assurance-2/[id]/configured-requirements and the create-template-audit page",
+      "Record LCP and CLS scores, noting which element is the LCP candidate",
+      "Run the same audit against a comparable page that uses next/image (e.g. evidence-management) as a control"
+    ],
+    "expectedResult": "Document LCP/CLS for both plain-<img> pages versus the next/image control page. Flag if LCP exceeds 2.5s or CLS exceeds 0.1 on the plain-<img> pages and the control page performs measurably better, confirming next/image migration would improve these metrics.",
+    "tags": ["core-web-vitals", "lcp", "cls", "next-image"],
+    "requirement": "Performance Budget - Core Web Vitals",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

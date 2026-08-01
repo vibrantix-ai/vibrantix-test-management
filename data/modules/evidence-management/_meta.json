@@ -1,0 +1,10 @@
+{
+  "slug": "evidence-management",
+  "name": "Evidence Management",
+  "scope": "feature",
+  "routes": [
+    "/evidence-management"
+  ],
+  "qaAgent": "Evidence_Management_QA_Agent",
+  "description": "Evidence upload, versioning, review workflow, retention, control mapping."
+}

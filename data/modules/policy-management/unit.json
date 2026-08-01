@@ -1,0 +1,79 @@
+[
+  {
+    "id": "POLM-UNIT-001",
+    "module": "policy-management",
+    "category": "unit",
+    "subFeature": "Compliance Scoring",
+    "title": "Compliance score calculation returns a deterministic value for identical mapping input, not a randomized placeholder",
+    "description": "Guards against a known anti-pattern class in this codebase (see Policy_Management QA coverage note on 'compliance dashboard authenticity — Math.random() fake scores') by asserting the score function is pure and deterministic.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Compliance score utility called in isolation with a fixed control-mapping fixture"],
+    "steps": [
+      "Call the compliance score calculator twice with an identical set of control mappings and statuses"
+    ],
+    "expectedResult": "Both calls return the exact same numeric score — confirms the score is computed from real mapping data, not randomized.",
+    "tags": ["compliance-score", "determinism"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-UNIT-002",
+    "module": "policy-management",
+    "category": "unit",
+    "subFeature": "Compliance Scoring",
+    "title": "compareVersions() field diff correctly reports changed, added, and removed fields between two policy versions",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call compareVersions with version 1 = {title:'A', body:'X'} and version 2 = {title:'A', body:'Y', owner:'Bob'}"
+    ],
+    "expectedResult": "Diff reports 'body' as changed (X->Y) and 'owner' as added, 'title' as unchanged.",
+    "tags": ["versioning"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-UNIT-003",
+    "module": "policy-management",
+    "category": "unit",
+    "subFeature": "Bulk Operations",
+    "title": "Bulk delete validation rejects a request that includes any policy currently in 'active' status",
+    "description": "Route-level v.bulkOperation validation plus controller logic for POST /policies/bulk should reject bulk-deleting active/approved policies without an explicit archive-first step.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call the bulk operation validator/handler with a mixed batch of policy IDs where one policy is 'active' and the operation is 'delete'"
+    ],
+    "expectedResult": "The active policy is excluded from the delete with a per-item error, or the whole batch is rejected — an active policy is never silently deleted via bulk operations.",
+    "tags": ["bulk-delete", "safeguard"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "POLM-UNIT-004",
+    "module": "policy-management",
+    "category": "unit",
+    "subFeature": "Requirement Mappings",
+    "title": "getRequirementMappings returns an empty array (not an error) for a policy with no mapped requirements",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "automated",
+    "steps": ["Call getRequirementMappings for a policy with zero entries in its requirement-mappings collection"],
+    "expectedResult": "Returns 200 with an empty array, not a 404 or 500.",
+    "tags": ["edge-case"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

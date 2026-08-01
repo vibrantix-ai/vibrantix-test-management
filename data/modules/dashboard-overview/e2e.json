@@ -1,0 +1,154 @@
+[
+  {
+    "id": "DASH-E2E-001",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Initial Load",
+    "title": "Loading /dashboard renders all 6 populated board cards for an org with real data",
+    "description": "AuditOverviewContent.jsx renders a SimpleGrid of 6 MetricCards (Resource, Compliance, Framework, Audit, Vendor, Risk Board) fed from a single dashboardService.getDashboardMetrics() call plus 5 parallel trend calls.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as an org member", "Org has at least one active project with compliance/risk/vendor/audit data"],
+    "steps": [
+      "Navigate to /dashboard",
+      "Wait for the 6 BoardCardSkeleton placeholders to disappear"
+    ],
+    "expectedResult": "All 6 cards (Resource, Compliance, Framework, Audit, Vendor, Risk Board) render with non-zero, populated KPI values, sparklines/donuts/gauges, and the 'LIVE DATA' pulse indicator, within a few seconds of navigation.",
+    "tags": ["dashboard", "kpi-cards"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-002",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Board Drill-Down Navigation",
+    "title": "Clicking a board card collapses the grid into the NavCard strip and expands that board's detail content",
+    "description": "handleCardClick collapses the 6-card SimpleGrid into a horizontal NavCard strip and mounts the matching *BoardContent component below (e.g. ComplianceBoardContent for the Compliance Board). This is the dashboard's only in-page 'quick action' style navigation.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /dashboard, click the 'Compliance Board' card",
+      "Observe the grid collapse into the NavCard strip with 'Compliance Board' active",
+      "Click the 'Overview' back button"
+    ],
+    "expectedResult": "ComplianceBoardContent renders below the NavCard strip with a breadcrumb 'Overview / Compliance Board'; clicking 'Overview' restores the original 6-card idle grid.",
+    "tags": ["navigation", "compliance-board"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-003",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Project Filter Empty State",
+    "title": "Deselecting every project in the filter bar zeroes out all 6 cards instead of leaving stale numbers on screen",
+    "description": "When selectedProjectIds becomes empty, AuditOverviewContent sets metrics=null and skips the fetch entirely; every card falls back to its hardcoded default (e.g. '0%', '0') via optional-chaining fallbacks.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /dashboard with data populated, open the Filters project picker",
+      "Click 'Deselect All'"
+    ],
+    "expectedResult": "All 6 cards immediately show their zero/default values (0%, 0) rather than continuing to display the previously-fetched org-wide numbers; no network call to /api/dashboard/metrics fires while zero projects are selected.",
+    "tags": ["filter-bar", "empty-state"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-004",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Filter Bar",
+    "title": "Selecting a date preset re-fetches metrics and updates Finding/risk-derived numbers only",
+    "description": "DashboardFilterBar's date preset drives dateFrom/dateTo in effectiveFilters, which only affects the Finding and risks aggregations server-side (per dashboard-metrics/index.js's dateRangeMatch) — compliance's snapshot-based timeline is unaffected.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /dashboard, open Filters and select 'Last 7 Days'",
+      "Observe the Resource and Risk Board cards update",
+      "Observe the Compliance Board card's KPI value"
+    ],
+    "expectedResult": "A new /api/dashboard/metrics request fires with dateFrom/dateTo set to the last 7 days; Resource/Risk numbers reflect only recent findings/risks; the Compliance Board's coverage % is unchanged by the date filter.",
+    "tags": ["filter-bar", "date-range"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-005",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Fresh Tenant Empty State",
+    "title": "A brand-new org with zero projects/risks/vendors/frameworks loads the dashboard without errors",
+    "description": "Verifies the honest-empty-state design principle documented throughout dashboard-metrics/index.js and AuditOverviewContent.jsx: absent data must render as '0', '—', or a 'Pending' badge, never a fabricated non-zero number.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Newly onboarded org with no projects created yet, or one empty project and no evidence/risk/vendor/audit data"],
+    "steps": [
+      "Log in as the new org's first user and navigate to /dashboard"
+    ],
+    "expectedResult": "The page loads without a console error or the red error Alert; all 6 cards render with 0%/0 KPI values, empty donuts/gauges, and Vendor/Resource Board's 'pending' metric rows show their dashed badge rather than 0.",
+    "tags": ["fresh-tenant", "empty-state", "onboarding"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-006",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Sidebar Project Sync",
+    "title": "Switching the Sidebar's active project re-syncs the dashboard's own project filter",
+    "description": "AuditOverviewContent watches the Redux sidebarSelectedProject and re-seeds selectedProjectIds to just that project whenever it changes, unless the user has already manually broadened the dashboard's own Filters selection.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User belongs to at least 2 projects"],
+    "steps": [
+      "On /dashboard, note the current KPI values (scoped to Project A via the Sidebar)",
+      "Use the Sidebar's project selector to switch to Project B"
+    ],
+    "expectedResult": "The dashboard's Filters project picker updates to show only Project B selected, and all 6 cards refresh to Project B's numbers.",
+    "tags": ["project-selector", "sidebar"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-E2E-007",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Mobile Responsive Layout",
+    "title": "The 6-card grid collapses to a single column on a mobile viewport with the filter bar still usable",
+    "description": "The SimpleGrid uses columns={{base:1, md:2, lg:3}}; on a narrow viewport all controls in DashboardFilterBar (project picker, date preset, severity) must remain reachable, not clipped or overlapped by the card grid.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Resize the browser (or use a mobile device emulation) to a 375px-wide viewport",
+      "Navigate to /dashboard",
+      "Open the Filters project picker and select a different project"
+    ],
+    "expectedResult": "Cards stack in a single column, the filter bar's controls are fully visible and operable, and the project selection still triggers a metrics refresh.",
+    "tags": ["responsive", "mobile"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

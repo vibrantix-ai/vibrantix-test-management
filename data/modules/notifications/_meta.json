@@ -1,0 +1,8 @@
+{
+  "slug": "notifications",
+  "name": "Notifications",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "Notifications_QA_Agent",
+  "description": "Notification dispatch pipeline, Socket.IO real-time delivery, unread state, BullMQ queue."
+}

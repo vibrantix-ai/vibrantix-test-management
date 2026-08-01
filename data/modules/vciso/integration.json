@@ -1,0 +1,172 @@
+[
+  {
+    "id": "VCIS-INT-001",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Executive Dashboard",
+    "title": "Executive dashboard projectIds filter narrows results to only projects the caller can access",
+    "description": "GET /organizations/:orgId/executive-dashboard runs filterAccessibleProjectIds on the requested projectIds before calling service.getDashboard, so a caller cannot widen scope by simply naming a project they don't have access to.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has access to projects P1 and P2 but not P3, all in the same org"],
+    "steps": [
+      "Call GET /organizations/:orgId/executive-dashboard?projectIds=P1,P2,P3 as this user"
+    ],
+    "expectedResult": "The service is invoked with projectIds narrowed to [P1, P2] only; returned KPI data is scoped to P1+P2 and excludes any P3-only initiatives, risks, or evidence.",
+    "tags": ["project-scoping", "access-control"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-002",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Risk Intelligence",
+    "title": "Risk heatmap short-circuits to an empty object when the caller has zero accessible projects in scope",
+    "description": "executive-dashboard.routes.ts's risk-heatmap handler checks `if (!projectIds.length) return reply.send({ success: true, data: {} })` after filtering — verifies this early-exit path instead of falling through to service.getHeatMapDistribution with an empty filter (which could silently return org-wide data).",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User requests projectIds consisting only of a project they cannot access"],
+    "steps": [
+      "Call GET /organizations/:orgId/executive-dashboard/risk-heatmap?projectIds=<inaccessible-project-id>"
+    ],
+    "expectedResult": "Response is 200 { success: true, data: {} } — service.getHeatMapDistribution is never invoked, and no org-wide heatmap data is returned as an unintended fallback.",
+    "tags": ["project-scoping", "empty-state"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-003",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Compliance Oversight",
+    "title": "Compliance Oversight /summary degrades to the documented null-input shape when accessible projectIds is empty",
+    "description": "When filterAccessibleProjectIds returns an empty array, the /summary handler returns buildSmartCompliance(null)/buildAuditAssurance(null,null,0)/etc. directly rather than calling CrossServiceIntegration with an empty filter.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User requests projectIds consisting only of an inaccessible project"],
+    "steps": [
+      "Call GET /compliance-oversight/summary?projectIds=<inaccessible-project-id>"
+    ],
+    "expectedResult": "Response returns overallScore 0, activeFrameworks 0, empty upcomingAudits/recentActivities arrays — matching the exact all-null builder output — without any call to CrossServiceIntegration.fetchComplianceData/fetchEvidenceData and without throwing.",
+    "tags": ["project-scoping", "empty-state"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-004",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Third-Party Risk",
+    "title": "Vendor risk distribution normalizes correctly across all 3 vendor-service response shapes",
+    "description": "buildRiskDistribution tries, in order: (1) dashboard's flat riskDistribution object, (2) analytics.data.vendorStats.byRiskTier nested path, (3) legacy [{risk,count}] array. Tier 1 must win when multiple tiers are simultaneously present, per applyFlatDistribution's early return on the first non-zero match.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["vendor-service dashboard/analytics responses can be mocked in 3 shapes: flat, nested vendorStats.byRiskTier, and legacy array"],
+    "steps": [
+      "Mock vendor-service to return only the legacy array format; call GET /third-party-risk/summary and record the riskDistribution",
+      "Mock vendor-service to return only the nested vendorStats.byRiskTier format; repeat",
+      "Mock vendor-service to return both a flat riskDistribution AND a conflicting nested vendorStats.byRiskTier; repeat"
+    ],
+    "expectedResult": "All 3 individual-format calls produce an identical {critical,high,medium,low} shape with correct counts; the mixed-format call in step 3 uses the flat riskDistribution values (tier 1), ignoring the conflicting nested tier.",
+    "tags": ["vendor-service", "data-normalization"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-005",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Board Reporting",
+    "title": "Report download falls back to direct PDF streaming when S3 is unavailable",
+    "description": "GET /reports/:reportId/download: when reportingService.getDownloadUrl returns statusCode 404 or 503 (no S3 presigned URL configured/stored), the route falls back to generatorService.generateReportForStream and streams the regenerated PDF bytes directly instead of erroring.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A generated report exists with no S3-backed file (S3 service disabled or getDownloadUrl configured to return 503)"],
+    "steps": [
+      "Call GET /reports/:reportId/download for this report"
+    ],
+    "expectedResult": "Response streams the regenerated PDF with Content-Type application/pdf, a sanitized Content-Disposition filename, correct Content-Length, and Cache-Control: no-store — the user receives a usable file rather than a 500/404.",
+    "tags": ["board-reporting", "s3-fallback", "pdf-export"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-006",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Strategic Planning",
+    "title": "Initiative creation rejects a timeline where targetDate precedes startDate",
+    "description": "CreateInitiativeSchema's .refine() on the timeline object enforces targetDate > startDate at the Zod layer before the route even calls service.createInitiative.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "POST /initiatives with timeline.startDate = 2026-09-01 and timeline.targetDate = 2026-08-01, otherwise valid body"
+    ],
+    "expectedResult": "400 response with error path timeline.targetDate and message 'Target date must be after start date'; no initiative document is persisted.",
+    "tags": ["validation", "strategic-planning"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-007",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "Risk Intelligence",
+    "title": "FAIR scenario creation rejects a malformed projectId before invoking the service layer",
+    "description": "POST /scenarios checks ObjectId.isValid(request.body.projectId) inline in the route handler and returns 400 'Invalid projectId' before service.createScenario is ever called.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "POST /scenarios with projectId: 'not-an-object-id' and otherwise valid lossEventFrequency/lossMagnitude ranges"
+    ],
+    "expectedResult": "400 'Invalid projectId' is returned; RiskIntelligenceService.createScenario is never invoked and no draft scenario document is created.",
+    "tags": ["validation", "risk-intelligence"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-INT-008",
+    "module": "vciso",
+    "category": "integration",
+    "subFeature": "AI Strategy Advisor",
+    "title": "Advisor message send surfaces a timeout without losing the user's already-persisted message",
+    "description": "The route persists the user message (step 3, saveMessage) before calling python-ai (step 4). If callPythonAI's AbortController fires after AI_TIMEOUT_MS, the route returns 504/502 — verifies the earlier user message survives this failure and is visible on retry, while no assistant message is written for the failed turn.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["python-ai service is unreachable or configured to exceed AI_TIMEOUT_MS for this request"],
+    "steps": [
+      "POST /conversations/:id/messages with a valid content string while python-ai is unresponsive",
+      "Inspect the response and then GET /conversations/:id/messages"
+    ],
+    "expectedResult": "The POST returns 504 'AI service timed out' or 502/503 'AI service error'/'AI service temporarily unavailable'; the subsequent GET shows the user's message persisted in history with no corresponding assistant message for that turn.",
+    "tags": ["ai-advisor", "error-handling", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

@@ -1,0 +1,188 @@
+[
+  {
+    "id": "BILL-INT-001",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Upgrade Flow",
+    "title": "POST /v1/billing/plan/upgrade without targetTier returns 400 INVALID_TIER",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has pricing_v1 feature flag enabled", "Valid JWT with billing.update permission"],
+    "steps": [
+      "Call POST /v1/billing/plan/upgrade with an empty body (no targetTier)"
+    ],
+    "expectedResult": "400 response with errorCode/body indicating INVALID_TIER; no SubscriptionOrg document is modified.",
+    "tags": ["upgrade", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-002",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Upgrade Flow",
+    "title": "Upgrading to an enterprise/contact_sales tier returns requires_contact instead of processing a Stripe change",
+    "description": "Enterprise-tier or ctaType==='contact_sales' targets are not self-serve; the endpoint short-circuits to a CTA response rather than calling Stripe.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org currently on 'scale' tier", "Target plan 'enterprise' has ctaType='contact_sales'"],
+    "steps": [
+      "Call POST /v1/billing/plan/upgrade with targetTier='enterprise'"
+    ],
+    "expectedResult": "200 { status:'requires_contact', requiresContact:true, csmEmail:'sales@vibrantix.ai', hubspotFormUrl:<string> }. No Stripe subscription-update call is made and the org's tier is unchanged.",
+    "tags": ["upgrade", "enterprise", "contact-sales"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-003",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Upgrade Flow",
+    "title": "Upgrade is blocked with 409 DOWNGRADE_PENDING when a scheduled downgrade already exists",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has an active pending-tier-change document (a downgrade scheduled for the next renewsAt)"],
+    "steps": [
+      "Call POST /v1/billing/plan/upgrade with a valid targetTier while the pending downgrade is still active"
+    ],
+    "expectedResult": "409 { code:'DOWNGRADE_PENDING', message:'Cancel pending downgrade before upgrading' }. Caller must call DELETE /v1/billing/plan/pending-change first.",
+    "tags": ["upgrade", "downgrade", "pending-change"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-004",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Downgrade Flow",
+    "title": "Downgrading from the enterprise tier is rejected and points to a different CSM email than the upgrade-to-enterprise path",
+    "description": "Enterprise downgrade requires talking to a CSM. Worth pinning: the downgrade-blocked email (csm@vibrantix.ai) differs from the upgrade-to-enterprise email (sales@vibrantix.ai) — verify this isn't an accidental inconsistency before it ships to more customers.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org currently on 'enterprise' tier"],
+    "steps": [
+      "Call POST /v1/billing/plan/downgrade with targetTier='scale'"
+    ],
+    "expectedResult": "409 { code:'DOWNGRADE_NOT_ALLOWED', message:'Enterprise downgrades require contacting your CSM', details:{ requiresContact:true, csmEmail:'csm@vibrantix.ai' } }.",
+    "tags": ["downgrade", "enterprise"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-005",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Downgrade Flow",
+    "title": "Downgrade with usage over the target tier's caps requires acknowledgeOverCap=true or returns 422",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org usage: 12 users, target 'growth' tier limits.users=10"],
+    "steps": [
+      "Call POST /v1/billing/plan/downgrade with targetTier='growth' and no acknowledgeOverCap field",
+      "Repeat the same call with acknowledgeOverCap=true"
+    ],
+    "expectedResult": "First call: 422 { code:'OVER_CAP_NOT_ACKNOWLEDGED', message:'Usage exceeds limits of target tier. Set acknowledgeOverCap=true to proceed.', details:{ overCap:{ users:true, ... } } }. Second call: 200/scheduled success — a pending-tier-change is created for the next renewsAt.",
+    "tags": ["downgrade", "over-cap"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-006",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Downgrade Flow",
+    "title": "Cancelling a pending downgrade when none exists returns NO_PENDING_CHANGE rather than a generic error",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has no active pending-tier-change document"],
+    "steps": [
+      "Call DELETE /v1/billing/plan/pending-change"
+    ],
+    "expectedResult": "Response carries code 'NO_PENDING_CHANGE'; no error is thrown and no side effects occur. Confirms the client's existing 'treat as no-op' handling matches server intent.",
+    "tags": ["downgrade", "pending-change"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-007",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Invoice History",
+    "title": "GET /v1/billing/invoices returns an empty paginated shape for an org with no Stripe customer yet",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has no billing.stripeCustomerId set"],
+    "steps": [
+      "Call GET /v1/billing/invoices"
+    ],
+    "expectedResult": "200 { items:[], page:1, pageSize:25, total:0, nextCursor:null } — no 4xx/5xx thrown for the common 'never billed yet' state.",
+    "tags": ["invoices", "empty-state"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-008",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Feature Flag Gating",
+    "title": "All customer-facing /v1/billing/* routes 404 when pricing_v1 is disabled for the org",
+    "description": "isPricingV1Enabled(orgId) gates the whole customer billing API (env PRICING_V1 or per-org PRICING_V1_ORG_ALLOWLIST). Public plans/tiers catalog and the Stripe webhook are exempt.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org is not in PRICING_V1_ORG_ALLOWLIST and PRICING_V1 env flag is off"],
+    "steps": [
+      "Call GET /v1/billing/plan, GET /v1/billing/usage, and POST /v1/billing/plan/upgrade for the flagged-off org"
+    ],
+    "expectedResult": "Each call returns 404 { error:{ code:'NOT_FOUND', message:'Not found' } }. GET /v1/billing/public-plans (or plans-catalog public variant) and POST /webhooks/stripe remain reachable regardless of the flag.",
+    "tags": ["feature-flag", "pricing_v1"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-INT-009",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Project-Scoped Billing",
+    "title": "billingProjectAccess middleware requires and validates projectId for project-billed organizations",
+    "description": "billing.routes.js (lines ~56-67) enforces projectId presence and project-org ownership for orgs on the project scope of billing.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org's billing scope is 'project' (project_billing_v1 enabled)"],
+    "steps": [
+      "Call a project-scoped billing endpoint (e.g. GET /v1/billing/plan) with no projectId query param",
+      "Repeat with a projectId belonging to a different organization"
+    ],
+    "expectedResult": "First call: 400 'projectId is required for project-billed organizations'. Second call: 404 'Project not found'.",
+    "tags": ["project-billing", "multi-tenant", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

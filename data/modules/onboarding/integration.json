@@ -1,0 +1,180 @@
+[
+  {
+    "id": "ONBD-INT-001",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Step Completion API",
+    "title": "POST /steps/:key/complete is idempotent for a repeated call on the same step",
+    "description": "onboarding.controller.js completeStep uses $addToSet on completedSteps, so calling the same step twice must not create a duplicate array entry or change the currentStep result.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["Authenticated onboarding session (bootstrap JWT) for a fresh org at step-1"],
+    "steps": [
+      "POST /api/v1/onboarding/steps/step-1/complete",
+      "POST /api/v1/onboarding/steps/step-1/complete again",
+      "GET /api/v1/onboarding/state"
+    ],
+    "expectedResult": "completedSteps contains exactly one 'step-1' entry after both calls; currentStep is 'step-2' both times; the second call returns 200, not an error.",
+    "tags": ["idempotency", "api"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-002",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "State API",
+    "title": "GET /onboarding/state auto-provisions a fresh OnboardingState document when none exists",
+    "description": "getState() (onboarding.controller.js lines 31-35) creates { orgId, currentStep:'step-1', completedSteps:[] } on the fly if no document is found — relevant for orgs provisioned outside the normal signup transaction (e.g. legacy/DIY-migrated orgs).",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An org exists with no onboarding_state document at all"],
+    "steps": [
+      "As a user of that org, call GET /api/v1/onboarding/state"
+    ],
+    "expectedResult": "Response is 200 with currentStep:'step-1', completedSteps: [], setupHealthScore: 0 — and a document is now persisted for subsequent calls.",
+    "tags": ["zero-state", "api"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-003",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Feature Flag Gate",
+    "title": "All /api/v1/onboarding/* routes return 404 when isPricingOnboardingV1Enabled() is off",
+    "description": "onboarding.routes.js line 21-26 short-circuits every route (including public ones like /signup and /frameworks) with 404 NOT_FOUND when the pricing-onboarding-v1 feature flag is disabled, forcing legacy signup instead.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Feature flag isPricingOnboardingV1Enabled() forced to false"],
+    "steps": [
+      "GET /api/v1/onboarding/frameworks",
+      "POST /api/v1/onboarding/signup",
+      "GET /api/v1/onboarding/state (with a valid bootstrap token)"
+    ],
+    "expectedResult": "All three calls return 404 { error: { code: 'NOT_FOUND' } } — including the otherwise-public /frameworks and /signup endpoints.",
+    "tags": ["feature-flag"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-004",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Step Completion API",
+    "title": "Completing an unknown step key is rejected before any database write",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "POST /api/v1/onboarding/steps/step-99/complete",
+      "GET /api/v1/onboarding/state"
+    ],
+    "expectedResult": "The complete call returns 400 { error: { code: 'INVALID_STEP', message: 'Unknown step: step-99' } }; the subsequent GET shows completedSteps unchanged.",
+    "tags": ["api", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-005",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Invite Team Step",
+    "title": "Step-4 completes even when the bulk-invite call fails",
+    "description": "step-4/page.jsx wraps the POST /users/bulk-invite call in .catch(() => {/* quota — non-fatal */}) so a seat-limit or quota failure on the invite endpoint must not block onboardingService.completeStep('step-4', ...) from running afterward.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org is at its seat limit so POST /users/bulk-invite would reject additional invites"],
+    "steps": [
+      "On /onboarding/step-4, add 2 teammate emails and submit",
+      "Observe the bulk-invite API response (expected to fail/reject due to seat limit)",
+      "Observe the subsequent onboarding step-4 completion call and navigation"
+    ],
+    "expectedResult": "Despite the bulk-invite failure, POST /steps/step-4/complete still fires and succeeds, and the wizard advances to /onboarding/step-5.",
+    "tags": ["invite-team", "error-handling"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-006",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Signup",
+    "title": "POST /onboarding/signup creates Organization, User, OnboardingState and a default Project in a single transaction",
+    "description": "signup.controller.js _withTxn() wraps Organization.create, User.create, OnboardingState.create, and Project.createWithCode. A duplicate email or domain must roll back the whole transaction and surface a 409.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An organization already exists with domain 'acme.com'"],
+    "steps": [
+      "POST /api/v1/onboarding/signup with domain='acme.com' and a new email",
+      "POST /api/v1/onboarding/signup again reusing an email that already exists on any org"
+    ],
+    "expectedResult": "First call returns 409 { error: { code: 'DOMAIN_TAKEN' } } with no partial Organization/User/OnboardingState/Project rows created. Second call (existing email, new domain) returns 409 { error: { code: 'EMAIL_TAKEN' } } under the same rollback guarantee.",
+    "tags": ["signup", "transaction", "multi-tenant"],
+    "requirement": "Trial signup integrity",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-007",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Signup",
+    "title": "Keycloak user creation failure rolls back the Mongo records created during signup",
+    "description": "signup.controller.js lines 156-177: if _createKeycloakUser throws, the handler deletes the just-created Organization, User, OnboardingState, and Project documents and returns 502 KEYCLOAK_SYNC_FAILED.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Keycloak admin API mocked to reject user creation"],
+    "steps": [
+      "POST /api/v1/onboarding/signup with valid, unique email/domain/orgName/frameworkName",
+      "Observe the Keycloak failure and the response",
+      "Query Mongo directly for the Organization/User/OnboardingState/Project just referenced by orgId"
+    ],
+    "expectedResult": "Response is 502 { error: { code: 'KEYCLOAK_SYNC_FAILED' } } and none of the 4 Mongo documents remain — the org is not left in a half-provisioned state.",
+    "tags": ["signup", "rollback", "keycloak"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "ONBD-INT-008",
+    "module": "onboarding",
+    "category": "integration",
+    "subFeature": "Platform Tour",
+    "title": "Platform tour status/update is isolated per user within the same organization",
+    "description": "PlatformTourState (platform-tour-state.model.js) is keyed uniquely on userId, not orgId — two users in the same org must have completely independent introDone/tourDone/tourSelection state.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User A and User B belong to the same organization", "User A has already completed the platform tour (tourDone=true)"],
+    "steps": [
+      "As User A, GET /api/v1/onboarding/platform-tour/status",
+      "As User B (same org, never toured), GET /api/v1/onboarding/platform-tour/status"
+    ],
+    "expectedResult": "User A's response shows tourDone: true. User B's response shows introDone: false, tourDone: false, tourSelection: null — User B is unaffected by User A's completion.",
+    "tags": ["platform-tour", "multi-tenant"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

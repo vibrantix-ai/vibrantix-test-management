@@ -1,0 +1,157 @@
+[
+  {
+    "id": "SMCM-INT-001",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "Questionnaire Snapshot",
+    "title": "questionnaireSnapshot denormalizes question text/options at submission time, immune to later question edits",
+    "description": "submitResponse copies question/responseType/options.value into scResponseSchema's snapshotSchema at submit time rather than referencing SCQuestion live. Verifies a later PATCH to the source question does not retroactively change a historical response's displayed Q&A.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A response was already submitted referencing question Q1 with its original wording/options"],
+    "steps": [
+      "As admin, PATCH /smart-compliance/questions/:Q1id changing the question text and one option's label",
+      "Re-fetch GET /smart-compliance/responses/:id for the earlier response"
+    ],
+    "expectedResult": "The response's questionnaireSnapshot still shows the original question text and options exactly as answered — it is unaffected by the later edit to the live SCQuestion document.",
+    "tags": ["data-integrity", "snapshot"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-002",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "Usage Gating",
+    "title": "submitResponse blocks a new submission once moduleConfig.smartCompliance.runsPerYear is reached this calendar year",
+    "description": "When scConfig.runsPerYear !== -1, submitResponse counts isActive SCResponse docs created since Jan 1 of the current year for the org and throws a 402 SC_RUNS_EXHAUSTED AppError once usedThisYear >= runsPerYear, before any LLM call or credit debit happens.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org's smartCompliance.runsPerYear = 2", "2 active responses already created this year for the org"],
+    "steps": [
+      "Submit a 3rd valid questionnaire response for the same org this year"
+    ],
+    "expectedResult": "402 error with code SC_RUNS_EXHAUSTED and message referencing '2/year' — no Azure OpenAI call is made (verify via absence of llm latency logs) and no new SCResponse document is created.",
+    "tags": ["billing-tier", "usage-gate"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-003",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "AI Credits",
+    "title": "submitResponse preflights AI credit balance and blocks the run before debiting when the org is exhausted",
+    "description": "When isPricingAiCreditsV1Enabled() is true, ledger.preflight(orgId, scConfig.aiCreditsPerRun) is checked before the LLM call. If !allowed, a 402 AI_CREDITS_EXHAUSTED error is thrown referencing the current balance, and neither the LLM nor ledger.debit() are invoked.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["AI credits pricing flag enabled", "Org's AI credit balance is below scConfig.aiCreditsPerRun (e.g. balance=1, aiCreditsPerRun=2)"],
+    "steps": [
+      "Submit a valid questionnaire response for this org"
+    ],
+    "expectedResult": "402 AI_CREDITS_EXHAUSTED error mentioning 'balance: 1'; no SCResponse is created and ledger.debit is never called for this attempt.",
+    "tags": ["ai-credits", "billing-tier"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-004",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "LLM Integration",
+    "title": "runLLMRecommendation returns a clear 400 error when Azure OpenAI is not configured, without leaking the API key",
+    "description": "runLLMRecommendation checks AZURE_OPENAI_ENDPOINT/DEPLOYMENT/API_KEY up front and throws AppError.badRequest with a fixed instructional message; the error log records only boolean hasEndpoint/hasDeployment/hasApiKey flags, never the key value itself.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["AZURE_OPENAI_API_KEY unset in the environment for a test deployment"],
+    "steps": [
+      "Submit a valid questionnaire response",
+      "Inspect both the API error response and the server log entry for this request"
+    ],
+    "expectedResult": "API returns 400 'LLM service not configured — set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT, AZURE_OPENAI_API_KEY'; the log entry contains only hasEndpoint/hasDeployment/hasApiKey booleans, never a raw key value.",
+    "tags": ["llm", "error-handling", "secrets"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-005",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "Framework Adoption",
+    "title": "POST /responses/:id/frameworks/:frameworkId/add reactivates an archived ClientFramework end-to-end through the real route",
+    "description": "End-to-end version of SMCM-UNIT-008 (which calls addRecommendedFramework directly) — exercises the full controller: permission check, PLAC project-scope check, isRecommended check, licensing check, then the reactivate-vs-create branch in addRecommendedFramework, followed by populate('frameworkId').",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A ClientFramework document exists for (org, project, frameworkId) with status='archived'",
+      "The same frameworkId is recommended in a new response"
+    ],
+    "steps": [
+      "Call POST /smart-compliance/responses/:responseId/frameworks/:frameworkId/add for the archived framework's id"
+    ],
+    "expectedResult": "201 response with the same ClientFramework document (not a new one), status='active', revokedAt=null, addedBy/addedAt updated to the current caller/time, frameworkId populated with name/title/version.",
+    "tags": ["framework-adoption", "data-integrity"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-006",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "Control Coverage",
+    "title": "enrichedSupportedFrameworks.criticalControls always reads 0 because the control-count aggregation never groups by severity",
+    "description": "getResponseById destructures ctrl.critical from the FrameworkControl.aggregate() result to populate criticalControls, but the aggregate pipeline only does { $group: { _id: '$frameworkId', total: { $sum: 1 } } } — it never computes a 'critical' field. ctrl.critical is therefore always undefined, so criticalControls silently renders as 0 for every framework regardless of how many Critical-severity controls actually exist. Flag for remediation: add a $sum on a severity==='critical' condition (or a separate $facet) alongside total.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A recommended framework has at least 3 controls marked severity/priority 'critical'"],
+    "steps": [
+      "Open the response detail page for a response recommending that framework",
+      "Inspect the framework card's 'criticalControls' figure"
+    ],
+    "expectedResult": "Current behavior: criticalControls shows 0 even though the framework has critical-severity controls — this is a data-accuracy gap in the compliance-map-feeding control coverage figure and should be remediated, not treated as correct.",
+    "tags": ["control-mapping", "data-integrity", "coverage"],
+    "requirement": "ISO 27001:2022 Clause 9.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SMCM-INT-007",
+    "module": "smart-compliance",
+    "category": "integration",
+    "subFeature": "Control Coverage",
+    "title": "getFrameworkAnalysis silently drops unlicensed frameworks while getResponseById still shows them marked isLicensed=false",
+    "description": "getFrameworkAnalysis filters its aggregated results to licensedSet before returning (`.filter(fw => licensedSet === null || licensedSet.has(...))`), so an unlicensed-but-recommended framework never appears in the 'Framework Recommendations' history/analysis view at all. getResponseById, by contrast, deliberately keeps unlicensed frameworks visible with isLicensed=false so the UI can show a 'Locked' badge. The two related views therefore disagree about whether an unlicensed recommendation exists.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A submitted response recommends a framework not licensed for the org"],
+    "steps": [
+      "Open the individual response detail page and note the unlicensed framework shown with a 'Locked' badge",
+      "Open the 'Framework Recommendations' analysis/history tab for the same project"
+    ],
+    "expectedResult": "The unlicensed framework is visible (locked) on the response detail page but absent entirely from the aggregated analysis tab — an inconsistency worth flagging even though neither view is technically wrong in isolation.",
+    "tags": ["licensing", "data-integrity", "ux-gap"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

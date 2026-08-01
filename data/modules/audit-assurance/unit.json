@@ -1,0 +1,176 @@
+[
+  {
+    "id": "AUDT-UNIT-001",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "CAR Lifecycle",
+    "title": "submitForVerification() rejects a CAR that is not in remediation_in_progress",
+    "description": "corrective-action.service.js submitForVerification() (lines 740-787) uses a conditional findOneAndUpdate gated on status:'remediation_in_progress'. CAR_VALID_TRANSITIONS at line 40-46 defines the full map (open -> remediation_in_progress -> verification_pending -> {closed|verification_failed}) but is only consulted via one hardcoded literal check at line 750, not a generic lookup. This unit test verifies the one transition that IS enforced.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR document exists with status='open'"],
+    "steps": [
+      "Call correctiveActionService.submitForVerification(carId, userId) on a CAR whose status is 'open' (not 'remediation_in_progress')"
+    ],
+    "expectedResult": "Call rejects with a 409/422 conflict indicating the CAR is not in remediation_in_progress; the CAR document's status field is left unchanged.",
+    "tags": ["state-machine", "car-lifecycle"],
+    "requirement": "ISO 27001:2022 Clause 10.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-002",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "Segregation of Duties",
+    "title": "verify() atomically rejects a verifier who is also the CAR's assignedTo",
+    "description": "corrective-action.service.js verify() (lines 789-860) performs a single findOneAndUpdate whose filter includes both status:'verification_pending' and assignedTo:{$ne: verifierId}. If the update matches zero documents it re-queries to distinguish 'already verified' from 'you are the assignee', throwing 403 'Verifier cannot be the same as the assignee (segregation of duties)' at line 841.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR exists with status='verification_pending' and assignedTo=userA"],
+    "steps": [
+      "Call correctiveActionService.verify(carId, userA_id, { outcome: 'passed' })"
+    ],
+    "expectedResult": "Call rejects with 403 'Verifier cannot be the same as the assignee (segregation of duties)'. The CAR's status remains 'verification_pending' and no entry is appended to verificationHistory.",
+    "tags": ["segregation-of-duties", "car-lifecycle"],
+    "requirement": "ISO 27001:2022 Clause 10.1",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-003",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "CAR Reference Generation",
+    "title": "generateDisplayId('CAR', ...) produces a unique carReference under concurrent creation",
+    "description": "carReference is generated via generateDisplayId('CAR', ...) backed by a unique+sparse index, replacing a prior race-prone countDocuments-based scheme (per in-code comment in corrective-action.service.js). This test verifies the current generator does not hand out duplicate references when called concurrently.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Invoke generateDisplayId('CAR', orgId) 20 times concurrently (Promise.all) against the same organization"
+    ],
+    "expectedResult": "All 20 generated carReference values are unique; none collide, and no unique-index constraint violation is thrown back to the caller.",
+    "tags": ["race-condition", "id-generation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-004",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "CAR Lifecycle",
+    "title": "submitForVerification() returns 409 when a concurrent request already advanced the CAR's status",
+    "description": "The conditional findOneAndUpdate at corrective-action.service.js:760-770 is gated on status:'remediation_in_progress'. If a second concurrent call already flipped the CAR to 'verification_pending', the second caller's filter matches nothing and the service returns 409 Conflict ('Refresh to see the current state') instead of silently no-op'ing or throwing a generic 500.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A CAR exists with status='remediation_in_progress'"],
+    "steps": [
+      "Fire two concurrent submitForVerification(carId, ...) calls against the same CAR",
+      "Inspect the response of whichever call loses the race"
+    ],
+    "expectedResult": "Exactly one call succeeds and transitions the CAR to 'verification_pending'; the losing call receives 409 Conflict with a message instructing the caller to refresh, not a stack trace or silent success.",
+    "tags": ["race-condition", "car-lifecycle"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-005",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "Soft Delete",
+    "title": "AuditNonConformance pre-find hook auto-injects deletedAt:null unless _includeDeleted is set",
+    "description": "audit-nonconformance.model.js:188-195 registers a pre(/^find/) hook: if the query doesn't already reference deletedAt and doesn't set _includeDeleted, it forces this.where({deletedAt: null}). This is the sole safety net keeping soft-deleted findings/CARs out of default queries.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A soft-deleted AuditNonConformance document exists (deletedAt set to a past date)"],
+    "steps": [
+      "Call AuditNonConformance.find({ auditId }) with no deletedAt or _includeDeleted in the query",
+      "Call AuditNonConformance.find({ auditId, _includeDeleted: true })"
+    ],
+    "expectedResult": "The first call excludes the soft-deleted document from the result set. The second call includes it, and the internal _includeDeleted flag is stripped from the executed query rather than being sent to MongoDB.",
+    "tags": ["soft-delete", "data-integrity"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-006",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "Schema Validation",
+    "title": "severity is required only when recordType='finding'; rootCauseCategory required only when recordType='car'",
+    "description": "audit-nonconformance.model.js:57-61 conditionally requires severity for finding rows, and rootCauseCategory has an analogous conditional requirement for car rows. Both recordTypes share one schema/collection, so validation must correctly branch on recordType.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Attempt to save an AuditNonConformance with recordType='finding' and no severity field",
+      "Attempt to save an AuditNonConformance with recordType='car' and no rootCauseCategory field",
+      "Attempt to save an AuditNonConformance with recordType='car' and no severity field"
+    ],
+    "expectedResult": "Step 1 fails Mongoose validation (severity required for findings). Step 2 fails validation (rootCauseCategory required for CARs). Step 3 succeeds — severity is not required on car rows.",
+    "tags": ["schema-validation", "data-model"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-007",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "Audit Status State Machine",
+    "title": "AUDIT_TRANSITIONS map references 'active' and omits 'archived', neither matching the audit.model.js status enum",
+    "description": "audit.model.js status enum (line 99) is: draft, in_progress, on_hold, closed, cancelled, archived. But the AUDIT_TRANSITIONS map used by auditSchema.methods.changeStatus (lines 253-259) uses the key/value 'active' instead of 'in_progress', and has no entry at all for 'archived' as either a source or reachable target. Calling changeStatus('in_progress') from 'draft' evaluates allowed=['active','cancelled'] and rejects the one transition every audit must make to actually start.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An Audit document exists with status='draft'"],
+    "steps": [
+      "Call audit.changeStatus('in_progress', userId) on a draft audit",
+      "Inspect whether the call throws or succeeds"
+    ],
+    "expectedResult": "Document current behavior: changeStatus('in_progress') throws 422 'Invalid transition ... Allowed: active, cancelled' because the map's vocabulary ('active') doesn't match the schema enum ('in_progress'). This is a P0 defect — either changeStatus() is bypassed everywhere in practice (a separate defect) or draft audits can never be legitimately started through this method. Flag for remediation: align AUDIT_TRANSITIONS keys/values with the real status enum and add an 'archived' entry.",
+    "tags": ["state-machine", "audit-lifecycle", "enum-drift"],
+    "requirement": "ISO 27001:2022 Clause 9.2",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-UNIT-008",
+    "module": "audit-assurance",
+    "category": "unit",
+    "subFeature": "Findings Closure",
+    "title": "Closing a finding sets closedBy/closedAt exactly once despite tautological branch logic in updateFinding",
+    "description": "findings.controller.js updateFinding (lines 255-311) writes req.body.status onto finding.status via the FIELD_MAP loop (line 279) *before* the two closedAt-setting branches at lines 284-292 run. Because finding.status has already been overwritten, the condition 'req.body.status===closed && finding.status===closed' is always true whenever the caller requests closed — making the two branches functionally identical dead-code paths. This test verifies the practical output is still correct (single, non-duplicated closedAt/closedBy) even though the code path that produces it is redundant.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A finding exists with status='open' and no closedAt/closedBy set"],
+    "steps": [
+      "Call updateFinding(findingId, { status: 'closed' }, closingUserId)"
+    ],
+    "expectedResult": "The finding's closedAt is set to the current timestamp and closedBy to closingUserId, set exactly once (not double-written or left null). Recommend simplifying the two redundant branches (findings.controller.js:284-292) into a single condition during any future refactor.",
+    "tags": ["code-smell", "findings"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

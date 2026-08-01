@@ -1,0 +1,10 @@
+{
+  "slug": "dashboard-overview",
+  "name": "Dashboard Overview",
+  "scope": "feature",
+  "routes": [
+    "/dashboard"
+  ],
+  "qaAgent": "Dashboard_Overview_QA_Agent",
+  "description": "Main dashboard KPI cards, cross-module aggregation, widgets, quick actions."
+}

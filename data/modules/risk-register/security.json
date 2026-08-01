@@ -1,0 +1,193 @@
+[
+  {
+    "id": "RISK-SEC-001",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "GET /risks/:riskId rejects a riskId that belongs to another organization",
+    "description": "risk-register.routes.ts verifyRiskAccess() first calls verifyRiskOwnership(), which loads only { organizationId, projectId } and compares organizationId against request.user.organizationIdString before the service layer is ever invoked.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/risk-register-idor.test.ts",
+    "preconditions": ["Two orgs (A, B) each with at least one risk", "Valid JWT for a user in org A holding risk.read"],
+    "steps": [
+      "As an org A user, call GET /risks/:riskId using a riskId (or riskCode RISK-YYYY-NNNN) belonging to org B"
+    ],
+    "expectedResult": "Request is rejected with 403 'Access denied' — no risk name, score, or treatment data from org B is returned in the response body.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-002",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Project Scoping",
+    "title": "An org member who is not assigned to a risk's project is denied access to that risk even with risk.read",
+    "description": "assertProjectAccess() (lib/project-access.ts) is invoked inside verifyRiskAccess() after the org-ownership check succeeds. It calls projectScopeClient.getScope() and rejects with 403 'You are not a member of this project' when the caller isn't in the risk's projectId — a second IDOR gate beyond organization membership.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": [
+      "Org A has Project 1 and Project 2",
+      "A risk exists in Project 1 with a non-null projectId",
+      "User is a member of Project 2 only, holds risk.read at the org level"
+    ],
+    "steps": [
+      "As the Project-2-only user, call GET /risks/:riskId for the Project 1 risk"
+    ],
+    "expectedResult": "Request is rejected with 403 'You are not a member of this project' despite the user belonging to the same organization and holding risk.read.",
+    "tags": ["idor", "project-scoping", "rbac", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-003",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "RBAC Enforcement",
+    "title": "PUT /risks/:riskId rejects a caller who lacks the risk.update permission",
+    "description": "The route's preHandler chain runs augmentPermissionsWithProjectGrant() then fastify.requirePermission('risk.update') before verifyRiskAccess() executes, so a permission-less caller is rejected before any risk data is touched.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User authenticated with a valid JWT but no risk.update permission (org-level or project-granted)"],
+    "steps": [
+      "As the permission-less user, call PUT /risks/:riskId with a valid body changing the risk's name"
+    ],
+    "expectedResult": "Request is rejected with 403 before the update reaches RiskRegisterService.updateRisk(); the risk document is unchanged.",
+    "tags": ["rbac", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-004",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "RBAC Enforcement",
+    "title": "PUT /risks/:riskId/acceptance/approve rejects a caller who lacks the risk.approve permission",
+    "description": "This route's preHandler requires risk.approve specifically (distinct from risk.update, which governs the /acceptance/request submission route) — a user who can submit an acceptance request must not automatically be able to decide one.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Risk has acceptance.status='pending'", "Caller holds risk.update but not risk.approve"],
+    "steps": [
+      "As the risk.update-only user, call PUT /risks/:riskId/acceptance/approve with decision='approved'"
+    ],
+    "expectedResult": "Request is rejected with 403 before processAcceptanceDecision() runs; acceptance.status remains 'pending'.",
+    "tags": ["rbac", "acceptance", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-005",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Authority Matrix",
+    "title": "Holding risk.approve does not let an attacker approve an acceptance request they were never named on",
+    "description": "processAcceptanceDecision() (RiskRegisterService.ts:1341) checks existingRisk.acceptance.approvers.some(a => a.userId === user.userId) as a second gate after the risk.approve permission check passes. This is the deliberate authority-matrix control: the permission grants the *capability* to approve risks in general, but only the named approverIds on that specific request may exercise it — verifying an attacker can't bypass named-approver authority just by holding the org-wide permission.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/risk-authority-matrix.test.ts",
+    "preconditions": [
+      "Risk has acceptance.status='pending' with approverIds=[UserA] only",
+      "UserB holds risk.approve at the org level but is not in approverIds"
+    ],
+    "steps": [
+      "As UserB, PUT /risks/:riskId/acceptance/approve with decision='approved'"
+    ],
+    "expectedResult": "Request is rejected with 403 'You are not authorized to approve this request' even though UserB's JWT carries risk.approve — permission alone does not satisfy the named-approver authority check.",
+    "tags": ["authority-matrix", "acceptance", "rbac", "privilege-escalation", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-006",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Authority Matrix",
+    "title": "A requester can name themselves as the sole approver and self-approve their own acceptance request",
+    "description": "submitAcceptanceRequest() places request.approverIds verbatim into acceptance.approvers with no check that the requester (user.userId) is excluded from the list, and processAcceptanceDecision()'s authority check only verifies list membership — it never compares the decider against the original requester. A user with both risk.update and risk.approve can submit a request naming themselves as approverIds[0], then immediately approve it, bypassing the four-eyes intent of the acceptance workflow. Documents the current gap for a product/security decision rather than asserting a fix already exists.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User holds both risk.update and risk.approve", "Risk has acceptance.status not 'pending'"],
+    "steps": [
+      "As the user, POST /risks/:riskId/acceptance/request with approverIds=[self.userId] and a valid 50+ char justification",
+      "As the same user, PUT /risks/:riskId/acceptance/approve with decision='approved'"
+    ],
+    "expectedResult": "Current behavior: both calls succeed and acceptance.status becomes 'approved' with the requester as the sole recorded approver — no self-review/four-eyes prevention exists. Flagged for remediation (reject approverIds containing the requester's own userId, or block self-decision in processAcceptanceDecision).",
+    "tags": ["authority-matrix", "acceptance", "self-review", "four-eyes"],
+    "requirement": "ISO 27001 Annex A.5.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-007",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Module Risk Triage",
+    "title": "Promote endpoint rejects a projectId in the request body that doesn't match the candidate module risk's actual project",
+    "description": "ModuleRiskService.promote() (ModuleRiskService.ts:195) re-checks moduleRisk.projectId.toHexString() !== projectId after the route's own assertProjectAccess(body.projectId) passes — this stops an attacker who IS a member of some project P from promoting a module risk that actually belongs to project Q by simply supplying P in the request body. Without this second check, augmentPermissionsWithProjectGrant + assertProjectAccess would only prove membership in the *claimed* project, not the *candidate's* real project.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/module-risk-promote-idor.test.ts",
+    "preconditions": [
+      "A pending module risk candidate belongs to Project Q",
+      "Caller holds risk.approve and is a member of Project P (not Q)"
+    ],
+    "steps": [
+      "POST /organizations/:orgId/module-risks/:id/promote with body { projectId: <Project P id> } where :id is the Project-Q candidate"
+    ],
+    "expectedResult": "Request fails with 409 'Candidate project does not match the requested project' — no risk entry is created in either project's register.",
+    "tags": ["idor", "module-risk-triage", "auto-promotion", "owasp-a01"],
+    "requirement": "ISO 27001 Clause 6.1.2",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "RISK-SEC-008",
+    "module": "risk-register",
+    "category": "security",
+    "subFeature": "Module Risk Triage",
+    "title": "Promote and dismiss endpoints return 404 for a moduleRiskId belonging to another organization, not 403",
+    "description": "Both ModuleRiskService.promote() and the dismiss route's getModuleRiskProjectId() filter the module-risks lookup by { _id, organizationId } together, so an org-B candidate id probed from org A never resolves to a document at all — preventing an attacker from distinguishing 'exists in another org' from 'doesn't exist' via response code, and closing off enumeration of cross-org module risk ids.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["Org B has a pending module risk candidate", "Caller is an org A user with risk.approve"],
+    "steps": [
+      "As the org A user, POST /organizations/:orgAId/module-risks/:orgBCandidateId/promote with any valid projectId in the body",
+      "As the org A user, POST /organizations/:orgAId/module-risks/:orgBCandidateId/dismiss with a valid 10+ char reason"
+    ],
+    "expectedResult": "Both calls return 404 'Module risk not found' — the org-B candidate is never promoted or dismissed, and no information about its existence, project, or severity leaks in the response.",
+    "tags": ["idor", "multi-tenant", "module-risk-triage", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

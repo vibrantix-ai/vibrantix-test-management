@@ -1,0 +1,111 @@
+[
+  {
+    "id": "TISO-SAN-001",
+    "module": "tenant-isolation",
+    "category": "sanity",
+    "subFeature": "Auth Bypass Guardrails",
+    "title": "Production build environment has DEV_BYPASS and BYPASS_PERMISSIONS unset or false across all services",
+    "description": "Quick build-verification check before any deployment: confirm the environment configuration for vibrantix-backend (DEV_BYPASS) and vendor-service (BYPASS_PERMISSIONS) does not carry a true value into the production environment file/secrets.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Access to the production deployment's environment configuration"],
+    "steps": [
+      "Inspect the production environment variables for vibrantix-backend: DEV_BYPASS, SKIP_JWKS_VERIFY",
+      "Inspect the production environment variables for vendor-service: BYPASS_PERMISSIONS",
+      "Confirm NODE_ENV=production is explicitly set (not left to default to the Docker image's baked-in 'development')"
+    ],
+    "expectedResult": "DEV_BYPASS, SKIP_JWKS_VERIFY, and BYPASS_PERMISSIONS are all absent or 'false' in production; NODE_ENV is explicitly 'production'.",
+    "tags": ["auth-bypass", "multi-tenant", "smoke"],
+    "linkedDefect": "TI-001",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TISO-SAN-002",
+    "module": "tenant-isolation",
+    "category": "sanity",
+    "subFeature": "Fresh Tenant Onboarding",
+    "title": "New organization dashboard loads without console errors and shows an empty (not fabricated) compliance score",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A newly created org with zero configured frameworks"],
+    "steps": [
+      "Log in as the new org's admin and open the dashboard",
+      "Check browser devtools console for errors",
+      "Read the compliance score widget value"
+    ],
+    "expectedResult": "No console errors; compliance score widget shows 'Not configured' rather than any numeric percentage.",
+    "tags": ["zero-data", "sanity"],
+    "linkedDefect": "TI-003",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TISO-SAN-003",
+    "module": "tenant-isolation",
+    "category": "sanity",
+    "subFeature": "Cross-Tenant IDOR",
+    "title": "A single spot-check request for another org's resource ID returns 403/404, not the resource",
+    "description": "Fast pre-release sanity check standing in for the fuller IDOR regression suite (TISO-SEC-004, TISO-SEC-009) — one representative resource type per deploy.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two test orgs each with one risk record"],
+    "steps": [
+      "As an Org A test user, call GET /api/risks/:id using Org B's risk ID"
+    ],
+    "expectedResult": "403 or 404 returned; no risk title/description/score from Org B present in the response body.",
+    "tags": ["idor", "sanity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TISO-SAN-004",
+    "module": "tenant-isolation",
+    "category": "sanity",
+    "subFeature": "Project Selector",
+    "title": "Project selector only lists projects belonging to the currently active organization",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Test user is a member of Org A (2 projects) and Org B (1 project)"],
+    "steps": [
+      "With Org A as the active organization, open the project selector dropdown"
+    ],
+    "expectedResult": "Exactly the 2 projects belonging to Org A are listed — Org B's project never appears.",
+    "tags": ["multi-tenant", "project-isolation", "sanity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TISO-SAN-005",
+    "module": "tenant-isolation",
+    "category": "sanity",
+    "subFeature": "Notification Scoping",
+    "title": "Socket.IO connection for a test user joins only their own org-scoped room, visible in server connection logs",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Backend logging enabled at info level for socket connections"],
+    "steps": [
+      "Connect a test client authenticated as an Org A user",
+      "Inspect the backend log line for the socket connection (e.g. '[SOCKET] ... joined user:... + org:...')"
+    ],
+    "expectedResult": "Log line shows the socket joined `org:{orgA-id}:user:{userId}` — never another org's ID.",
+    "tags": ["multi-tenant", "socket-io", "sanity"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

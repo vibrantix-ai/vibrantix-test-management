@@ -1,0 +1,107 @@
+[
+  {
+    "id": "INTG-SAN-001",
+    "module": "integrations",
+    "category": "sanity",
+    "subFeature": "Credential Masking",
+    "title": "Reopening a connector's settings after connect never displays the raw access/refresh token",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A previously connected OAuth integration"],
+    "steps": [
+      "Open the settings/details view for a connected integration",
+      "Inspect any field that shows credential/token information"
+    ],
+    "expectedResult": "Only the masked form (e.g. '****xyz9') is shown; the raw token value never appears in the DOM, network response payload rendered to the field, or any tooltip.",
+    "tags": ["sanity", "credential-security"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SAN-002",
+    "module": "integrations",
+    "category": "sanity",
+    "subFeature": "Sync Status Badge",
+    "title": "A connector's last-sync timestamp and status badge update immediately after a manual sync completes",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An active, connected integration"],
+    "steps": [
+      "Trigger a manual sync for the integration",
+      "Wait for the sync job to complete",
+      "Refresh or observe the integration card / sync-jobs page"
+    ],
+    "expectedResult": "The card's 'last synced' timestamp updates to the completion time and the status badge reflects success (not a stale 'never synced' or leftover 'running' state).",
+    "tags": ["sanity", "health-monitoring"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SAN-003",
+    "module": "integrations",
+    "category": "sanity",
+    "subFeature": "Disconnect Confirmation",
+    "title": "Disconnect action requires an explicit confirmation step before deactivating the integration",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Click 'Disconnect' on a connected integration card",
+      "Observe whether a confirmation dialog appears before the action is applied"
+    ],
+    "expectedResult": "A confirmation dialog/prompt appears; dismissing it (Cancel) leaves the integration connected/unchanged; only confirming actually calls the disconnect API.",
+    "tags": ["sanity", "disconnect"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SAN-004",
+    "module": "integrations",
+    "category": "sanity",
+    "subFeature": "Admin-Only Actions",
+    "title": "Connect/Disconnect/Reconfigure controls are hidden or disabled for a user role without MANAGE_CONNECTORS permission",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A user role granted integration.read (can view the Hub) but not MANAGE_CONNECTORS"],
+    "steps": [
+      "Log in as the read-only integrations user",
+      "Open /integrations and inspect each connector card"
+    ],
+    "expectedResult": "Cards render in read-only form: no 'Connect', 'Disconnect', or 'Configure' action is available/enabled for this user, even though the catalog itself is visible.",
+    "tags": ["sanity", "rbac", "permission-gating"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SAN-005",
+    "module": "integrations",
+    "category": "sanity",
+    "subFeature": "Integration Evidence Source Attribution",
+    "title": "Evidence detail page's 'Source' field never shows blank/undefined for evidence imported via an integration",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["At least one evidence item imported via an integration sync"],
+    "steps": [
+      "Open the evidence detail page for an integration-sourced evidence item",
+      "Read the 'Source' field"
+    ],
+    "expectedResult": "The 'Source' field always shows a real connector type name (e.g. 'github (automated)'), never a blank value, 'undefined (automated)', or a raw internal enum key.",
+    "tags": ["sanity", "evidence-linking"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

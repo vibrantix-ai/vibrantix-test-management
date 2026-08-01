@@ -1,0 +1,10 @@
+{
+  "slug": "vendor-management",
+  "name": "Vendor Management",
+  "scope": "feature",
+  "routes": [
+    "/vendor-management"
+  ],
+  "qaAgent": "Vendor_Management_QA_Agent",
+  "description": "Vendor onboarding, assessments, trust score, vendor portal, Trust Network sharing."
+}

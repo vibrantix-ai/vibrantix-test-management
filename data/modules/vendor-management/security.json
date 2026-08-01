@@ -1,0 +1,192 @@
+[
+  {
+    "id": "VEND-SEC-001",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Evidence Lifecycle",
+    "title": "confirmPresigned accepts any client-supplied s3Key without verifying it matches the evidence document's pre-computed pendingS3Key or organization/vendor prefix",
+    "description": "EvidenceUploadService.confirmPresigned(organizationId, id, userId, s3Key, fileName, mimeType) only calls S3Service.headObject(s3Key) to confirm the object exists — it never compares the caller-supplied s3Key against the evidenceRepository doc's own pendingS3Key (set during createPresigned) nor checks that s3Key starts with 'vendors/{vendorId}/evidence/...' for this org's vendor. A caller who owns a valid presigned-upload evidence record for their own vendor could confirm it against a DIFFERENT s3Key they already know about (e.g. another org's object, if bucket enumeration or a leaked key is available), attaching someone else's S3 object as their own evidence file. This is the vendor-service equivalent of the IDOR gap evidence-management's confirmPresignedUpload already guards against (s3Key.startsWith('evidence/{orgId}/')) — vendor-service has no such check.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Valid JWT for a user in org A with vendor.create permission",
+      "An evidence document created via POST /evidence/upload/presigned (Mode 3) for org A's vendor, with its own pendingS3Key on record",
+      "A second, unrelated S3 object key known to the caller (e.g. from another evidence record's s3Key)"
+    ],
+    "steps": [
+      "As the org A user, call POST /evidence/:id/files/confirm with s3Key set to the unrelated object's key (not the evidenceId's own pendingS3Key), plus a fileName/mimeType of the caller's choosing"
+    ],
+    "expectedResult": "Current behavior: the call succeeds (200) as long as headObject(s3Key) resolves, and the unrelated S3 object is attached to the caller's evidence document as if it were their own upload. Expected/remediated behavior: the confirm call should be rejected with 400/403 unless s3Key exactly matches evidence.pendingS3Key (or at minimum starts with 'vendors/{vendorId}/evidence/' for a vendor the caller's org owns). Flag as an open finding pending remediation.",
+    "tags": ["idor", "s3-upload", "owasp-a01", "evidence-lifecycle"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-002",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "assertProjectAccess fails closed (503) when the project-scope service is unavailable, never silently allowing access",
+    "description": "project-access.ts's resolveScope() explicitly documents 'fail closed (503), never fall back to allow' when projectScopeClient.getScope() throws ProjectScopeUnavailableError. This guards every vendor/assessment/evidence/trust-network route in the service.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Valid JWT for an org member who is NOT an org admin",
+      "The project-scope backend dependency is simulated as unreachable/erroring"
+    ],
+    "steps": [
+      "Call GET /assessments/:id for an assessment whose projectId requires a membership check, while the project-scope service is down"
+    ],
+    "expectedResult": "Request is rejected with 503 and code PROJECT_SCOPE_UNAVAILABLE — the assessment data is never returned, and the outage is logged server-side without leaking infra details in the client-facing message.",
+    "tags": ["multi-tenant", "fail-closed", "owasp-a01"],
+    "requirement": "PLAC-006 / PLAC-017",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-003",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Vendor Portal Security",
+    "title": "Passcode-protected assessment portal withholds questions, profile, and answers until the passcode is server-verified",
+    "description": "GET /vendor-portal/assessment/:token returns only { passcodeRequired: true, vendorName, assessmentTitle } when doc.passcodeRequired is set, deliberately omitting questions/vendorProfile/clientRelation so the gate cannot be bypassed by calling the GET endpoint directly instead of POST /verify-passcode.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["An assessment link has been sent (accessToken + accessPasscode set, passcodeRequired = true)"],
+    "steps": [
+      "Call GET /vendor-portal/assessment/:token without ever calling /verify-passcode",
+      "Inspect the full response body"
+    ],
+    "expectedResult": "Response contains only passcodeRequired/requiresPasscode/vendorName/assessmentTitle — no `assessment`, `questions`, `vendorProfile`, or `clientRelation` fields are present in the payload at any point before passcode verification.",
+    "tags": ["vendor-portal", "auth-bypass", "owasp-a07"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-004",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Vendor Portal Security",
+    "title": "verifyPasscode enforces a 10-attempt lockout with a 30-minute cooldown and returns 429",
+    "description": "AssessmentService.verifyPasscode implements MAX_PASSCODE_ATTEMPTS=10 and LOCKOUT_MINUTES=30. On the 10th consecutive wrong guess the token is locked; further attempts return 429 until the lockout window elapses, at which point resetPasscodeAttempts runs and a fresh attempt budget is granted.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A passcode-protected assessment link exists with 0 recorded attempts"],
+    "steps": [
+      "Submit 10 consecutive incorrect 6-digit passcodes to POST /vendor-portal/assessment/:token/verify-passcode",
+      "Submit an 11th attempt, this time with the CORRECT passcode"
+    ],
+    "expectedResult": "Attempts 1-9 return 400 'Invalid passcode. N attempts remaining.' with a decrementing counter. The 10th attempt locks the token and returns 429 'Too many failed attempts... locked for 30 minutes.' The 11th attempt (even with the correct code) also returns 429 because the lockout is time-based, not attempt-based — it is not bypassed by supplying the right passcode.",
+    "tags": ["vendor-portal", "brute-force", "owasp-a07"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-005",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Vendor Portal Security",
+    "title": "Vendor portal evidence delete/download endpoints reject an evidenceId that does not belong to the token's own assessment",
+    "description": "DELETE and GET .../evidence/:evidenceId(/download) both fetch the evidence via evidenceService.getById(..., { skipProjectCheck: true }) and then explicitly compare evidence.assessmentId to the token's own assessment _id, throwing AppError.forbidden('Evidence does not belong to this assessment') on mismatch — this is the only tenant boundary available in the token-auth (no Keycloak) portal context.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Two separate assessments (X and Y) each with their own valid, unexpired magic-link token",
+      "Assessment X has at least one uploaded evidence item with a known evidenceId"
+    ],
+    "steps": [
+      "Using assessment Y's token, call DELETE /vendor-portal/assessment/:tokenY/evidence/:evidenceIdFromX",
+      "Using assessment Y's token, call GET /vendor-portal/assessment/:tokenY/evidence/:evidenceIdFromX/download"
+    ],
+    "expectedResult": "Both calls are rejected with 403 'Evidence does not belong to this assessment' — no delete occurs and no presigned download URL for assessment X's file is issued to the holder of assessment Y's token.",
+    "tags": ["idor", "vendor-portal", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.19",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-006",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Vendor Portal Security",
+    "title": "PUT vendor-portal vendor-profile only accepts a whitelisted field set — riskTier, status, and frameworkIds cannot be self-escalated by the vendor",
+    "description": "The route builds `safePayload` field-by-field from body.globalDirectory/contacts/businessInfo/compliance only — it explicitly does not read or forward riskTier/status/frameworkIds/category from the request body, per the code comment 'riskTier, status, frameworkIds, etc. are NOT accepted from the portal.'",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A valid, unexpired vendor portal token"],
+    "steps": [
+      "Call PUT /vendor-portal/assessment/:token/vendor-profile with a body that includes both legitimate fields (globalDirectory.name) AND riskTier: 'low', status: 'active', frameworkIds: [...] injected at the top level"
+    ],
+    "expectedResult": "The vendor's internalName updates as expected, but riskTier/status/frameworkIds on the underlying client_vendor document remain unchanged from before the call — the extra fields are silently ignored, not applied.",
+    "tags": ["vendor-portal", "mass-assignment", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-007",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "RBAC / Multi-Tenant Isolation",
+    "title": "A single vendor.approve permission grants authority over evidence review, assessment review, and questionnaire publishing with no sub-feature separation",
+    "description": "PERMISSIONS.VENDOR is built via modulePermissions('vendor') producing only vendor.read/create/update/delete/approve/admin. Evidence transition (/evidence/:id/transition), the evidence review queue (/evidence/reviews), and assessment score/close logic all gate on the SAME PERMISSIONS.VENDOR.APPROVE — unlike evidence-management's sub-permission model (evidence.read/write/approve/archive/delete), there is no way to grant a user 'can review evidence' without also granting 'can close vendor assessments' or vice versa.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A custom role has been granted vendor.approve for evidence-review purposes only"],
+    "steps": [
+      "As a user with vendor.approve, call POST /evidence/:id/transition to close an evidence review",
+      "As the same user, call POST /assessments/:id/transition to close (approve) a vendor assessment"
+    ],
+    "expectedResult": "Both calls succeed — confirming that granting evidence-review authority inherently also grants assessment-closure authority. Document as an RBAC granularity gap versus other GRC modules; not immediately exploitable cross-tenant, but a least-privilege violation worth tracking.",
+    "tags": ["rbac", "least-privilege"],
+    "requirement": "ISO 27001 Annex A.5.18",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VEND-SEC-008",
+    "module": "vendor-management",
+    "category": "security",
+    "subFeature": "Evidence Lifecycle",
+    "title": "Evidence file streaming proxy endpoint enforces project membership and never leaks the raw S3 URL to the browser",
+    "description": "GET /evidence/:id/files/:fileId/proxy streams via S3Service.getStream() and sets Cache-Control: private, no-store, rather than redirecting the browser to a presigned S3 URL — so a shared/cached browser response cannot leak file bytes cross-user, and the augmentPermissionsWithProjectGrant + requirePermission(VENDOR.READ) preHandler chain still applies.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Two orgs (A, B), each with an evidence file uploaded",
+      "Valid JWT for a user in org A"
+    ],
+    "steps": [
+      "As the org A user, call GET /evidence/:idFromOrgB/files/:fileId/proxy using an evidence id belonging to org B",
+      "As the org A user, call the same endpoint for their own org's file and inspect response headers"
+    ],
+    "expectedResult": "The org B request is rejected (404/403, evidence not found in this organisation) before any S3 call is made. The org A request succeeds and the response includes 'Cache-Control: private, no-store' — the S3 bucket/key is never exposed in the response body or headers.",
+    "tags": ["idor", "multi-tenant", "s3-upload", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

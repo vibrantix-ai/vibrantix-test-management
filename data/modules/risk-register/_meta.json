@@ -1,0 +1,11 @@
+{
+  "slug": "risk-register",
+  "name": "Risk Register & Risk Center",
+  "scope": "feature",
+  "routes": [
+    "/risk-register",
+    "/risk-center"
+  ],
+  "qaAgent": "Risk_Register_QA_Agent",
+  "description": "Risk identification, scoring, treatment plans, acceptance workflow, risk center analytics."
+}

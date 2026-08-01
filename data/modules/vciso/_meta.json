@@ -1,0 +1,10 @@
+{
+  "slug": "vciso",
+  "name": "vCISO Suite",
+  "scope": "feature",
+  "routes": [
+    "/vciso"
+  ],
+  "qaAgent": "vCISO_QA_Agent",
+  "description": "Executive dashboard, strategic planning, risk intelligence, board reporting, AI advisor."
+}

@@ -1,0 +1,10 @@
+{
+  "slug": "smart-compliance",
+  "name": "Smart Compliance",
+  "scope": "feature",
+  "routes": [
+    "/smart-compliance"
+  ],
+  "qaAgent": "Smart_Compliance_QA_Agent",
+  "description": "AI questionnaire, evidence auto-mapping, control coverage calculation."
+}

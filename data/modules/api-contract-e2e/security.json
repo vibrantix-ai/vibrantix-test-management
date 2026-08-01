@@ -1,0 +1,145 @@
+[
+  {
+    "id": "APIE-SEC-001",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "Internal Token Auth",
+    "title": "Every internal (X-Internal-Token family) endpoint uses constant-time comparison and rejects missing/empty tokens",
+    "description": "vibrantix-backend's notification-internal.routes.js, risk-management-service's internal.routes.ts, and trust-vault-service's s2s.routes.ts all independently implement Buffer-length-check + crypto.timingSafeEqual for their respective internal tokens. A regression in any one of these (e.g. a plain === comparison, or skipping the length check before timingSafeEqual which throws on length mismatch) would either reintroduce a timing side-channel or crash the process on a malformed header.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Access to at least one of: vibrantix-backend, risk-management-service, trust-vault-service internal endpoints in a test environment"],
+    "steps": [
+      "Call POST /api/internal/notifications with no X-Internal-Token header at all",
+      "Call the same endpoint with an X-Internal-Token header of a completely different length than the real secret",
+      "Call risk-management-service's POST /internal/vendor-risks/events and trust-vault-service's GET /s2s/certifications the same way (missing header, wrong-length header)"
+    ],
+    "expectedResult": "All calls return 401 Unauthorized (or 503 'not configured' if the server-side secret itself is unset) without throwing an unhandled exception or crashing the process — the length-mismatch case must be handled as a clean rejection, not an uncaught timingSafeEqual RangeError.",
+    "tags": ["internal-api", "timing-attack", "owasp-a02"],
+    "requirement": "ISO 27001 Annex A.8.24",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "APIE-SEC-002",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "risk-management-service's /internal/vendor-risks/events cannot be used to inject a vendor risk into an organization the caller doesn't legitimately represent",
+    "description": "The internal endpoint trusts organizationId/vendorId/projectId entirely from the request body once the shared X-Internal-API-Key passes — there is no per-organization scoping on the internal token itself (it is a single shared platform-wide secret). Any service (or anything holding that one secret) can post events for ANY organizationId. Confirms this is at minimum logged/traceable and that vendor-service itself only ever sends its own resolved organizationId, never a client-supplied one, for this call.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Valid INTERNAL_API_KEY", "Two known organizationIds, A (legitimate caller context) and B (target)"],
+    "steps": [
+      "Using the shared internal API key, POST /internal/vendor-risks/events with organizationId set to B while acting outside any legitimate vendor-service request context for B",
+      "Check whether a VendorRisk document is created under organizationId B",
+      "Review vendor-service's own code path that emits this event to confirm organizationId is always derived from the authenticated request's own org context, never taken from client-controlled input"
+    ],
+    "expectedResult": "The event IS accepted for organizationId B by design (the shared secret is platform-trust, not per-org) — confirming this is an accepted architecture trade-off requires that vendor-service (the only intended caller) never lets an end user influence which organizationId is sent; if any code path lets a caller pass an arbitrary organizationId sourced from user input rather than the authenticated session's own org, that is a cross-tenant injection defect.",
+    "tags": ["multi-tenant", "internal-api", "idor", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "APIE-SEC-003",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "Trust Network Data Sharing",
+    "title": "S2S certification file download endpoint enforces both partner visibility AND includeDocument before issuing a presigned URL",
+    "description": "GET /s2s/certifications/:certId/files/:fileId/download requires isVisibleToPartner() to pass AND sharingMetadata.includeDocument === true before calling S3Service.getPresignedDownloadUrl. Both checks must independently gate the download — a cert visible to a partner (trustNetworkEnabled + not excluded) but with includeDocument left false must still be blocked from file download even though its metadata is listed.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "automationRef": "test-framework/tests/security/trust-vault-s2s.test.ts",
+    "preconditions": [
+      "Certification for vendor org A with trustNetworkEnabled=true, partnerOrgId B allowed, but includeDocument=false"
+    ],
+    "steps": [
+      "As partner B (valid S2S token), call GET /s2s/certifications/:certId/files/:fileId/download for the certification above",
+      "Repeat for a certification with includeDocument=true",
+      "Repeat for a certification the partner is NOT allowed to see at all (excluded via allowedPartnerIds/excludedPartnerIds) but with includeDocument=true"
+    ],
+    "expectedResult": "First call (visible but includeDocument=false): 403 'Document download is not permitted for this certification'. Second call (visible + includeDocument=true): 200 with a presigned URL scoped to that file only. Third call (not visible, even with includeDocument=true): 403/404 'Certification not found or not shared' — visibility is checked before, and independently of, includeDocument.",
+    "tags": ["idor", "trust-network", "s3-upload", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.19",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "APIE-SEC-004",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "Trust Network Data Sharing",
+    "title": "S2S incident/report endpoints never leak raw description/lessonsLearned fields even when includeDocument or trustNetworkEnabled is true",
+    "description": "The /s2s/incidents projection explicitly excludes description, lessonsLearned, and internal notes — only publicSummary and structured metadata are ever projected from MongoDB, meaning the sensitive fields never leave the database layer for this route (defense in depth beyond just filtering the JS object). Reports use a similar redactedSummary override pattern. Confirms a future field added to the incidents collection doesn't accidentally get swept into the S2S response via a careless projection rewrite (e.g. switching from an explicit allow-list projection to an exclude-list).",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An incident with trustNetworkEnabled=true containing sensitive internal 'description' and 'lessonsLearned' text"],
+    "steps": [
+      "Call GET /s2s/incidents?vendorOrgId=A&partnerOrgId=B as a valid partner for an incident with rich internal notes",
+      "Inspect every key in the returned JSON object for that incident"
+    ],
+    "expectedResult": "The response contains only: incidentId, title, severity, status, category, incidentDate, resolutionDate, publicSummary, impactScope, sanitized sharingMetadata, createdAt, updatedAt — description, lessonsLearned, and any other internal-only field are entirely absent from the payload, not merely blank.",
+    "tags": ["data-leakage", "trust-network", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.19",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "APIE-SEC-005",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "AI Service Contract",
+    "title": "policy-ai-proxy.service.js's X-Target-DB header cannot be influenced by client-supplied input to route a generation request at another tenant's database",
+    "description": "_targetDatabaseHeaders() derives X-Target-DB from process.env.MONGODB_DB_NAME/TARGET_DB/mongoose.connection.name — i.e. the backend process's own configured database, not anything from the request. Confirms no code path along the policy generation request chain (policy-ai.controller.js) allows a request body/query param to override this value before it reaches the Python service.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Access to submit a policy AI generation request with arbitrary extra body fields"],
+    "steps": [
+      "Submit a policy generation request via the normal endpoint with an extra body field like 'targetDb' or 'X-Target-DB' set to a different tenant's database name",
+      "Inspect (via logs or a proxy/interceptor) the actual X-Target-DB header sent to the Python service for this request"
+    ],
+    "expectedResult": "The X-Target-DB header sent to ai_policy_generator_python always reflects the backend process's own configured database regardless of any client-supplied field of a similar name — there is no path for a request body value to override tenant DB routing.",
+    "tags": ["multi-tenant", "ai", "policy-management", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "APIE-SEC-006",
+    "module": "api-contract-e2e",
+    "category": "security",
+    "subFeature": "Error Propagation",
+    "title": "Unreachable-dependency error messages surfaced to the client never leak internal hostnames, ports, or stack traces",
+    "description": "policy-ai-proxy.service.js's _unreachableError() deliberately builds a human-readable message referencing AI_POLICY_SERVICE_URL misconfiguration for internal logs/ops, but this same detailed message (potentially including internal service URLs like 'http://localhost:8002' or container hostnames) must not be forwarded verbatim to the end-user-facing API response.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Ability to force AI_POLICY_SERVICE_URL to point at an unreachable address"],
+    "steps": [
+      "Misconfigure/point AI_POLICY_SERVICE_URL at an unreachable host",
+      "Trigger a policy AI generation request from the client panel as a normal user",
+      "Inspect the exact HTTP response body and status code returned to the browser"
+    ],
+    "expectedResult": "The client-facing response is a generic 503 'AI service temporarily unavailable' (or similar) with no internal hostname, port, container name, or raw ECONNREFUSED/stack trace text — the detailed diagnostic message is reserved for server-side logs only.",
+    "tags": ["error-propagation", "information-disclosure", "owasp-a05"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

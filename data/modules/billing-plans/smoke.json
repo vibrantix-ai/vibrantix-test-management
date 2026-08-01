@@ -1,0 +1,100 @@
+[
+  {
+    "id": "BILL-SMK-001",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "Plans Page",
+    "title": "/billing-plans loads for an org owner with no console/network errors",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as SUPERADMIN", "Org has pricing_v1 enabled"],
+    "steps": [
+      "Navigate to /billing-plans",
+      "Confirm both Overview and Plans tabs render"
+    ],
+    "expectedResult": "Page loads within a reasonable time, both tabs are visible/clickable, and no unhandled request failures appear in the network panel.",
+    "tags": ["smoke", "plans-page"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SMK-002",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "API Health",
+    "title": "GET /v1/billing/plan returns 200 for an active org",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org has pricing_v1 enabled and an active subscription"],
+    "steps": [
+      "Call GET /v1/billing/plan with a valid billing.read JWT"
+    ],
+    "expectedResult": "200 response with the org's current plan/tier fields populated.",
+    "tags": ["smoke", "api-health"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SMK-003",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "API Health",
+    "title": "GET /v1/billing/invoices returns 200 (even if empty) for an active org",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /v1/billing/invoices with a valid billing.read JWT"
+    ],
+    "expectedResult": "200 response with the paginated invoice shape, whether or not any invoices exist yet.",
+    "tags": ["smoke", "invoices"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SMK-004",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "Stripe Webhook",
+    "title": "POST /webhooks/stripe is reachable and correctly rejects a request with no stripe-signature header",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call POST /webhooks/stripe with a minimal JSON body and no stripe-signature header"
+    ],
+    "expectedResult": "Endpoint responds 400 'Invalid signature' (proves the route is mounted and the signature check is live) rather than timing out, 404ing, or 500ing.",
+    "tags": ["smoke", "webhook"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "BILL-SMK-005",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "Plans Catalog",
+    "title": "Plans catalog endpoint returns at least one public plan",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /v1/billing/plans-catalog"
+    ],
+    "expectedResult": "200 response listing one or more plans with isPublic=true, each with label/pricePerFrameworkAnnualCents/limits populated — the Plans tab has data to render.",
+    "tags": ["smoke", "plans-catalog"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

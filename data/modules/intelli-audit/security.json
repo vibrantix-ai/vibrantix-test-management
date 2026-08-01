@@ -1,0 +1,211 @@
+[
+  {
+    "id": "INTA-SEC-001",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "Cross-org audit access returns 403 not 404, creating an ID-enumeration side channel",
+    "description": "findAudit() returns 404 'Intelligent audit not found' (intelligent-audit.controller.js:128-134) only when the ID doesn't exist at all; assertOrgAccess() returns 403 'Access denied' (:115-119) when the ID exists but belongs to another org. An attacker can distinguish 'exists in another tenant' from 'does not exist' by comparing status codes.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org A and Org B each have at least one IntelligentAudit document",
+      "Valid JWT for a user in Org A"
+    ],
+    "steps": [
+      "As an Org A user, call GET /api/intelligent-audit/:auditId with a real auditId belonging to Org B",
+      "As the same user, call GET /api/intelligent-audit/:auditId with a well-formed but nonexistent ObjectId"
+    ],
+    "expectedResult": "First call returns 403 'Access denied'; second call returns 404 'Intelligent audit not found'. No audit content from Org B is returned in either case, but the status-code difference should be flagged as an enumeration risk for remediation (consider returning 404 uniformly for cross-tenant IDs).",
+    "tags": ["idor", "multi-tenant", "owasp-a01", "enumeration"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-002",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Mass Assignment",
+    "title": "PATCH /:auditId/phase/:phaseNumber spreads req.body unvalidated into phaseStatus, bypassing every phase-completion guard",
+    "description": "updatePhaseStatus (intelligent-audit.controller.js:946-962) runs `audit.phaseStatus[key] = { ...existing, ...req.body }` with no field whitelist, gated only by permission 'audit.update' (not an admin-only action). A caller can force isCompleted/isActive flags directly, skipping IA_GAP_ANALYSIS_LOCKED, the Phase-3-completed guard, and the zero-controls-selected guard entirely.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Logged in as a user who holds only 'audit.update' (not an admin role)",
+      "Audit is in Phase 4 with unresolved gaps and gap analysis never run"
+    ],
+    "steps": [
+      "Call PATCH /api/intelligent-audit/:auditId/phase/4 with body {\"isCompleted\": true, \"isActive\": false}",
+      "Call GET /api/intelligent-audit/:auditId and inspect phaseStatus.phase4"
+    ],
+    "expectedResult": "Current behavior: the PATCH succeeds and phaseStatus.phase4.isCompleted becomes true with no gap analysis ever having run and no gaps resolved — demonstrating a phase can be marked complete by directly injecting fields via req.body. This should be flagged as a P0 remediation item: whitelist the fields updatePhaseStatus accepts per phase.",
+    "tags": ["mass-assignment", "authz", "owasp-a01", "known-gap"],
+    "linkedDefect": "INTA-BUG-phase-status-mass-assignment",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-003",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "GET /my-assignments has no organizationId filter and can leak another org's assignment data to a multi-org user",
+    "description": "getMyAssignments' four aggregation builders (buildStrategicQuery:5179, buildTacticalQuery:5273, buildCustomWorkflowQuery:5383, buildRemediationQuery:5470) filter only by assignedTo — unlike every other handler in the module, none of them add an organizationId: req.orgId match stage.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A ClientUser is (or was previously) assigned a question/gap in Org A",
+      "The same user is currently authenticated in an Org B session (multi-org membership)"
+    ],
+    "steps": [
+      "As the user, with an active Org B session/orgId context, call GET /api/intelligent-audit/my-assignments"
+    ],
+    "expectedResult": "Current behavior: the Org A assignment (with its auditTitle, frameworkName, controlTitle, questionText) is returned even though the caller's session orgId is Org B — a cross-tenant data leak. Expected fix: add organizationId: req.orgId to all four aggregation builders so only current-org assignments are returned.",
+    "tags": ["idor", "multi-tenant", "tenant-isolation", "owasp-a01", "known-gap"],
+    "linkedDefect": "INTA-BUG-my-assignments-no-org-scope",
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-004",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Evidence Linking",
+    "title": "Evidence-existence probe via attachEvidenceToControl fires before the audit's org ownership is checked",
+    "description": "attachEvidenceToControl/bulkAttachEvidenceToControl (intelligent-audit.controller.js:2374-2380, 2418-2426) validate that the Evidence document exists globally (AppError.notFound('Evidence not found')) before calling assertOrgAccess on the audit. A caller can supply an arbitrary/invalid auditId and still learn whether a given evidenceId exists anywhere on the platform.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Caller has a valid JWT but no legitimate access to the target auditId"],
+    "steps": [
+      "Call POST /api/intelligent-audit/:bogusAuditId/phase/3/control/0/evidence with an evidenceId known to exist in another org",
+      "Call the same endpoint with an evidenceId known not to exist at all"
+    ],
+    "expectedResult": "Current behavior: both calls return the Evidence-existence check result (404 'Evidence not found' only for the second) before any audit-ownership error would fire, letting an attacker enumerate evidenceId existence platform-wide independent of audit access. Should be flagged for remediation: check audit/org ownership before evidence existence.",
+    "tags": ["idor", "enumeration", "evidence", "owasp-a01", "known-gap"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-005",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Input Validation",
+    "title": "linkEvidenceToAttachment accepts an arbitrary unvalidated string as evidenceId, unlike attachEvidenceToControl",
+    "description": "linkEvidenceToAttachment (intelligent-audit.controller.js:3025-3038) explicitly documents accepting a non-ObjectId custom string (e.g. 'EV-xxx') and persists it into entry.evidenceId with no format or existence validation at all — an inconsistency versus attachEvidenceToControl, which requires a real Evidence document to exist first.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with audit.update on a real audit/control"],
+    "steps": [
+      "Call the evidence-attachment-workflow endpoint for a Phase 3 control with evidenceId set to an arbitrary garbage string (e.g. '<script>alert(1)</script>' or a long random string)",
+      "Fetch the control's evidence-attachment record afterward"
+    ],
+    "expectedResult": "Current behavior: the arbitrary string is accepted and stored verbatim in entry.evidenceId with no validation or existence check — confirm this does not enable stored XSS when rendered in the UI, and flag the inconsistency with the stricter attachEvidenceToControl path for remediation.",
+    "tags": ["input-validation", "data-integrity", "owasp-a03", "known-gap"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-006",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Injection",
+    "title": "Framework audit search parameter safely escapes regex metacharacters instead of being interpreted as a live regex",
+    "description": "getIntelligentAuditsByFramework (intelligent-audit.controller.js:882-889) escapes the search string with esc = search.trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') before building the $regex query — a positive control confirming no regex-injection/ReDoS surface on this endpoint.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["At least 2 audits exist for the framework with titles 'Audit One' and 'AuditXOne'"],
+    "steps": [
+      "Call GET /api/intelligent-audit/framework/:frameworkId?search=Audit.One",
+      "Call GET /api/intelligent-audit/framework/:frameworkId?search=(a+)+$"
+    ],
+    "expectedResult": "The literal dot in 'Audit.One' is NOT treated as a regex wildcard — only an audit literally titled 'Audit.One' matches (not 'AuditXOne'). The ReDoS-shaped pattern '(a+)+$' returns quickly (no catastrophic backtracking) and matches nothing or is treated as a literal string.",
+    "tags": ["injection", "regex", "redos", "positive-control"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-007",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "Deleting evidence/policy/vendor links or removing a participant only requires audit.update, not audit.delete",
+    "description": "Despite being DELETE HTTP verbs, removeEvidenceFromControl, unlinkPolicyFromControl, unlinkVendorFromControl, and removeAuditParticipant (intelligent-audit.routes.js lines 88,97,99,144) all require only 'audit.update'. A user granted update-but-not-delete permission can still perform destructive unlink/remove operations.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A test role is granted 'audit.update' but explicitly NOT 'audit.delete'"],
+    "steps": [
+      "As the audit.update-only user, call DELETE /api/intelligent-audit/:auditId/phase/3/control/:controlIndex/evidence/:evidenceId",
+      "As the same user, call DELETE /api/intelligent-audit/:auditId/participants/:userId"
+    ],
+    "expectedResult": "Both DELETE calls currently succeed for a user who lacks 'audit.delete', confirming the permission model treats these as updates rather than deletions. Flag for a product/security decision on whether 'audit.delete' should gate these destructive sub-resource removals.",
+    "tags": ["rbac", "permission-gating", "known-gap"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-008",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "addControlToPhase2 (a scope-expanding POST) is gated by audit.update, not audit.create",
+    "description": "intelligent-audit.routes.js:67 requires only 'audit.update' for POST /:auditId/phase/2/controls, whereas the module's only other resource-creation-shaped POSTs (createIntelligentAudit, createCustomQuestion) require 'audit.create'. A role holding audit.update but not audit.create can still add new controls to an audit's scope.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A test role is granted 'audit.update' but explicitly NOT 'audit.create'", "Audit is in Phase 2"],
+    "steps": [
+      "As the audit.update-only user, call POST /api/intelligent-audit/:auditId/phase/2/controls with a valid requirementId from the audit's own framework"
+    ],
+    "expectedResult": "The control is added successfully (200/201) despite the caller lacking 'audit.create' — confirm this is intended (scope editing treated as an update) or flag for permission-model alignment.",
+    "tags": ["rbac", "permission-gating", "known-gap"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTA-SEC-009",
+    "module": "intelli-audit",
+    "category": "security",
+    "subFeature": "Permission Gating",
+    "title": "Frontend hides Intelli Audit actions but the corresponding API endpoints must independently reject unauthorized calls",
+    "description": "All Intelli Audit pages use PermissionGate (permission='pre_audit.read') and PermissionHide (permission='audit.update'/'audit.create') to hide UI, per PermissionGate.jsx's OR-based project-grant logic. UI hiding is not a substitute for server-side enforcement — this case verifies the API rejects direct calls from a user who only fails the permission check.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["A user has no 'audit.create' permission (globally or project-scoped)"],
+    "steps": [
+      "Confirm the 'Start New Audit' button is not rendered for this user in the UI",
+      "Directly call POST /api/intelligent-audit with a valid title/description/frameworkId/projectId using this user's JWT"
+    ],
+    "expectedResult": "The direct API call is rejected with 403 (permission-middleware error), independent of and consistent with the UI's hidden button — confirming the client-side hide is backed by real server-side authorization, not merely cosmetic.",
+    "tags": ["rbac", "permission-gating", "defense-in-depth"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

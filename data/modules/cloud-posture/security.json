@@ -1,0 +1,141 @@
+[
+  {
+    "id": "CLPO-SEC-001",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Tenant Isolation",
+    "title": "getScanResults and exportScanResults leak cross-org scan data via an unscoped findById fallback",
+    "description": "Confirmed live defect (CLOUD_POSTURE_BUGS_FOUND.csv #1): both getScanResults and exportScanResults (scan.controller.js) fall back to CloudPostureScan.findById(scanId) with no organizationId check when the org-scoped lookup misses, unlike getScanProgress which re-checks scan.organizationId===req.orgId after the same fallback pattern.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "automationRef": "test-framework/tests/security/cloud-posture-idor.test.ts",
+    "preconditions": ["Two orgs (A, B), org B has a completed scan with findings", "Valid JWT for a user in org A who does not have access to org B's project"],
+    "steps": [
+      "As an org A user, call GET /cloud-posture/scans/:scanId/results using org B's scanId",
+      "As an org A user, call the export endpoint for the same org B scanId"
+    ],
+    "expectedResult": "Both requests must be rejected with 403/404 and return no scan results or export data belonging to org B. (Currently reproduces the bug: the unscoped findById fallback returns org B's data.)",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.8.9",
+    "linkedDefect": "CLPO-BUG-1",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SEC-002",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Tenant Isolation",
+    "title": "Resource list and provider-summary endpoints trust the orgId URL path param instead of the authenticated req.orgId",
+    "description": "Confirmed live defect (BUGS_FOUND.csv #12): resource.controller.js destructures { orgId, projectId } directly from req.params in getProjectResources (line ~207) and getCloudProviderResources (line ~242), and builds every Mongo filter from that path value. Route middleware only validates requireProjectMembership() against req.orgId — it never asserts req.params.orgId === req.orgId.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "automationRef": "test-framework/tests/security/cloud-posture-idor.test.ts",
+    "preconditions": [
+      "User belongs to org A and has an authorized project P (also under org A)",
+      "Org B exists with its own project and cloud resources"
+    ],
+    "steps": [
+      "As the org A user (authenticated, valid JWT for org A), call GET /api/client/cloud-posture/organizations/:orgId/projects/:projectId/providers/:provider/dashboard with :orgId replaced by org B's ID while :projectId stays a project the caller is otherwise entitled to reach",
+      "Observe whether the request is rejected before reaching the data query"
+    ],
+    "expectedResult": "Request must be rejected with 403 as soon as req.params.orgId diverges from the authenticated req.orgId. (Currently reproduces the bug: filters are built from the path param, so mismatched IDs are not independently rejected by the query layer.)",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.8.9",
+    "linkedDefect": "CLPO-BUG-12",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SEC-003",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Scan Lifecycle",
+    "title": "controlScan rejects a cancel request whose scan does not belong to the caller's organization",
+    "description": "Positive control, contrasted with CLPO-SEC-001/002: controlScan (scan.controller.js:861) explicitly re-checks scan.organizationId.toString() !== req.orgId?.toString() and returns 403, in addition to the org-scoped findOne filter. Regression guard to keep this path from regressing to the same unscoped-fallback pattern seen elsewhere.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Org B has a scan currently in status 'running'", "Valid JWT for a user in org A"],
+    "steps": [
+      "As an org A user, call POST /cloud-posture/scans/:scanId/control with {operation:'cancel'} using org B's running scanId"
+    ],
+    "expectedResult": "Request is rejected with 403; org B's scan status remains 'running' and is unaffected by the attempted cancel.",
+    "tags": ["idor", "multi-tenant", "scan-lifecycle", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.8.9",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SEC-004",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Credential Storage",
+    "title": "A failed or interrupted connection test never leaves a readable staged credential secret in Vault",
+    "description": "config.controller.js stages raw provider credentials to a per-operation Vault path before calling Prowler's validate endpoint, then destroys it in a finally block (lines ~212-218) regardless of success/failure/timeout. If this cleanup path regressed, raw AWS/GCP/Azure secrets could persist at a predictable Vault path after a single failed test.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Ability to inspect the Vault path used for staged test-connection credentials (test/staging environment only)"],
+    "steps": [
+      "Submit a 'Test Connection' request for AWS with any credential values",
+      "Regardless of whether the test call succeeds, fails, or times out at 15s, immediately query Vault for the per-operation staging path used"
+    ],
+    "expectedResult": "The staged secret path returns not-found in every outcome (success, failure, and timeout) — the finally-block cleanup runs unconditionally and no raw credential is left recoverable in Vault.",
+    "tags": ["credential-security", "vault", "data-sanitization"],
+    "requirement": "ISO 27001 Annex A.8.9",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SEC-005",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Provider Onboarding",
+    "title": "Configuration endpoint rejects an unsupported provider name such as 'kubernetes' instead of silently accepting it",
+    "description": "No Kubernetes credential path exists anywhere in the backend (no VAULT_FIELDS_BY_PROVIDER entry, no config sub-schema, no controller branch) despite Prowler's scan engine supporting Kubernetes. Verifies the API fails closed for unrecognized provider values rather than accepting and partially persisting them.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call PUT /api/cloud-posture-config/:projectId with provider='kubernetes' and an arbitrary credentials payload"
+    ],
+    "expectedResult": "Request is rejected with a 400-class error identifying the provider as unsupported; no providers.kubernetes field is created on the CloudPostureConfig document.",
+    "tags": ["input-validation", "provider-onboarding"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SEC-006",
+    "module": "cloud-posture",
+    "category": "security",
+    "subFeature": "Provider Onboarding",
+    "title": "Test-connection endpoint requires membership on the target project, not just any valid org session",
+    "description": "Guards against a user who is authenticated in an org but not assigned to a specific project using that project's projectId to trigger credential-validation calls (which reach live cloud provider APIs and Prowler) against a project they have no membership on.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User X belongs to org A but is not a member of project P (also under org A)"],
+    "steps": [
+      "As user X, call POST /api/cloud-posture-config/test-connection with projectId=P's ID"
+    ],
+    "expectedResult": "Request is rejected with 403 for lack of project membership; no call is made to Prowler's credential-validate endpoint on user X's behalf.",
+    "tags": ["rbac", "provider-onboarding"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

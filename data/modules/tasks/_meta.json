@@ -1,0 +1,10 @@
+{
+  "slug": "tasks",
+  "name": "Centralised Tasks",
+  "scope": "feature",
+  "routes": [
+    "/tasks"
+  ],
+  "qaAgent": "Tasks_QA_Agent",
+  "description": "Cross-module task aggregation from 9 entity types, filters, overdue flags."
+}

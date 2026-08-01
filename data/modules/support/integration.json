@@ -1,0 +1,175 @@
+[
+  {
+    "id": "SUPP-INT-001",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Bug Report Creation",
+    "title": "POST /bug-reports rejects a description shorter than 20 characters",
+    "description": "bug-report.routes.js validates body('description').isString().trim().isLength({min:20, max:5000}) via express-validator before the controller runs.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Authenticated client-panel user with a selected project"],
+    "steps": [
+      "POST /bug-reports with { projectId: '<valid ObjectId>', description: 'too short' } (9 chars)"
+    ],
+    "expectedResult": "400 response with a validation error mentioning 'description must be 20-5000 chars'; no BugReport document is created.",
+    "tags": ["validation", "bug-report-creation"],
+    "requirement": "SUPP creation validation",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-002",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Bug Report Creation",
+    "title": "POST /bug-reports rejects a description longer than 5000 characters and an invalid projectId",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "POST /bug-reports with description of 5001 characters and a valid projectId",
+      "POST /bug-reports with a 25-character description but projectId: 'not-a-mongo-id'"
+    ],
+    "expectedResult": "Both requests return 400 with express-validator messages ('description must be 20-5000 chars' / 'projectId must be a valid ObjectId'); no document persisted for either.",
+    "tags": ["validation", "bug-report-creation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-003",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Bug Report Creation",
+    "title": "Bug report is persisted locally with jiraStatusRaw='Sync Failed' when Jira issue creation throws, and the API still returns 201",
+    "description": "createBugReport() saves the BugReport document to MongoDB before attempting jiraService.createIssue, specifically 'to prevent data loss'. If Jira creation fails (either issue.success===false or an exception), the report is updated to jiraStatusRaw='Sync Failed' but the HTTP response is still 201 with no client-visible error — the ticket is expected to self-heal via triggerBackgroundSync on the next list call.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["jiraService.createIssue mocked to reject or return { success:false }"],
+    "steps": [
+      "POST /bug-reports with a valid 30-character description",
+      "Inspect the response and then query the BugReport document directly"
+    ],
+    "expectedResult": "Response is 201 with success:true and the created report (no jiraKey). The persisted document has status:'Open', jiraStatusRaw:'Sync Failed', and a valid ticketNumber — the user-visible ticket is never lost due to a Jira outage.",
+    "tags": ["resilience", "jira-sync", "bug-report-creation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-004",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Bug Report Creation",
+    "title": "Screenshot attachment failure does not fail or delay bug report creation",
+    "description": "In createBugReport(), jiraService.attachScreenshot(...) is invoked without awaiting its resolution meaningfully for the response — it's a fire-and-forget call with only a .catch(logger.warn). A slow or failing Jira attachments API must not add latency to the create response or roll back the created ticket.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["jiraService.attachScreenshot mocked to reject after a 10s delay"],
+    "steps": [
+      "POST /bug-reports with a valid description and a small PNG screenshotBase64",
+      "Measure response time and response status"
+    ],
+    "expectedResult": "Response returns 201 well under the attachment mock's 10s delay; the ticket and its jiraKey are present regardless of the eventual attachment failure, which is only recorded via a warn-level log.",
+    "tags": ["screenshot", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-005",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Ticket Listing",
+    "title": "GET /bug-reports (My Tickets) filters strictly by organizationId AND userId",
+    "description": "listMyBugReports builds filter { organizationId, userId: req.userId } — two different users in the same org and project must never see each other's reports in this endpoint.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User A and User B in the same org each have 1 bug report"],
+    "steps": [
+      "As User A, GET /bug-reports",
+      "As User B, GET /bug-reports"
+    ],
+    "expectedResult": "User A's response contains only User A's report; User B's response contains only User B's report — neither list includes the other's ticket.",
+    "tags": ["multi-tenant", "ticket-listing"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-006",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Ticket Listing",
+    "title": "GET /bug-reports/all is blocked by requirePermission('bug-report.read_all') at the route level",
+    "description": "bug-report.routes.js gates /all with requirePermission('bug-report.read_all') before listAllBugReports runs, independent of any UI tab visibility logic.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User without the bug-report.read_all permission"],
+    "steps": [
+      "As a normal user (no bug-report.read_all), call GET /bug-reports/all directly"
+    ],
+    "expectedResult": "Request is rejected with 403 before listAllBugReports executes — no cross-user report data is returned even if the frontend tab were bypassed.",
+    "tags": ["rbac", "multi-tenant", "ticket-listing"],
+    "requirement": "bug-report.read_all",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-007",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "On-Demand Sync",
+    "title": "POST /:id/sync creates the missing Jira ticket on demand and surfaces a 500 if that also fails",
+    "description": "syncBugReportStatus(): when report.jiraKey is absent it attempts jiraService.createIssue right away (unlike the fire-and-forget background path) and, unlike createBugReport, throws AppError.internal if this synchronous attempt also fails — giving the caller an explicit signal rather than silently marking 'Sync Failed' again.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A BugReport with jiraStatusRaw:'Sync Failed' and no jiraKey"],
+    "steps": [
+      "POST /bug-reports/:id/sync with jiraService.createIssue mocked to succeed",
+      "Repeat against a second report with jiraService.createIssue mocked to fail"
+    ],
+    "expectedResult": "First call returns 200 with the report now carrying jiraKey/jiraId/jiraUrl and jiraStatusRaw:'Open', and triggers a 'bugReportCreated' email. Second call returns 500 'Failed to create Jira ticket: <reason>' and the report remains without a jiraKey.",
+    "tags": ["jira-sync", "resilience"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "SUPP-INT-008",
+    "module": "support",
+    "category": "integration",
+    "subFeature": "Comment Thread",
+    "title": "POST /:id/comments returns 400 when the ticket has no jiraKey yet",
+    "description": "addComment() explicitly checks `if (!report.jiraKey) throw AppError.badRequest('Jira ticket not synced yet. Cannot post comments.')` — comments can only be relayed to a real Jira issue.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A BugReport with jiraStatusRaw:'Sync Failed' / no jiraKey"],
+    "steps": [
+      "POST /bug-reports/:id/comments with { comment: 'Any update?' } against the unsynced report"
+    ],
+    "expectedResult": "400 response with message 'Jira ticket not synced yet. Cannot post comments.' — no call is made to jiraService.addComment.",
+    "tags": ["comments", "jira-sync"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

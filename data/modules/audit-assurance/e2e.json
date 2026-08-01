@@ -1,0 +1,143 @@
+[
+  {
+    "id": "AUDT-E2E-001",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "CAR Lifecycle",
+    "title": "Full CAR lifecycle from finding to closure is reflected live in FindingsRegisterTab and CARDetailDrawer",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as an auditor with audit.update permission", "An active audit exists with at least one open finding"],
+    "steps": [
+      "Open FindingsRegisterTab and raise a CAR against an open finding",
+      "Open the new CAR in CARDetailDrawer and upload evidence (status should auto-flip to 'remediation_in_progress')",
+      "Submit the CAR for verification",
+      "Log out, log in as a different user (not the CAR's assignee), and verify the CAR as 'passed'",
+      "Return to FindingsRegisterTab and confirm the underlying finding's displayed status"
+    ],
+    "expectedResult": "The CAR transitions open -> remediation_in_progress -> verification_pending -> closed visibly in CARDetailDrawer at each step, and the linked finding's status in FindingsRegisterTab reflects the CAR's closure without a manual page refresh being required to see stale data.",
+    "tags": ["car-lifecycle", "cross-tab"],
+    "requirement": "ISO 27001:2022 Clause 10.1",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-E2E-002",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "Audit Closure",
+    "title": "Audit can be approved for closure via AuditClosureTab while major CARs/findings remain open",
+    "description": "End-to-end reproduction of critical defect CD-001: approveClosure() (audit-closure.service.js:131-170) never queries AuditNonConformance for open findings/CARs before setting the audit to 'closed'.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An audit has at least one CAR with status='open' and one finding with severity='critical' and status not closed", "Closure checklist items have all been manually ticked complete"],
+    "steps": [
+      "In AuditClosureTab, tick every checklist item as complete (checklist items are free text, unrelated to actual CAR/finding state)",
+      "Click 'Request Approval'",
+      "As a different user with audit.update permission, click 'Approve'"
+    ],
+    "expectedResult": "Current behavior: closure is approved and the audit's status is set to 'closed' even though a critical finding and an open CAR still exist and are visible elsewhere in the same audit. This should be flagged as a release-blocking gap — closure approval must be blocked (or require explicit override with justification) while major nonconformities remain open, per ISO 27001:2022 Clause 10.1.",
+    "tags": ["audit-closure", "iso27001", "critical-defect"],
+    "requirement": "ISO 27001:2022 Clause 9.2",
+    "linkedDefect": "CD-001",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-E2E-003",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "Management Review Reporting",
+    "title": "Management review meeting minutes and decisions are captured but omitted from the generated report preview",
+    "description": "ManagementReview.minutes.content/decisions[] are captured by the ManagementReviewTab UI and persisted, but the management-review-report preview mapper (audit-assurance.routes.js:474-491) only surfaces total_reviews/completed/pending counts and a flat reviewItems table — it never reads minutes off the review documents.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A completed management review exists with non-empty minutes.content and at least one decision recorded"],
+    "steps": [
+      "Complete a management review meeting in ManagementReviewTab, entering detailed minutes text and at least one decision",
+      "Navigate to the Phase 3 report suite and generate/preview the 'management-review-report'"
+    ],
+    "expectedResult": "Current behavior: the report preview shows only review counts and a flat item table; the minutes text and decisions entered are nowhere in the generated report, despite being stored in the database. Flag for remediation as a reporting content gap against ISO 27001:2022 Clause 9.3.",
+    "tags": ["reporting-gap", "management-review", "iso27001"],
+    "requirement": "ISO 27001:2022 Clause 9.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-E2E-004",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "Findings UX",
+    "title": "NonConformanceForm.jsx status dropdown offers every status value with no indication of which are legal from the current state",
+    "description": "Frontend symptom (D-33) of the backend state-machine gap in AUDT-INT-006: the form exposes the full status enum unconditionally.",
+    "priority": "P3",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A finding exists with status='open'"],
+    "steps": [
+      "Open the finding's edit form (NonConformanceForm.jsx)",
+      "Open the status dropdown"
+    ],
+    "expectedResult": "Current behavior: the dropdown lists all possible status values (e.g. 'closed' directly selectable from 'open') with no visual distinction between valid next-states and invalid ones, and no confirmation prompt when skipping intermediate states. Flag as a UX gap to pair with the backend transition-validation fix.",
+    "tags": ["ux-gap", "findings"],
+    "linkedDefect": "D-33",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-E2E-005",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "Closure Approval UX",
+    "title": "ApprovalDrawer.jsx does not warn or block when the current user is the same person who submitted the report for approval",
+    "description": "Frontend-side SoD gap (D-36), distinct from the backend closure-approval self-check in audit-closure.service.js (which only blocks the literal requestedBy===userId case for audit closure, not the broader report-governance approval drawer used elsewhere in the module).",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as the same user who submitted a Phase 3 report for approval"],
+    "steps": [
+      "Submit a Phase 3 report for approval",
+      "As the same user, open ApprovalDrawer.jsx for that report and click 'Approve'"
+    ],
+    "expectedResult": "Current behavior: no client-side warning or block prevents self-approval in this drawer. Flag for remediation: ApprovalDrawer.jsx should disable the approve action (or require a distinct approver) when the current user matches the submitter, mirroring the backend closure check.",
+    "tags": ["ux-gap", "segregation-of-duties"],
+    "linkedDefect": "D-36",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "AUDT-E2E-006",
+    "module": "audit-assurance",
+    "category": "e2e",
+    "subFeature": "Findings Closure Tracker Reporting",
+    "title": "Findings Closure Tracker tab displays CAR aging buckets matching underlying CAR ages",
+    "description": "Positive-control test: FindingsClosureTrackerTab.jsx (R16) sources age/days_open and aging_buckets from AGING_BUCKETS (phase3-enums.js:246-251: 0-30/31-60/61-90/90+ days) via the preview mapper at audit-assurance.routes.js:454-468.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["CARs exist open for 10, 40, 75, and 120 days respectively"],
+    "steps": [
+      "Open the Findings Closure Tracker report tab for the audit",
+      "Inspect the aging buckets breakdown"
+    ],
+    "expectedResult": "Each CAR is bucketed correctly: the 10-day CAR under '0-30', the 40-day CAR under '31-60', the 75-day CAR under '61-90', and the 120-day CAR under '90+'.",
+    "tags": ["reporting", "car-aging"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

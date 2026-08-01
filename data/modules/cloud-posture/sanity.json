@@ -1,0 +1,105 @@
+[
+  {
+    "id": "CLPO-SAN-001",
+    "module": "cloud-posture",
+    "category": "sanity",
+    "subFeature": "Provider Onboarding",
+    "title": "AWS accountId validation still enforces exactly 12 numeric digits after any credential-form change",
+    "description": "Quick regression re-check for the accountId /^\\d{12}$/ rule (config.controller.js) whenever the onboarding form is touched, to catch an accidental loosening or tightening of the regex.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Enter a 12-digit numeric accountId and submit",
+      "Enter an 11-digit accountId and submit"
+    ],
+    "expectedResult": "The 12-digit value is accepted; the 11-digit value is rejected with the accountId format error, unchanged from prior behavior.",
+    "tags": ["provider-onboarding", "aws", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SAN-002",
+    "module": "cloud-posture",
+    "category": "sanity",
+    "subFeature": "Scan Lifecycle",
+    "title": "Cancel action is unavailable for scans already in a terminal status",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A scan exists in status 'completed' and another in 'failed'"],
+    "steps": [
+      "Open each scan's detail page and look for a 'Cancel Scan' control"
+    ],
+    "expectedResult": "No cancel control is shown/enabled for scans in 'completed' or 'failed'; if invoked directly via API it is rejected as a conflict rather than silently succeeding.",
+    "tags": ["scan-lifecycle", "state-machine"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SAN-003",
+    "module": "cloud-posture",
+    "category": "sanity",
+    "subFeature": "Posture Dashboard",
+    "title": "Dashboard security score changes after a new scan completes with a different pass/fail mix",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Note the current overall security score",
+      "Run a new scan that introduces at least one new FAIL finding",
+      "Reload the dashboard once the scan completes"
+    ],
+    "expectedResult": "The overall security score changes to reflect the new pass/fail ratio; it is not a static/cached value that ignores the latest scan.",
+    "tags": ["dashboard", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SAN-004",
+    "module": "cloud-posture",
+    "category": "sanity",
+    "subFeature": "Scheduling",
+    "title": "Toggling a recurring scan schedule off stops further automatic scans from firing",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A project has an active recurring schedule"],
+    "steps": [
+      "Disable the recurring schedule from the UI",
+      "Wait past what would have been the next scheduled run time"
+    ],
+    "expectedResult": "No new scan is created after the schedule is disabled; the schedule document's status no longer reads 'scheduled_recurring' so the scheduler's runDue() query does not pick it up.",
+    "tags": ["scheduling", "regression"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CLPO-SAN-005",
+    "module": "cloud-posture",
+    "category": "sanity",
+    "subFeature": "Provider Onboarding",
+    "title": "Connection health badge on the configure page reflects the most recent test result after reload",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["A provider's most recent connection test failed"],
+    "steps": [
+      "Reload /cloud-posture/configure"
+    ],
+    "expectedResult": "The provider's connection status badge shows the failed state with the message and timestamp from connectionHealth, not a stale 'verified' badge from an earlier successful test.",
+    "tags": ["provider-onboarding", "connection-health"],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

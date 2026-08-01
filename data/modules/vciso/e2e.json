@@ -1,0 +1,233 @@
+[
+  {
+    "id": "VCIS-E2E-001",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Executive Dashboard",
+    "title": "Executive dashboard loads composite security score, financial exposure, and top risks together",
+    "description": "ExecutiveDashboardService computes the Security Score as a weighted composite (technical 35%, process 25%, governance 20%, people 20%, renormalized over whatever sub-scores are actually available) — verifies the full page assembles all KPI cards from one /executive-dashboard call within the default 90d timeframe.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Logged in as a user with vciso.read permission",
+      "Org has at least one completed FAIR scenario and one activated compliance framework"
+    ],
+    "steps": [
+      "Log in and navigate to /vciso/executive-dashboard",
+      "Observe the Security Score card, Financial Exposure card, Compliance Summary widget, and Top Risks table",
+      "Confirm all widgets reflect the same default 90d timeframe"
+    ],
+    "expectedResult": "Dashboard renders all KPI widgets from a single load; Security Score is an integer 0-100 reflecting the weighted composite of available sub-scores; Financial Exposure and Top Risks are consistent with the same timeframe and organization.",
+    "tags": ["executive-dashboard", "security-score", "kpi"],
+    "requirement": "ISO 27001 Clause 9.3 (Management Review)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-002",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Strategic Planning",
+    "title": "Initiative creation, milestone tracking, and atomic budget expense recording flow end to end",
+    "description": "Verifies the roadmap -> initiative -> milestone -> expense chain in StrategicPlanningService, including the $inc-based atomic expense recording (POST /initiatives/:id/expenses) that avoids read-modify-write races on budget.spent.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with vciso.create and vciso.update permissions"],
+    "steps": [
+      "Create a security initiative with budget.allocated=50000 and a valid timeline (targetDate after startDate)",
+      "Add a milestone to the initiative with a target date",
+      "Record two budget expenses of 1000 and 1500 via the 'Log Expense' action",
+      "Reload the initiative detail view"
+    ],
+    "expectedResult": "Initiative appears on the roadmap with owner and category; milestone shows status 'pending'; budget.spent equals exactly 2500 (both expenses applied atomically, no lost update) and remaining budget is recalculated correctly.",
+    "tags": ["strategic-planning", "budget", "milestones"],
+    "requirement": "ISO 27001 Clause 5.1 (Leadership commitment to resourcing)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-003",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Risk Intelligence",
+    "title": "FAIR scenario creation, Monte Carlo simulation run, and stored results retrieval",
+    "description": "Covers the full FAIR quantification path: createScenario -> runSimulation (10000-iteration Monte Carlo over PERT-sampled loss event frequency/magnitude) -> getSimulationResults returning the same stored statistics later.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with vciso.create permission"],
+    "steps": [
+      "Navigate to /vciso/risk-intelligence and create a new FAIR scenario with loss event frequency and primary/secondary loss magnitude ranges (min/likely/max)",
+      "Run the Monte Carlo simulation (default 10000 iterations)",
+      "Note the reported ALE statistics and distribution",
+      "Navigate away and reopen the scenario's stored results"
+    ],
+    "expectedResult": "Simulation returns iterations, statistics (mean/percentiles), lef, lossMagnitude, and a distribution array; reopening the scenario later via GET /scenarios/:id/results shows the identical stored statistics from the original run, not a fresh recompute.",
+    "tags": ["fair-model", "monte-carlo", "risk-quantification"],
+    "requirement": "ISO 27001 Clause 6.1.2 (Risk Assessment)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-004",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Compliance Oversight",
+    "title": "Compliance Oversight page shows framework status, gap counts, and upcoming audit deadlines together",
+    "description": "buildSmartCompliance counts every returned framework as 'active' (even one at 0% compliance) rather than filtering by complianceRate > 0 — this was a prior defect where the Compliance Oversight page under-counted frameworks vs. the Reports page.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has 2 activated frameworks, one with 0% current compliance",
+      "An external audit is scheduled 10 days from today"
+    ],
+    "steps": [
+      "Navigate to /vciso/compliance-oversight",
+      "Observe the Smart Compliance section's 'Active Frameworks' count",
+      "Observe the framework list and the Upcoming Audits section"
+    ],
+    "expectedResult": "Active Frameworks shows 2 (both frameworks counted, including the 0%-compliant one); gaps equals the non-compliant control count; Upcoming Audits shows the scheduled audit with daysToNextAudit approximately 10; each framework row shows name and rounded compliance percentage.",
+    "tags": ["compliance-oversight", "framework-status", "gap-tracking"],
+    "requirement": "ISO 27001 Clause 9.1 (Monitoring, measurement, analysis, evaluation)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-005",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Third-Party Risk",
+    "title": "Third-Party Risk page aggregates vendor risk distribution, highlights critical vendors, and flags overdue reviews",
+    "description": "Verifies the server-side ported version of the vendor-service normalization (buildRiskDistribution/buildHighRiskVendors/buildUpcomingReviews) that replaced the old client-side 3-tier fallback chain.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has vendors across all 4 risk tiers (critical/high/medium/low)",
+      "At least one vendor's next review date is overdue"
+    ],
+    "steps": [
+      "Navigate to /vciso/third-party-risk",
+      "Observe the Risk Distribution chart and Critical Vendors highlighting",
+      "Observe the Upcoming/Overdue Reviews section"
+    ],
+    "expectedResult": "Risk Distribution bucket counts match the seeded vendor tiers exactly; vendors in the 'critical' tier are visually highlighted with riskScore and openIssues populated; the overdue vendor appears in the reviews list with its actual nextReviewDate.",
+    "tags": ["third-party-risk", "vendor-aggregation", "sla"],
+    "requirement": "ISO 27001 Annex A.5.19 (Supplier relationships)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-006",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Board Reporting",
+    "title": "Board report progresses from generation through approval, delivery, and PDF download with a frozen data snapshot",
+    "description": "Verifies the report keeps a dataSnapshot/metricsSnapshot captured at generate-time (used by the versions/compare endpoint) so the delivered PDF reflects the data as of generation, not whatever changed in the org afterward — the report's 'freshness stamp'.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with vciso.create and vciso.approve permissions", "At least one report template exists"],
+    "steps": [
+      "Create a new report from a template (POST /reports)",
+      "Trigger full content + PDF generation (POST /reports/:id/generate)",
+      "Change an underlying metric in the org (e.g. approve a new evidence item) after generation",
+      "Approve the report, then deliver it to recipients",
+      "Download the report PDF"
+    ],
+    "expectedResult": "Report transitions draft -> submitted/under_review -> closed -> delivered; the downloaded PDF's figures match the data snapshot at generation time, not the metric changed afterward; download returns actual PDF bytes with Content-Type application/pdf and a sanitized filename.",
+    "tags": ["board-reporting", "pdf-export", "data-freshness"],
+    "requirement": "ISO 27001 Clause 9.3 (Management Review reporting)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-007",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "AI Strategy Advisor",
+    "title": "AI Strategy Advisor conversation returns tenant-scoped recommendations with no cross-tenant leakage",
+    "description": "Verifies advisor-chat.routes.ts forwards org_context.organization_id from the caller's own JWT (never client-supplied) to python-ai, and that returned recommendations/citations only reference this org's own GRC data.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["Logged in as a user with vciso.read permission", "Org has its own initiatives, risks, and frameworks distinct from any other tenant"],
+    "steps": [
+      "Navigate to /vciso/ai-strategy-advisor",
+      "Click the 'Security Budget Allocation' quick action",
+      "Review the AI response's recommendations and any cited sources"
+    ],
+    "expectedResult": "A conversation and message are created and persisted; the AI response's recommendations/citations reference only this organization's own initiatives/risks/frameworks; no vendor, risk, or framework name belonging to another tenant appears anywhere in the response.",
+    "tags": ["ai-advisor", "tenant-scoping", "hallucination-check"],
+    "requirement": "ISO 27001 Annex A.8.16 (Monitoring activities / AI-generated content)",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-008",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Access Control",
+    "title": "User without vciso.read permission is blocked from every vCISO sub-module, not just the landing redirect",
+    "description": "layout.jsx wraps the vCISO section in <PermissionGate permission=\"vciso.read\">. Confirms the gate applies at the shared layout level so all 7 sub-pages are blocked identically, and that backend routes independently 403 regardless of what the UI renders.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User's role has zero vciso.* permissions"],
+    "steps": [
+      "Log in as the restricted user",
+      "Navigate directly to /vciso (should redirect to /vciso/executive-dashboard)",
+      "Navigate directly to each of the 6 remaining sub-module URLs: /vciso/strategic-planning, /vciso/risk-intelligence, /vciso/compliance-oversight, /vciso/third-party-risk, /vciso/board-reporting, /vciso/ai-strategy-advisor",
+      "In parallel, call the corresponding backend GET endpoints directly with this user's token"
+    ],
+    "expectedResult": "Every sub-page renders the standard access-denied state instead of any dashboard content; every backend endpoint gated on vciso.read (or a stricter vciso.* action) returns 403, independent of the frontend gate.",
+    "tags": ["rbac", "permission-gate", "nav-vciso"],
+    "requirement": "ISO 27001 Annex A.5.15 (Access control)",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-E2E-009",
+    "module": "vciso",
+    "category": "e2e",
+    "subFeature": "Empty States",
+    "title": "All 7 vCISO sub-modules render a designed empty state on a freshly onboarded tenant with zero data",
+    "description": "Verifies getDefaultSecurityScore()/getDefaultFinancialExposure() and equivalent null-safe builders (buildSmartCompliance(null), buildThirdPartyRiskSummary(null,null,null)) actually reach the frontend as zeroed widgets instead of the page crashing on empty arrays or null vendor-service responses.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Brand-new organization: zero initiatives, zero FAIR scenarios, zero board reports, no frameworks activated, no vendors onboarded"
+    ],
+    "steps": [
+      "Log in as the new org's admin",
+      "Visit each of the 7 vCISO sub-module pages in turn"
+    ],
+    "expectedResult": "Executive Dashboard shows default zeroed KPI cards (no NaN/crash); Strategic Planning shows a 'no initiatives yet' prompt; Risk Intelligence shows zero scenarios with a create-scenario CTA; Compliance Oversight shows zero active frameworks and zero gaps; Third-Party Risk shows a zeroed summary (not an error from a null vendor-service payload); Board Reporting shows only system templates with 0 generated reports; AI Strategy Advisor loads with its quick actions and no prior conversation history.",
+    "tags": ["empty-state", "fresh-tenant", "onboarding"],
+    "requirement": "ISO 27001 Clause 9.3",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

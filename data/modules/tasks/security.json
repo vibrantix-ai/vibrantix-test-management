@@ -1,0 +1,139 @@
+[
+  {
+    "id": "TASK-SEC-001",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Microservice Auth",
+    "title": "vendor-service /internal/tasks rejects a request with a missing X-Internal-Token header",
+    "description": "internal-tasks.routes.ts validateToken(): reads request.headers['x-internal-token'], compares byte-length then timingSafeEqual against process.env.INTERNAL_SERVICE_TOKEN. A missing header produces an empty Buffer, which fails the length check before timingSafeEqual is even invoked.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["INTERNAL_SERVICE_TOKEN is configured on vendor-service"],
+    "steps": [
+      "Call GET http://vendor-service/internal/tasks?userId=...&organizationId=... with no X-Internal-Token header"
+    ],
+    "expectedResult": "401 { success: false, error: 'Unauthorized' }. No vendor_assessments or vendor_evidence data is returned in the response body.",
+    "tags": ["auth", "internal-token", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-SEC-002",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Microservice Auth",
+    "title": "risk-management-service /internal/tasks rejects a forged X-Internal-Token using constant-time comparison",
+    "description": "Regression guard for TK-002 (fixed — auth header naming was previously mismatched between the caller and this service). risk-management-service's validateToken accepts a token from either INTERNAL_SERVICE_TOKEN or INTERNAL_API_KEY env vars, but always compares the SAME received header value via timingSafeEqual against whichever one it resolved — verify a same-length-but-wrong token is rejected, and that the comparison does not short-circuit early (timing side-channel).",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "linkedDefect": "TK-002",
+    "preconditions": ["INTERNAL_SERVICE_TOKEN is a known value on risk-management-service"],
+    "steps": [
+      "Call GET http://risk-management-service/internal/tasks?userId=...&organizationId=... with X-Internal-Token set to a string of the exact same length as the real token but with the last character altered"
+    ],
+    "expectedResult": "401 Unauthorized. No risk data (owner/lead-owner/escalation risks) is leaked in the error response.",
+    "tags": ["auth", "internal-token", "timing-safe", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-SEC-003",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Microservice Auth",
+    "title": "Each of the 3 internal /internal/tasks endpoints fails closed (503) when its own service has no INTERNAL_SERVICE_TOKEN configured",
+    "description": "All three routes (vendor-service, risk-management-service, trust-vault-service) check `if (!token) { ...503... }` BEFORE ever reading the caller's header — an unconfigured deployment cannot accidentally allow all requests through by treating a falsy expected token as '' == '' matching an empty caller header.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": ["INTERNAL_SERVICE_TOKEN (and INTERNAL_API_KEY for risk-management-service) is unset in the target service's environment"],
+    "steps": [
+      "Call GET /internal/tasks on the affected service with ANY X-Internal-Token value, including an empty string"
+    ],
+    "expectedResult": "503 { success: false, error: 'Internal endpoint not configured' } — the endpoint never falls back to accepting all callers when misconfigured; it fails closed, not open.",
+    "tags": ["auth", "fail-closed", "configuration", "owasp-a05"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-SEC-004",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "A cross-org WorkflowEntry assignment cannot surface another organization's Evidence/Policy document as a task",
+    "description": "Duplicate-purpose security-focused variant of TASK-INT-004 (functional angle) — this case specifically probes the IDOR/tenant-isolation risk: WorkflowEntry has no org field, so without the TK-009 post-filter fix, any org's WorkflowEntry pointing at metadata.assignedTo=<attacker's userId> would surface a victim org's evidence/policy content (title, entityName) directly in the attacker's /api/tasks response.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "linkedDefect": "TK-009",
+    "preconditions": [
+      "Attacker is a user in Org A",
+      "A WorkflowEntry exists (e.g. from a data-migration bug, stale test fixture, or an app-level bug elsewhere) with metadata.assignedTo = attacker's userId, entityType='evidence', pointing at an Evidence document that belongs to Org B"
+    ],
+    "steps": [
+      "As the attacker, call GET /api/tasks with orgId = Org A"
+    ],
+    "expectedResult": "The Org B evidence task is absent from the response — fetchWorkflowEntries' post-filter (EntityModel.find({_id:{$in:entityIds}, organizationId: orgId})) excludes it because it does not belong to Org A. No entityName, title, or other Org B evidence metadata leaks.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-SEC-005",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Authentication",
+    "title": "GET /api/tasks and GET /api/tasks/tab-counts require a valid authenticated session",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "steps": [
+      "Call GET /api/tasks with no Authorization header / no valid session cookie",
+      "Call GET /api/tasks/tab-counts the same way"
+    ],
+    "expectedResult": "Both endpoints reject with 401 before the `authenticate` middleware allows tasksService.getMyTasks to run — no task data of any kind is returned to an unauthenticated caller.",
+    "tags": ["authentication", "owasp-a01"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TASK-SEC-006",
+    "module": "tasks",
+    "category": "security",
+    "subFeature": "Project-Level Access Control",
+    "title": "A non-admin user cannot use ?projectId= to enumerate tasks from a project they are not a member of",
+    "description": "GET / calls resolveProjectScope(req, projectId) (PLAC-006) BEFORE tasksService.getMyTasks runs. For a non-admin (no project.admin permission), an explicit projectId the caller is not a ProjectMember of throws AppError.forbidden('You are not a member of this project') rather than silently ignoring the filter or, worse, returning unfiltered org-wide results.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "planned",
+    "preconditions": [
+      "User U is a member of Project 1 only, in an org that also has Project 2",
+      "User U has no project.admin permission"
+    ],
+    "steps": [
+      "As user U, call GET /api/tasks?projectId=<Project 2's id>"
+    ],
+    "expectedResult": "403 'You are not a member of this project'. No Project 2 task data of any kind is returned. A subsequent call with ?projectId=<Project 1's id> (a project U IS a member of) succeeds and returns only Project 1-scoped tasks.",
+    "tags": ["idor", "project-access-control", "plac", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

@@ -1,0 +1,196 @@
+[
+  {
+    "id": "PROJ-UNIT-001",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Project Code Generation",
+    "title": "generateCode() produces a 6-character code from consonants only",
+    "description": "Project.generateCode (project.model.js) builds the projectCode from a fixed 21-consonant alphabet ('BCDFGHJKLMNPQRSTVWXYZ') specifically so no vowels can ever appear — the comment states this makes profanity formation structurally impossible, not filtered after the fact.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call Project.generateCode() 1000 times",
+      "Assert every returned value is exactly 6 characters",
+      "Assert every character in every value belongs to the set 'BCDFGHJKLMNPQRSTVWXYZ'"
+    ],
+    "expectedResult": "All generated codes are 6 characters long and contain only consonants from the defined alphabet — no vowels, digits, or symbols ever appear.",
+    "tags": ["project-code"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-002",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Project Code Generation",
+    "title": "createWithCode() retries on projectCode collision up to 5 times",
+    "description": "projectSchema.statics.createWithCode (project.model.js) catches a Mongo duplicate-key error (code 11000) specifically on the projectCode unique index and retries with a freshly generated code, up to MAX_RETRIES=5, before giving up.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project.generateCode is stubbed to return a colliding code for the first 2 calls, then a unique code"],
+    "steps": [
+      "Insert a project with projectCode 'BCDFGH' directly",
+      "Stub generateCode to return 'BCDFGH' twice, then 'JKLMNP'",
+      "Call Project.createWithCode({ name: 'Retry Test', organizationId })"
+    ],
+    "expectedResult": "The document is saved successfully on the 3rd attempt with projectCode 'JKLMNP'; no error is thrown to the caller for the first two collisions.",
+    "tags": ["project-code", "retry-logic"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-003",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Access Control Helpers",
+    "title": "createWithCode() throws after exhausting all 5 retry attempts",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Stub Project.generateCode to always return the same already-taken code",
+      "Call Project.createWithCode({ name: 'Always Collides', organizationId })"
+    ],
+    "expectedResult": "After exactly 5 attempts, the call rejects with 'Unable to assign a unique project code — please try again' rather than retrying indefinitely.",
+    "tags": ["project-code", "retry-logic"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-004",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Access Control Helpers",
+    "title": "assertOrgAccess() unwraps a populated organizationId subdocument before comparing",
+    "description": "assertOrgAccess (project.controller.js) does `entity.organizationId?._id ?? entity.organizationId` because getById populates organizationId to { _id, name } for display — comparing the populated object directly via .toString() would yield '[object Object]' and never match req.orgId, silently denying every legitimate same-org request.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["A project whose organizationId is populated as { _id, name }"],
+    "steps": [
+      "Build a project object with organizationId populated to { _id: orgA, name: 'Org A' }",
+      "Call assertOrgAccess(project, { orgId: orgA, permissions: new Set() })"
+    ],
+    "expectedResult": "No exception is thrown — the populated subdocument's _id is correctly unwrapped and matches req.orgId.",
+    "tags": ["access-control", "regression-guard"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-005",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Access Control Helpers",
+    "title": "buildOrgScope() returns null (unrestricted) only for a super admin with no orgId query param",
+    "description": "buildOrgScope (project.controller.js) is the org-scoping helper behind /projects (list) and /projects/stats. A non-super-admin always gets req.orgId regardless of any query param they pass.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call buildOrgScope({ permissions: new Set(['organization.admin']), query: {} , orgId: 'ownOrg' })",
+      "Call buildOrgScope({ permissions: new Set(['organization.admin']), query: { orgId: 'targetOrg' }, orgId: 'ownOrg' })",
+      "Call buildOrgScope({ permissions: new Set([]), query: { orgId: 'targetOrg' }, orgId: 'ownOrg' })"
+    ],
+    "expectedResult": "First call returns null (unscoped, admin browsing all orgs). Second call returns 'targetOrg'. Third call (non-admin) returns 'ownOrg' regardless of the query param supplied — a non-admin can never widen or redirect their own org scope via the query string.",
+    "tags": ["access-control", "multi-tenant"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-006",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Project Creation Wizard",
+    "title": "CreateProjectModal validateForm() rejects project name outside 2-200 characters",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Set formData.name to a single character 'A' and call validateForm()",
+      "Set formData.name to a 201-character string and call validateForm()",
+      "Set formData.name to a valid 10-character string and call validateForm()"
+    ],
+    "expectedResult": "First two calls return false and populate errors.name with 'Project name must be between 2 and 200 characters'; the third call returns true with no error.",
+    "tags": ["form-validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-007",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Project Creation Wizard",
+    "title": "CreateProjectModal validateForm() rejects an end date on or before the start date",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Set timeline.startDate = '2026-08-10' and timeline.endDate = '2026-08-10' (same day)",
+      "Call validateForm()",
+      "Set timeline.endDate = '2026-08-09' (before start) and call validateForm() again"
+    ],
+    "expectedResult": "Both calls return false with errors.endDate = 'End date must be after start date'; a genuinely later end date passes validation.",
+    "tags": ["form-validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-008",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Project Dashboard",
+    "title": "calculateProgress() returns 0 without dividing by zero when a project has no milestones",
+    "description": "The project list page's calculateProgress helper divides completed milestone count by total milestone count — must guard the empty-array case explicitly rather than producing NaN in the Progress bar.",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call calculateProgress({ milestones: [] })",
+      "Call calculateProgress({ milestones: undefined })",
+      "Call calculateProgress({ milestones: [{status:'Completed'}, {status:'Not Started'}] })"
+    ],
+    "expectedResult": "First two calls return 0 (not NaN). Third call returns 50.",
+    "tags": ["ui", "edge-case"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "PROJ-UNIT-009",
+    "module": "project-management",
+    "category": "unit",
+    "subFeature": "Idempotent Creation",
+    "title": "getCreationRequestId() rejects an Idempotency-Key header longer than 200 characters",
+    "priority": "P3",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call getCreationRequestId(req) where req.get('Idempotency-Key') returns a 201-character string",
+      "Call getCreationRequestId(req) where the header is an empty/whitespace-only string",
+      "Call getCreationRequestId(req) where the header is a normal 36-character UUID"
+    ],
+    "expectedResult": "First call throws AppError.badRequest('Idempotency-Key must be between 1 and 200 characters'). Second call also throws (normalizes to empty, treated as invalid). Third call returns the trimmed UUID string.",
+    "tags": ["idempotency", "validation"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

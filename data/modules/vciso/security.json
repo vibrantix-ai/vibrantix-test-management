@@ -1,0 +1,153 @@
+[
+  {
+    "id": "VCIS-SEC-001",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "Access Control",
+    "title": "Initiative detail endpoint rejects cross-organization access (IDOR)",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two orgs (A, B) each with at least one initiative", "Valid JWT for a user in org A with vciso.read"],
+    "steps": [
+      "As an org A user, call GET /initiatives/:initiativeId using an initiativeId that belongs to org B"
+    ],
+    "expectedResult": "extractOrgId-scoped lookup returns 404 — no org B initiative data (budget figures, owner PII, linked risks/controls) is returned in the response body.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-002",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "AI Strategy Advisor",
+    "title": "Advisor conversation creation is blocked for a user without vciso.read (MRB-05 regression guard)",
+    "description": "Regression guard for MRB-05 (2026-07-22): POST /conversations was previously gated on authentication only, letting any authenticated org user drive the AI advisor and surface org GRC data via python tool calls even with zero vCISO access. Must not regress.",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["User's role has no vciso.* permissions"],
+    "steps": [
+      "As the restricted user, call POST /advisor/conversations with a valid body"
+    ],
+    "expectedResult": "403 is returned before any conversation document is created; no vciso_conversations record exists for this user/org from this attempt.",
+    "tags": ["rbac", "owasp-a01", "ai-advisor"],
+    "linkedDefect": "MRB-05",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-003",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "AI Strategy Advisor",
+    "title": "AI advisor message endpoint enforces a 10-per-minute-per-user rate limit",
+    "description": "SEC-003 fix: rate limiter keyGenerator uses userId/sub (falling back to IP only if absent), protecting the Python AI service from DoS while not penalizing other users sharing the same IP/NAT.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["An existing conversation owned by the test user"],
+    "steps": [
+      "Send 10 messages to POST /conversations/:id/messages within 60 seconds as user A",
+      "Send an 11th message within the same 60-second window as user A",
+      "In parallel, send 1 message as user B from behind the same IP/NAT"
+    ],
+    "expectedResult": "The 11th request from user A is rejected with 429 and a message containing 'AI advisor rate limit exceeded'; user B's request in the same window succeeds, confirming the limit is keyed per-user, not per-IP.",
+    "tags": ["dos", "rate-limiting", "owasp-api4"],
+    "linkedDefect": "SEC-003",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-004",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "Third-Party Risk",
+    "title": "Third-Party Risk summary does not fall back to org-wide vendor data when all requested projects are inaccessible",
+    "description": "When filterAccessibleProjectIds resolves the caller's projectIds down to an empty array, the route must return the all-null buildThirdPartyRiskSummary(null,null,null) shape, not silently drop the project filter and fetch org-wide vendor-service data as an unintended broader-access fallback.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has no access to any project in the org, or requests only inaccessible project IDs"],
+    "steps": [
+      "Call GET /third-party-risk/summary?projectIds=<inaccessible-project-id>"
+    ],
+    "expectedResult": "Response returns the zeroed/null summary shape (totalVendors 0, empty highRiskVendors/upcomingReviews); no vendor-service call is made without a project filter, and no vendor data outside the caller's access is returned.",
+    "tags": ["idor", "multi-tenant", "project-scoping"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-005",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "Board Reporting",
+    "title": "Report download endpoint enforces organization ownership before returning any file",
+    "priority": "P0",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two orgs (A, B) each with a generated board report"],
+    "steps": [
+      "As an org A user, call GET /reports/:reportId/download using a reportId that belongs to org B"
+    ],
+    "expectedResult": "reportingService.getDownloadUrl (scoped by organizationId) returns not-found; the S3-unavailable stream fallback is never reached with org B's file; no PDF bytes or presigned URL for org B's report are returned to the org A caller.",
+    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-006",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "Board Reporting",
+    "title": "System report templates cannot be deleted through the API",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has vciso.delete permission", "A built-in system template exists"],
+    "steps": [
+      "Call DELETE /templates/:templateId for a system-provided (non-custom) template ID"
+    ],
+    "expectedResult": "Request is rejected by reportingService.deleteTemplate; the template remains present and unmodified in a subsequent GET /templates call.",
+    "tags": ["data-integrity", "template-management"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "VCIS-SEC-007",
+    "module": "vciso",
+    "category": "security",
+    "subFeature": "Risk Intelligence",
+    "title": "FAIR scenario workflow transition requires vciso.update, not vciso.create",
+    "description": "Regression guard: POST /scenarios/:id/transition was previously gated on vciso.create, described in code as 'a copy-paste mismatch' — transitioning workflow state is an update to an existing scenario, not creation of a new one.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "automated",
+    "preconditions": ["User's role grants vciso.create but explicitly not vciso.update"],
+    "steps": [
+      "As this user, call POST /scenarios/:scenarioId/transition with a valid targetState for an existing scenario"
+    ],
+    "expectedResult": "403 is returned — a create-only user cannot transition scenario workflow state; the scenario's status is unchanged.",
+    "tags": ["rbac", "least-privilege"],
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

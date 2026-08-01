@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vibrantix Test Management System</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__title">
+      <h1>Vibrantix Test Management System</h1>
+      <span class="app-header__subtitle">Modular test case repository — filter, review, and export for SDET &amp; release testing</span>
+    </div>
+    <div class="app-header__actions">
+      <button id="btn-export-xlsx" class="btn btn--primary">Export to Excel</button>
+      <button id="btn-export-csv" class="btn btn--secondary">Export CSV</button>
+    </div>
+  </header>
+
+  <section id="stats" class="stats"></section>
+
+  <main class="layout">
+    <aside class="filters" id="filters">
+      <div class="filters__header">
+        <h2>Filters</h2>
+        <button id="btn-reset-filters" class="btn btn--link">Reset</button>
+      </div>
+
+      <div class="filter-group">
+        <label for="search">Search</label>
+        <input id="search" type="search" placeholder="ID, title, step, tag..." autocomplete="off" />
+      </div>
+
+      <div class="filter-group">
+        <h3>Category</h3>
+        <div id="filter-category" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Priority</h3>
+        <div id="filter-priority" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Type</h3>
+        <div id="filter-type" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Automation status</h3>
+        <div id="filter-automation" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Status</h3>
+        <div id="filter-status" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Module</h3>
+        <input id="module-search" type="search" placeholder="Filter modules..." autocomplete="off" />
+        <div id="filter-module" class="module-list"></div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Tags</h3>
+        <div id="filter-tag" class="chip-group chip-group--tags"></div>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="content__toolbar">
+        <span id="result-count" class="result-count"></span>
+        <span id="load-status" class="load-status"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="table">
+          <thead>
+            <tr>
+              <th data-sort="id">ID</th>
+              <th data-sort="module">Module</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="subFeature">Sub-feature</th>
+              <th data-sort="title">Title</th>
+              <th data-sort="priority">Priority</th>
+              <th data-sort="type">Type</th>
+              <th data-sort="automationStatus">Automation</th>
+              <th data-sort="status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="detail-overlay" class="detail-overlay hidden">
+    <div id="detail-panel" class="detail-panel">
+      <button id="detail-close" class="detail-panel__close" aria-label="Close">&times;</button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

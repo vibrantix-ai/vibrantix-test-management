@@ -1,0 +1,10 @@
+{
+  "slug": "profile-settings",
+  "name": "Profile Settings",
+  "scope": "feature",
+  "routes": [
+    "/profile"
+  ],
+  "qaAgent": "Profile_Settings_QA_Agent",
+  "description": "User profile fields, notification preferences, account activity, MFA flag."
+}

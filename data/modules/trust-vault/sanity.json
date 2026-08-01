@@ -1,0 +1,110 @@
+[
+  {
+    "id": "TRVT-SAN-001",
+    "module": "trust-vault",
+    "category": "sanity",
+    "subFeature": "Workflow State Machine",
+    "title": "Regression check: certifications in 'active' status show workflow action buttons",
+    "description": "Sanity guard for a previously shipped defect where CERT_STATUS_ACTIONS had no 'active' key and WorkflowActionPanel rendered null for active certifications, permanently freezing them.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open any certification with status 'active'",
+      "Look at the workflow action control on the card/detail page"
+    ],
+    "expectedResult": "At least one action button is visible (e.g. 'Mark Expiring Soon' with a dropdown for Revoke/Archive/Request Revision) — the panel does not render blank.",
+    "tags": ["sanity", "regression-guard", "workflow"],
+    "linkedDefect": "TV-004",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-SAN-002",
+    "module": "trust-vault",
+    "category": "sanity",
+    "subFeature": "Review Justification",
+    "title": "Regression check: the Approve action still requires a 30-character justification note before it can be submitted",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open a certification in 'under_review' status and click 'Approve'",
+      "Leave the justification note blank and observe the Approve button state",
+      "Type a 15-character note and observe the button state again"
+    ],
+    "expectedResult": "The Approve button is disabled both when the note is empty and when it is under 30 characters, with a live '{n}/30' counter — it never becomes clickable below the 30-character threshold.",
+    "tags": ["sanity", "regression-guard", "workflow"],
+    "linkedDefect": "TV-001",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-SAN-003",
+    "module": "trust-vault",
+    "category": "sanity",
+    "subFeature": "Review Justification",
+    "title": "Regression check: a transition note typed by the user actually reaches the backend and is retrievable afterward",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Submit a 'Request Revision' with a distinctive note text (e.g. include today's date and a random word)",
+      "Immediately re-open the certification's workflow/audit history"
+    ],
+    "expectedResult": "The distinctive note text appears verbatim in the workflow history entry — it is not blank, generic, or silently dropped.",
+    "tags": ["sanity", "regression-guard", "audit-trail"],
+    "linkedDefect": "TV-005",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-SAN-004",
+    "module": "trust-vault",
+    "category": "sanity",
+    "subFeature": "Incident Reporting",
+    "title": "Regression check: the incident date field still rejects a future date",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open 'Report New Incident'",
+      "Attempt to pick tomorrow's date in the Incident Date field"
+    ],
+    "expectedResult": "The date picker's max attribute prevents selecting a future date, and if bypassed (e.g. via direct input manipulation) the form shows 'Incident date cannot be in the future' and blocks submission.",
+    "tags": ["sanity", "regression-guard", "incident"],
+    "linkedDefect": "TV-008",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "TRVT-SAN-005",
+    "module": "trust-vault",
+    "category": "sanity",
+    "subFeature": "Share Link Password Strength",
+    "title": "Regression check: 'Generate Link' stays disabled for a password-protected share link until the password contains at least one digit",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open Share Link modal, enable Password Protection",
+      "Enter a 10-character all-letter password (e.g. 'abcdefghij')",
+      "Observe the 'Generate Link' button"
+    ],
+    "expectedResult": "The button remains disabled with the tooltip 'Password does not meet complexity requirements' until a digit is added — this client-side gate has not regressed.",
+    "tags": ["sanity", "regression-guard", "share-link"],
+    "linkedDefect": "TV-006",
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

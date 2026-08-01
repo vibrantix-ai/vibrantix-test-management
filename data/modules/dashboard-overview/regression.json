@@ -1,0 +1,133 @@
+[
+  {
+    "id": "DASH-REG-001",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Risk Posture Cross-Service Call",
+    "title": "Risk posture/governance calls never 400 the whole dashboard when 0 or 2+ projects are in scope",
+    "description": "Previously, fetchRiskPostureAndGovernance called risk-management-service's risk-center/posture and risk-center/governance with no projectId at all — those RMS routes require exactly one — so every single call unconditionally 400'd and was silently swallowed, leaving postureScore permanently null regardless of project selection. The fix only calls RMS when scopedIds resolves to exactly 1 project.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/dashboard/metrics with no projectIds filter (org-wide, multiple projects)",
+      "Call GET /api/dashboard/metrics?projectIds=<projectA> (exactly one project)"
+    ],
+    "expectedResult": "Both calls return HTTP 200 (never a 400 propagated from RMS); the first has data.risk.summary.postureScore === null, the second has a real numeric postureScore.",
+    "tags": ["regression", "risk-management-service"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-002",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Vendor Assessment Project Scoping",
+    "title": "Vendor assessment pipeline numbers don't zero out for a project-scoped (non-admin) caller",
+    "description": "vendor_assessments has no reliable projectId of its own (only a handful of stray documents happen to have one). Previously spreading projectScope directly onto a vendor_assessments query silently matched zero documents for every project-scoped caller, zeroing assessmentsOverdue/pipeline.current/inProgress/overdue. Fixed by joining through client_vendors.projectId via $lookup.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Non-admin user, member of exactly one project, that project's vendor has at least one overdue assessment"],
+    "steps": [
+      "As that non-admin user, call GET /api/dashboard/metrics"
+    ],
+    "expectedResult": "data.vendorRisk.summary.assessmentsOverdue and data.vendorRisk.assessmentPipeline.overdue are both > 0, reflecting the real overdue assessment — not silently zeroed.",
+    "tags": ["regression", "vendor-board", "project-scope"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-003",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Provider Coverage Shape",
+    "title": "fetchProviderCoverage returns the {provider,count,color} shape FrameworkCoverageCard actually reads",
+    "description": "Previously returned {provider, frameworks} — a shape FrameworkCoverageCard.jsx's chart/legend never read at all — rendering a zero-height, uncoloured bar with a tooltip reading 'Frameworks: undefined'. Fixed to return [{provider:'Cloud', count, color:'#3182CE'}].",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["At least one ClientControl with cloudPosture.dominantStatus set"],
+    "steps": [
+      "Call GET /api/dashboard/<orgId>",
+      "Inspect data.compliance.providerCoverage"
+    ],
+    "expectedResult": "Each entry has non-null provider, count, and color fields (e.g. {provider:'Cloud', count: N, color:'#3182CE'}) — never {provider, frameworks} with a missing count/color.",
+    "tags": ["regression", "framework-board"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-004",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Framework Readiness Project Scoping",
+    "title": "Framework Board's readiness summary respects the selected project(s) instead of always being org-wide",
+    "description": "fetchFrameworkReadiness's ClientFramework query previously never accepted/applied projectScope — always org-wide regardless of the selected project — feeding readyCount/inProgressCount/avgCoverage/strongest/weakest with unscoped data even when the caller had narrowed to one project.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Project A has 2 active frameworks; Project B (different project, same org) has a 3rd, unrelated framework"],
+    "steps": [
+      "Call GET /api/dashboard/metrics?projectIds=<projectA only>",
+      "Inspect data.compliance.frameworkReadiness.totalActive"
+    ],
+    "expectedResult": "totalActive is 2, not 3 — Project B's framework is excluded when only Project A is in scope.",
+    "tags": ["regression", "framework-board", "project-scope"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-005",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Risk Field Correctness",
+    "title": "Risk KPI counts read residualRisk.level/treatment.status, not the non-existent riskLevel/riskTreatment.status fields",
+    "description": "The risk aggregation's critical/high/open counts previously referenced $residualRisk.level and $treatment.status paths that didn't exist under those old names on the risks schema, so every count silently evaluated to zero for every org.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["At least one risk document with residualRisk.level='Critical' and treatment.status != 'completed'"],
+    "steps": [
+      "Call GET /api/dashboard/metrics",
+      "Inspect data.risk.summary.criticalRisks and data.risk.summary.openRisks"
+    ],
+    "expectedResult": "Both counts are > 0, matching the seeded risk — never silently 0 regardless of real risk data.",
+    "tags": ["regression", "risk-board"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-006",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Cache Key Collision",
+    "title": "scopeCacheKey no longer collapses every non-admin's project scope to the literal string '[object Object]'",
+    "description": "projectScope.projectId can be a plain ObjectId, an {$in:[...]} array (a non-admin's membership set), or absent. Naively stringifying the {$in:[...]} case previously collapsed to '[object Object]' for every non-admin, letting two different non-admins collide on the same Redis cache entry regardless of their actual distinct project access.",
+    "priority": "P0",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["Two non-admin users in the same org with disjoint project memberships"],
+    "steps": [
+      "As User X (Project A member), call GET /api/dashboard/metrics",
+      "Immediately as User Y (Project B member), call GET /api/dashboard/metrics"
+    ],
+    "expectedResult": "User Y's response reflects Project B's own data, never a cached copy of User X's Project A response.",
+    "tags": ["regression", "cache", "multi-tenant"],
+    "linkedDefect": "PLAC-015",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

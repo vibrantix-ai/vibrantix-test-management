@@ -1,0 +1,132 @@
+[
+  {
+    "id": "CPVT-INT-001",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Data Source",
+    "title": "Whatever list compliance-vault would render is sourced from GET /api/evidence/organization/:orgId, identical to evidence-management",
+    "description": "evidence.routes.js:43 exposes GET /organization/:orgId gated by 'evidence.read' with no query parameter or response-shape distinction for a 'vault' context. Integration-level check that this single source of truth serves both surfaces identically.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An org with at least 5 evidence items across multiple types including 'certificate'"],
+    "steps": [
+      "Call GET /api/evidence/organization/:orgId as a user with 'evidence.read'",
+      "Inspect the response shape and item count"
+    ],
+    "expectedResult": "Returns the full evidence list for the org with no vault-specific filtering, tagging, or response field distinguishing 'vault items' from ordinary evidence — confirming there is no separate data source or collection backing compliance-vault.",
+    "tags": ["data-source", "evidence-management"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-INT-002",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Workflow Transitions",
+    "title": "POST /:evidenceId/workflow/transition enforces 'evidence.update' regardless of calling UI context",
+    "description": "evidence.routes.js:59 chains authenticate → augmentPermissionsWithProjectGrant(getEvidenceProjectId) → requirePermission('evidence.update') → ctrl.transitionWorkflow. This is the only backend surface for any vault-style workflow screen; no compliance-vault-specific middleware exists.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User has 'evidence.read' but not 'evidence.update'"],
+    "steps": [
+      "As the read-only user, call POST /:evidenceId/workflow/transition with a valid transition payload"
+    ],
+    "expectedResult": "403 Forbidden — 'evidence.update' is strictly required, proving vault workflow transitions cannot be performed with read-only access under any current implementation.",
+    "tags": ["workflow", "rbac"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-INT-003",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Google Drive Integration",
+    "title": "GET /integrations/google-drive/enabled is the single status source for both the working /evidence-management/gdrive page and the broken /compliance-vault/integrations/google-drive link",
+    "description": "GoogleDriveIntegrationCard.js calls GET /integrations/google-drive/enabled to populate its card regardless of which detail page it will eventually deep-link to. Integration test confirms the status payload shape (enabled, configured, needsReauth, accountInfo) is what both destinations would need to consume, underscoring that the only missing piece is the frontend page at the compliance-vault path, not any backend gap.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /integrations/google-drive/enabled as an authenticated org user",
+      "Inspect response for enabled, configured, needsReauth, accountInfo fields"
+    ],
+    "expectedResult": "Response includes all fields the integration card and any future compliance-vault detail page would need — confirming this endpoint is a viable shared backend for both entry points once the missing frontend route is built.",
+    "tags": ["google-drive", "integrations"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-INT-004",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Audit Trail",
+    "title": "Downloading a vault file attachment fires the 'data.export.download' activity log event with evidenceId and fileId",
+    "description": "evidence.controller.js's getFileDownloadUrl handler (around lines 793-856) logs an activity event 'data.export.download' with message 'Evidence file download: evidenceId=... fileId=...' after issuing a presigned S3 URL. This is the only real audit-trail mechanism available for 'who accessed/downloaded which vault item and when', since no compliance-vault-specific audit logging exists.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An evidence item with at least one attached file"],
+    "steps": [
+      "As a user with evidence.read and project membership, call GET /:evidenceId/files/:fileId/download-url",
+      "Query the activity log store for events with type 'data.export.download' correlated to this request"
+    ],
+    "expectedResult": "Exactly one 'data.export.download' activity log entry is created, containing the acting user's ID, the evidenceId, the fileId, and a timestamp — this is the mechanism any future vault audit-trail UI would need to read from.",
+    "tags": ["audit-trail", "activity-log"],
+    "requirement": "ISO 27001 Annex A.8.16",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-INT-005",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Cross-Service Boundary",
+    "title": "Evidence items of type 'certificate' are not synced to or linked with trust-vault-service's Certification records",
+    "description": "trust-vault-service has its own CertificationRepository.ts / Certification.ts model, entirely separate from vibrantix-backend's evidence.model.js. A 'certificate' type evidence item created in evidence-management (the real store behind compliance-vault) has no automatic relationship to a Trust Vault Certification document, even though both conceptually represent 'a certification'.",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["An evidence item of type='certificate' created via evidence-management", "No corresponding Trust Vault certification manually created"],
+    "steps": [
+      "Create the certificate-type evidence item",
+      "Query trust-vault-service's certification list endpoint for the same org/project"
+    ],
+    "expectedResult": "The evidence-management certificate does not appear in trust-vault-service's certification list — confirming these are two independent, unlinked systems despite overlapping subject matter. Document this as an integration gap for anyone assuming compliance-vault's 'certification storage' surfaces Trust Vault data.",
+    "tags": ["cross-module", "trust-vault", "known-gap"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "CPVT-INT-006",
+    "module": "compliance-vault",
+    "category": "integration",
+    "subFeature": "Multi-Tenant Scoping",
+    "title": "GET /api/evidence/project/:projectId enforces requireProjectMembership() for any vault-context project-scoped listing",
+    "description": "evidence.routes.js:44 chains authenticate → augmentPermissionsWithProjectGrant(getParamProjectId) → requirePermission('evidence.read') → requireProjectMembership() → ctrl.getEvidenceByProjectId. Any vault hub filtered to a specific project must go through this exact chain since no alternative endpoint exists.",
+    "priority": "P1",
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": ["User is authenticated but not a member of the target project"],
+    "steps": [
+      "As a non-member of Project X but a member of the same org, call GET /api/evidence/project/:projectXId"
+    ],
+    "expectedResult": "403 Forbidden from requireProjectMembership() — org membership alone is insufficient; project-level membership is mandatory for any vault-scoped evidence listing.",
+    "tags": ["multi-tenant", "rbac", "project-scoping"],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-07-31",
+    "updatedAt": "2026-07-31"
+  }
+]

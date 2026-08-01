@@ -1,0 +1,8 @@
+{
+  "slug": "rbac-security",
+  "name": "RBAC & Access Control",
+  "scope": "platform",
+  "routes": [],
+  "qaAgent": "RBAC_Security_QA_Agent",
+  "description": "Authn/authz layer, role/permission model, route guards, privilege escalation, IDOR."
+}
