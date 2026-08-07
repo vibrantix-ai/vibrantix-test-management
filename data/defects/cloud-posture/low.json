@@ -1,0 +1,110 @@
+[
+  {
+    "id": "CP-010",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "/cloud-posture/[provider]/checks/[checkId]",
+    "category": "Dead / orphaned route",
+    "title": "No component anywhere in the frontend builds a link matching this route pattern - it's unreachable via any UI action. It also hard-requires a ?projectId= query param that nothing ever supplies, so even a hand-typed URL shows 'No project specified'.",
+    "description": "A route that exists in the codebase but has no way to be reached through normal navigation; dead weight / confusing for future maintainers.",
+    "affectedFiles": [
+      "vibrantix-client-panel/app/(detail)/cloud-posture/[provider]/checks/[checkId]/page.jsx"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-011",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "getScanHistory's includeAnalytics (feeds ScanMonitoringPanel.jsx - currently unmounted/dead per the agent's check)",
+    "category": "Wrong aggregation (page vs full set)",
+    "title": "completedScans and averageScore are computed only from the CURRENT PAGE's scans array (post skip/limit), not the full filtered match set, even though totalScans correctly comes from a separate countDocuments(filter) call.",
+    "description": "A project with 500 scans (300 completed) requesting page 1 (limit 20) would get completedScans/averageScore computed over just those 20 rows instead of the true 300 - currently no visible symptom since the only consumer discards this field, but a landmine for the next consumer.",
+    "affectedFiles": [
+      "vibrantix-backend/.../scan.controller.js:635-643"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-013",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "compareScans finding-pairing logic",
+    "category": "Wrong pairing logic",
+    "title": "getKey() falls back to finding_info.title (or f.message) when finding_info.uid is absent, then builds a Map keyed by that value - if two different resources in the same scan share an identical generic title with no uid, one silently overwrites the other in the Map, dropping it from the comparison entirely.",
+    "description": "Conditional on finding_info.uid being missing (not the normal path) - if it happens, N-1 findings sharing a title vanish from a scan comparison instead of appearing as their own resolved/new/unchanged/changed row.",
+    "affectedFiles": [
+      "vibrantix-backend/.../scan.controller.js:1009,1019-1020"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-019",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "/cloud-posture main dashboard (category drawer)",
+    "category": "UI/UX - misleading interactivity",
+    "title": "Resource rows in the category-detail drawer have hover affordance suggesting they're clickable and are wired to an onRowClick handler whose entire body is commented out with a TODO.",
+    "description": "User opens a category drawer expecting drill-down on a resource row click; nothing happens with no feedback at all.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/ResourceCategoryDetailsDrawer.jsx:290-297 (handleViewResource entirely commented out) but still wired to onRowClick at line 868"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-020",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "/cloud-posture/[provider] (resource filter)",
+    "category": "Filter accepted by frontend/API but silently not applied server-side",
+    "title": "The status filter param the frontend sends for per-provider resource filtering is never read by the backend - harmless today only because the frontend ALSO re-applies the same filter client-side against the full unfiltered list, but it's dead weight and a trap for any future change relying on server-side filtering/pagination.",
+    "description": "No current visible symptom (masked by a client-side redundant filter) but silently broken if that redundant client-side filter is ever removed.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/CloudProviderDashboard.jsx:172-175 (sends a status query param) vs. vibrantix-backend/.../resource.controller.js:233-236 (destructures only page/limit/search/service/severity - status is silently dropped)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-022",
+    "module": "cloud-posture",
+    "severity": "Low",
+    "status": "open",
+    "component": "General (informational)",
+    "category": "Dead code / maintenance risk",
+    "title": "Neither component is imported by any route file - both contain their own independent (and in CloudProviderDetail.jsx's case, differently-computed) finding/compliance logic that will silently drift out of sync with the real in-use components if anyone edits one believing it's live.",
+    "description": "Wasted maintenance effort / confusion risk only - not user-facing today.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/CloudProviderDetail.jsx and ComplianceDashboard.jsx"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  }
+]

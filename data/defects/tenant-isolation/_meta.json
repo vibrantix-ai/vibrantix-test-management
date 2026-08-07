@@ -1,0 +1,10 @@
+{
+  "slug": "tenant-isolation",
+  "name": "Multi-Tenant Isolation",
+  "scope": "platform",
+  "qaAgent": "Tenant_Isolation_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Tenant Isolation live defect registry. Source uses the same alternate column schema as Risk Register (Priority/Component/ISO-Privacy Ref/Affected Files)."
+}

@@ -7,6 +7,9 @@
     "title": "isSuccessfulAIExtraction rejects a response whose extracted_metadata is an array",
     "description": "evidence-ai-response.js::isSuccessfulAIExtraction requires response.success===true AND extracted_metadata to be a non-array object. Guards against a malformed/legacy Python service payload being treated as a successful extraction.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-response.test.js:12",
@@ -15,7 +18,10 @@
       "Call isSuccessfulAIExtraction({ success: true, extracted_metadata: { title: {} } })"
     ],
     "expectedResult": "First call returns false (array is not treated as a valid metadata object); second call returns true.",
-    "tags": ["ai-classification", "unit"],
+    "tags": [
+      "ai-classification",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,17 +34,26 @@
     "subFeature": "AI Response Handling",
     "title": "getAIExtractionError falls back through response.data.detail, message, reason.message, then a default string",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-response.test.js:34",
-    "preconditions": ["Simulated Promise.allSettled 'rejected' results with varying shapes"],
+    "preconditions": [
+      "Simulated Promise.allSettled 'rejected' results with varying shapes"
+    ],
     "steps": [
       "Call getAIExtractionError with a reason where reason.response.data.detail = 'Unsupported file type: .exe'",
       "Call it with a reason where only reason.message is set",
       "Call it with an empty reason object {}"
     ],
     "expectedResult": "First call returns 'Unsupported file type: .exe'; second returns reason.message; third falls back to the default 'AI extraction failed' string.",
-    "tags": ["ai-classification", "error-handling", "unit"],
+    "tags": [
+      "ai-classification",
+      "error-handling",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,6 +67,9 @@
     "title": "computeChecksum produces a deterministic SHA-256 hex digest for identical buffers",
     "description": "S3FileStorageIntegration.computeChecksum(buffer, algorithm='sha256') wraps crypto.createHash('sha256'). The evidence-upload.worker.js computes this before every S3 PUT and stores it under files.$.checksum.value.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/s3-file-storage.test.js:8",
@@ -60,7 +78,11 @@
       "Call computeChecksum with a single byte changed"
     ],
     "expectedResult": "Both identical-input calls return the same 64-character hex string; the changed-byte call returns a different digest.",
-    "tags": ["s3-upload", "checksum", "unit"],
+    "tags": [
+      "s3-upload",
+      "checksum",
+      "unit"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "SDET",
     "status": "active",
@@ -74,6 +96,9 @@
     "subFeature": "S3 Integrity",
     "title": "generateKey sanitizes the filename to [a-zA-Z0-9._-] and includes evidence/{orgId}/{evidenceId}/ prefix",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/s3-file-storage.test.js:21",
@@ -81,7 +106,11 @@
       "Call generateKey(orgId, evidenceId, 'Report (final) v2 #3.pdf')"
     ],
     "expectedResult": "Returned key matches 'evidence/{orgId}/{evidenceId}/{timestamp}-Report-final-v2-3.pdf' (or equivalent), containing no parentheses, spaces, or '#' characters, and begins with the caller's own orgId segment.",
-    "tags": ["s3-upload", "idor", "unit"],
+    "tags": [
+      "s3-upload",
+      "idor",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -95,6 +124,9 @@
     "title": "Classification confidence formula computes min(1.0, 0.5 + gap*10.0) from the top-2 score gap",
     "description": "evidence_classification_service.py derives confidence from the margin between the #1 and #2 combined category+subcategory scores, not from the raw similarity itself.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/evidence_classification_service.test.py:15",
@@ -103,7 +135,11 @@
       "Feed two combined scores with a gap of 0.0 (a tie)"
     ],
     "expectedResult": "First case yields confidence ~1.0 (0.5 + 0.05*10 = 1.0, capped); second case yields confidence 0.5 (the documented 'uncertain classification' floor).",
-    "tags": ["ai-classification", "confidence-score", "unit"],
+    "tags": [
+      "ai-classification",
+      "confidence-score",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -116,6 +152,9 @@
     "subFeature": "AI Classification",
     "title": "Combined category/subcategory score weights (0.40 category + 0.60 subcategory) select the correct winner",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/evidence_classification_service.test.py:29",
@@ -125,7 +164,10 @@
       "Run get_category_subcategory_ids and inspect which candidate wins"
     ],
     "expectedResult": "Candidate B wins (0.75 > 0.66) even though its raw category similarity is lower, confirming the subcategory-weighted formula is applied as documented (CAT_WEIGHT=0.40, SUBCAT_WEIGHT=0.60).",
-    "tags": ["ai-classification", "unit"],
+    "tags": [
+      "ai-classification",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -139,16 +181,25 @@
     "title": "evidence-ai-billing.service enforces the default annual AI-upload allowance of 50 when no plan override exists",
     "description": "DEFAULT_AI_UPLOADS_PER_YEAR = 50 in evidence-ai-billing.service.js; -1 denotes unlimited. Allowance can be scoped per-project when billingMode==='project'.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-billing.test.js:10",
-    "preconditions": ["Org has no explicit aiUploadPerYear override on its plan config"],
+    "preconditions": [
+      "Org has no explicit aiUploadPerYear override on its plan config"
+    ],
     "steps": [
       "Simulate 50 prior AI uploads counted for the current annual window",
       "Call the allowance check for a 51st AI upload"
     ],
     "expectedResult": "The check throws AppError with status 402 and code EM_AI_UPLOADS_EXHAUSTED, message 'AI-assisted upload limit reached (50/year). Upgrade your plan.'",
-    "tags": ["ai-classification", "billing", "unit"],
+    "tags": [
+      "ai-classification",
+      "billing",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -162,6 +213,9 @@
     "title": "WorkflowTransitionService rejects an evidence under_review -> needs_revision transition submitted without a comment",
     "description": "featureWorkflows.js declares commentRequiredTransitions: [['under_review','needs_revision']] for the evidence feature — rejecting AI-assisted evidence must always carry a reason.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/unit/workflow-transition-service.test.js:44",
@@ -169,7 +223,10 @@
       "Call WorkflowTransitionService.transition('evidence', id, 'needs_revision', { comment: undefined }) from state 'under_review'"
     ],
     "expectedResult": "Transition is rejected with a validation error requiring a comment; the evidence document's status remains 'under_review'.",
-    "tags": ["workflow", "unit"],
+    "tags": [
+      "workflow",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

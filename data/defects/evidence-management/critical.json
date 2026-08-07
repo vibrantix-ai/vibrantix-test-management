@@ -1,0 +1,57 @@
+[
+  {
+    "id": "EM-001",
+    "module": "evidence-management",
+    "title": "Hard-delete endpoint (`DELETE /:evidenceId/hard`) has no retention period check, no immutability lock on approved/submitted evidence — two clicks permanently destroys certification evidence; violates A.5.33",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Retention",
+    "requirement": "ISO 27001 Annex A.5.33",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-backend/src/modules/evidence/evidence.controller.js` — `hardDeleteEvidence` handler\n**Root Cause:** The `DELETE /:evidenceId/hard` route calls the delete service with no pre-check on the evidence status or any retention policy. There is no immutability lock on evidence in `submitted`, `approved`, or `active` states. Any user with `evidence.delete` permission can permanently destroy certification evidence in two clicks with no grace period.\n**Impact:** Direct violation of ISO 27001:2022 A.5.33. Evidence destroyed cannot be recovered; Stage 2 auditors will find unexplained gaps in the chain of custody.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-backend/src/modules/evidence/evidence.controller.js — hardDeleteEvidence handler\n\n1. Before the delete call, look up the evidence record and check its `status`.\n2. If status is `submitted`, `approved`, or `active`, return 400: \"Active evidence cannot be hard-deleted — archive it first.\"\n3. Add an `isImmutable` boolean field to the evidence schema; set it to true when status transitions to `approved`. Block delete if `isImmutable === true`.\n4. Add a `RETENTION_PERIOD_DAYS` env var (default 2555 / 7 years). If `createdAt > now - retentionPeriod`, return 400: \"Evidence is within the retention period and cannot be deleted.\"\n5. Log every hard-delete attempt (success or rejection) to the audit trail with actor, timestamp, and reason.\n```"
+  },
+  {
+    "id": "EM-002",
+    "module": "evidence-management",
+    "title": "Review decision comment has no minimum length — blank or single-character approval accepted in `EvidenceMyReviewsTab.jsx`; certification body would challenge approvals with no justification; violates ISO 19011:2018 §6.4.9",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Audit Trail",
+    "requirement": "ISO 19011:2018 §6.4.9",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceMyReviewsTab.jsx` — `handleApprove`/`handleReject`; backend review endpoint\n**Root Cause:** The approval and rejection submit handlers pass `reviewComment` to the API without any minimum-length validation. The Textarea has no `minLength` HTML attribute and no JS guard. The backend review endpoint does not validate comment length either. Every approved evidence item therefore has a legally challengeable audit trail under ISO 19011:2018 §6.4.9.\n**Impact:** An entire evidence repository can have single-character approvals. A certification body reviewing approval justifications will raise a major nonconformity.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/EvidenceMyReviewsTab.jsx\n\n1. In handleApprove and handleReject, add before the API call:\n   if (!reviewComment || reviewComment.trim().length < 50) {\n     setCommentError('Justification must be at least 50 characters');\n     return;\n   }\n2. Pass `error={commentError}` and `helperText={commentError}` to the Textarea.\n3. Clear the error on every keystroke: onChange={() => setCommentError(null)}.\n\nFile: backend evidence review endpoint (evidence.controller.js or evidenceReview.service.js)\n4. Add server-side validation: reviewComment: Joi.string().min(50).required()\n5. Return 422 with field-level error if validation fails.\n```"
+  },
+  {
+    "id": "EM-003",
+    "module": "evidence-management",
+    "title": "Export/Share feature is a UI mockup — 'Generate Secure Link', 'Send via Email', 'Portal Access' cards have no click handlers or functional modals in `ExportShareContent.jsx`; presented as fully implemented; violates Clause 7.5.3",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Non-Functional UI",
+    "requirement": "ISO 27001:2022 Clause 7.5.3",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx`\n**Root Cause:** The \"Generate Secure Link\", \"Send via Email\", and \"Portal Access\" action cards render with no `onClick` handlers and no backend routes exist for any of these operations. The feature was scaffolded as a UI mockup and never implemented. The `staticRecentExports` fallback array contains hardcoded entries dated 2025-12-28 that are presented as real export history.\n**Impact:** The primary mechanism for delivering evidence packages to an external certification body does not function. Fabricated export history constitutes a document integrity violation under Clause 7.5 and A.5.36.\n**Claude Fix Prompt:**\n```\nThis requires full implementation. Minimum viable path:\n\nBackend — create two new routes:\n1. POST /evidence/export/secure-link — generates a signed JWT URL granting time-limited read access to specified evidenceIds[]. Store the grant in MongoDB with expiresAt, createdBy, accessCount.\n2. GET /evidence/export/history — returns real export records for the org (empty array on first use).\n\nFrontend — ExportShareContent.jsx:\n3. Delete the `staticRecentExports` array entirely.\n4. Replace with <EmptyState title=\"No exports yet\" /> when history is empty.\n5. Wire \"Generate Secure Link\" onClick to open a modal: evidence multi-select, expiry picker (7/30/90 days), optional password. On submit call the backend, display the generated URL with a copy button.\n6. Mark \"Send via Email\" and \"Portal Access\" with <Badge>Coming soon</Badge> and disabled={true} until implemented.\n```"
+  },
+  {
+    "id": "G-SC-01",
+    "module": "evidence-management",
+    "title": "`organization_id` absent → risk service returns silent `{}` → empty R3/R4 reports",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Service Client",
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+  }
+]

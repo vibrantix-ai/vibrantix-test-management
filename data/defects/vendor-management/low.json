@@ -1,0 +1,44 @@
+[
+  {
+    "id": "VM-023",
+    "module": "vendor-management",
+    "title": "yearEstablished accepts implausible years — no min (1800) / max (currentYear) guard; year 1 or 3999 accepted without error",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Data Validation",
+    "description": "**Files:** `vibrantix-client-panel/src/components/vendor-management/VendorFormWizard.jsx`\n**Root Cause:** `yearEstablished` input has no min or max validation. Year 1 or year 3999 is accepted without error.\n**Claude Fix Prompt:**\nAdd Yup validation: `yearEstablished: Yup.number().integer().min(1800, 'Year must be 1800 or later').max(new Date().getFullYear(), \\`Year cannot be in the future\\`).nullable()`. Add `min=\"1800\"` and `max={new Date().getFullYear()}` to the Input component.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "VM-024",
+    "module": "vendor-management",
+    "title": "Legacy /vendors/list silent redirect — returns null and calls `router.replace()` with no loading state or explanation for bookmarked users",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "UX",
+    "description": "**Files:** `vibrantix-client-panel/src/app/(private)/vendors/list/page.jsx`\n**Root Cause:** Returns `null` and immediately calls `router.replace('/vendors')` with no loading state or user explanation. Bookmarked users see a blank flash before redirect.\n**Claude Fix Prompt:**\nReplace blank redirect with a loading state: `export default function VendorsListRedirect() { const router = useRouter(); useEffect(() => { router.replace('/vendors'); }, []); return (<div className=\"flex items-center justify-center h-32\"><Loader2 className=\"w-6 h-6 animate-spin text-muted-foreground\" /><span className=\"ml-2 text-muted-foreground\">Redirecting to vendor registry…</span></div>); }`.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "VM-025",
+    "module": "vendor-management",
+    "title": "riskTier and Trust Score never shown side-by-side — Trust Score not a default column; manual riskTier=low + trustScore=18/100 raises no visible flag during registry review",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "UX",
+    "description": "**Files:** `vibrantix-client-panel/src/components/vendor-management/VendorRegistry.jsx`\n**Root Cause:** Trust Score is not a default column in the registry table. Manual `riskTier: low` combined with `trustScore: 18/100` raises no visible flag during a standard registry review.\n**Claude Fix Prompt:**\nAdd `Trust Score` as a default column in `VendorRegistry`. In the cell renderer: `{vendor.riskTier === 'low' && vendor.trustScore < 40 && (<Tooltip content=\"Trust Score is inconsistent with Low risk tier classification\"><AlertCircle className=\"w-4 h-4 text-amber-500 inline ml-1\" /></Tooltip>)}`. This surfaces contradictions without blocking workflow.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  }
+]

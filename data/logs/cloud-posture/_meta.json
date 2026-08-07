@@ -1,0 +1,16 @@
+{
+  "slug": "cloud-posture",
+  "name": "Cloud Posture",
+  "sourceModule": "cloud-posture",
+  "logTypes": [
+    "activity",
+    "security"
+  ],
+  "description": "Logs emitted by the Cloud Posture module (activity, security).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

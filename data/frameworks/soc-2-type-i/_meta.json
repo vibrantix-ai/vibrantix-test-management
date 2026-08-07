@@ -1,0 +1,14 @@
+{
+  "slug": "soc-2-type-i",
+  "name": "SOC 2 Type I",
+  "version": "2017",
+  "frameworkType": "standard",
+  "family": "AICPA",
+  "description": "Trust Services Criteria — point-in-time design-of-controls report.",
+  "testFocusAreas": [
+    "Trust Services Criteria requirement coverage (Security/Availability/Confidentiality/Processing Integrity/Privacy)",
+    "Requirement-to-UCL control mapping accuracy",
+    "Point-in-time (Type I) scope boundary correctness vs Type II",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

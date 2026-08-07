@@ -10,13 +10,16 @@
   <header class="app-header">
     <div class="app-header__title">
       <h1>Vibrantix Test Management System</h1>
-      <span class="app-header__subtitle">Modular test case repository — filter, review, and export for SDET &amp; release testing</span>
+      <span id="app-subtitle" class="app-header__subtitle">Modular test case repository — filter, review, and export for SDET &amp; release testing</span>
     </div>
     <div class="app-header__actions">
+      <a href="process.html" class="btn btn--link">Process flow →</a>
       <button id="btn-export-xlsx" class="btn btn--primary">Export to Excel</button>
       <button id="btn-export-csv" class="btn btn--secondary">Export CSV</button>
     </div>
   </header>
+
+  <nav id="system-tabs" class="system-tabs"></nav>
 
   <section id="stats" class="stats"></section>
 
@@ -32,38 +35,43 @@
         <input id="search" type="search" placeholder="ID, title, step, tag..." autocomplete="off" />
       </div>
 
-      <div class="filter-group">
-        <h3>Category</h3>
+      <div class="filter-group" id="filtergroup-category">
+        <h3 id="filter-category-heading">Category</h3>
         <div id="filter-category" class="chip-group"></div>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" id="filtergroup-priority">
         <h3>Priority</h3>
         <div id="filter-priority" class="chip-group"></div>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" id="filtergroup-environment">
+        <h3>Environment</h3>
+        <div id="filter-environment" class="chip-group"></div>
+      </div>
+
+      <div class="filter-group" id="filtergroup-type">
         <h3>Type</h3>
         <div id="filter-type" class="chip-group"></div>
       </div>
 
-      <div class="filter-group">
-        <h3>Result</h3>
+      <div class="filter-group" id="filtergroup-result">
+        <h3 id="filter-result-heading">Result</h3>
         <div id="filter-result" class="chip-group"></div>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" id="filtergroup-automation">
         <h3>Automation status</h3>
         <div id="filter-automation" class="chip-group"></div>
       </div>
 
-      <div class="filter-group">
+      <div class="filter-group" id="filtergroup-status">
         <h3>Status</h3>
         <div id="filter-status" class="chip-group"></div>
       </div>
 
       <div class="filter-group">
-        <h3>Module</h3>
+        <h3 id="filter-module-heading">Module</h3>
         <input id="module-search" type="search" placeholder="Filter modules..." autocomplete="off" />
         <div id="filter-module" class="module-list"></div>
       </div>
@@ -82,13 +90,14 @@
       <div class="table-wrap">
         <table id="table">
           <thead>
-            <tr>
+            <tr id="table-head-row">
               <th data-sort="id">ID</th>
               <th data-sort="module">Module</th>
               <th data-sort="category">Category</th>
               <th data-sort="subFeature">Sub-feature</th>
               <th data-sort="title">Title</th>
               <th data-sort="priority">Priority</th>
+              <th data-sort="environment">Environment</th>
               <th data-sort="type">Type</th>
               <th data-sort="automationStatus">Automation</th>
               <th data-sort="status">Status</th>

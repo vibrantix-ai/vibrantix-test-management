@@ -1,0 +1,15 @@
+{
+  "slug": "project-management",
+  "name": "Project Management",
+  "sourceModule": "project-management",
+  "logTypes": [
+    "activity"
+  ],
+  "description": "Logs emitted by the Project Management module (activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

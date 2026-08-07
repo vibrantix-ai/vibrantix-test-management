@@ -1,0 +1,14 @@
+{
+  "slug": "hipaa",
+  "name": "HIPAA",
+  "version": "1996",
+  "frameworkType": "regulation",
+  "family": "US-Federal",
+  "description": "US Health Insurance Portability and Accountability Act — Privacy and Security Rules.",
+  "testFocusAreas": [
+    "Privacy Rule / Security Rule requirement coverage",
+    "Requirement-to-UCL control mapping accuracy",
+    "PHI-handling requirement traceability",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

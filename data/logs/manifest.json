@@ -1,0 +1,242 @@
+{
+  "categories": [
+    "unit",
+    "integration",
+    "e2e",
+    "security",
+    "smoke",
+    "sanity",
+    "regression",
+    "performance",
+    "accessibility"
+  ],
+  "entities": [
+    {
+      "slug": "dashboard-overview",
+      "name": "Dashboard Overview",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "evidence-management",
+      "name": "Evidence Management",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "policy-management",
+      "name": "Policy Management",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "risk-register",
+      "name": "Risk Register & Risk Center",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "audit-assurance",
+      "name": "Audit Assurance",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "vendor-management",
+      "name": "Vendor Management",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "trust-vault",
+      "name": "Trust Vault",
+      "logTypes": [
+        "audit",
+        "activity",
+        "security"
+      ]
+    },
+    {
+      "slug": "grc-framework",
+      "name": "GRC Framework",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "smart-compliance",
+      "name": "Smart Compliance",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "intelli-audit",
+      "name": "Intelli Audit",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "cloud-posture",
+      "name": "Cloud Posture",
+      "logTypes": [
+        "activity",
+        "security"
+      ]
+    },
+    {
+      "slug": "compliance-vault",
+      "name": "Compliance Vault",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "integrations",
+      "name": "Integrations",
+      "logTypes": [
+        "audit",
+        "security"
+      ]
+    },
+    {
+      "slug": "notifications",
+      "name": "Notifications",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "onboarding",
+      "name": "Onboarding & Getting Started",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "organization-management",
+      "name": "Organization Management",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "billing-plans",
+      "name": "Billing & Plans",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "profile-settings",
+      "name": "Profile Settings",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "project-management",
+      "name": "Project Management",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "tasks",
+      "name": "Centralised Tasks",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "support",
+      "name": "Support",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "vciso",
+      "name": "vCISO Suite",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "ai-assistant",
+      "name": "AI Assistant",
+      "logTypes": [
+        "activity",
+        "security"
+      ]
+    },
+    {
+      "slug": "ai-evidence",
+      "name": "AI Evidence",
+      "logTypes": [
+        "audit",
+        "activity"
+      ]
+    },
+    {
+      "slug": "rbac-security",
+      "name": "RBAC & Access Control",
+      "logTypes": [
+        "security",
+        "audit"
+      ]
+    },
+    {
+      "slug": "tenant-isolation",
+      "name": "Multi-Tenant Isolation",
+      "logTypes": [
+        "security"
+      ]
+    },
+    {
+      "slug": "security-vulnerability",
+      "name": "Security Vulnerability",
+      "logTypes": [
+        "security"
+      ]
+    },
+    {
+      "slug": "performance",
+      "name": "Performance",
+      "logTypes": [
+        "system"
+      ]
+    },
+    {
+      "slug": "ui-ux",
+      "name": "UI/UX Consistency",
+      "logTypes": [
+        "activity"
+      ]
+    },
+    {
+      "slug": "api-contract-e2e",
+      "name": "API Contract & Cross-Service E2E",
+      "logTypes": [
+        "system"
+      ]
+    }
+  ]
+}

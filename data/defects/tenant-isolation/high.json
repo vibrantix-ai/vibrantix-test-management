@@ -1,0 +1,124 @@
+[
+  {
+    "id": "TI-004",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`vciso-service` — `extractOrgId()`",
+    "category": "Tenant Spoofing",
+    "title": "Despite SEC-004 partial fix, `x-organization-id` header path remains active; INTERNAL_SERVICE_TOKEN not confirmed rotated — spoofed service header can misdirect vCISO data retrieval to wrong org",
+    "requirement": "ISO 27001 A.5.15, A.5.18",
+    "affectedFiles": [
+      "vciso-service/src/utils/org-id.ts"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-005",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`vendor-service` — Auth Middleware",
+    "category": "Authorization Bypass + IDOR",
+    "title": "`BYPASS_PERMISSIONS=true` hardcoded — all authz guards disabled; any authenticated user in any org can read, write, or delete any vendor data via direct resource ID (cross-tenant IDOR)",
+    "requirement": "ISO 27001 A.5.15, SOC 2 CC6.1",
+    "affectedFiles": [
+      "vendor-service/ authorization middleware"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-006",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Risk / Evidence / Audit Analytics Endpoints",
+    "category": "Missing Project Filter",
+    "title": "Analytics aggregation pipelines apply `organizationId` filter but are missing `projectId` sub-filter — new project within org sees org-wide aggregate totals instead of project-scoped zero",
+    "requirement": "ISO 27001 A.5.15",
+    "affectedFiles": [
+      "risk-management-service/src/",
+      "vibrantix-backend/src/modules/evidence/",
+      "vibrantix-backend/src/modules/audit/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-007",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Redis Cache Layer",
+    "category": "Cache Namespace Collision",
+    "title": "API response cache keys constructed without `orgId` prefix — Org A can receive Org B's cached API response when keys collide (e.g., `risks:analytics:${projectId}` shared across orgs)",
+    "requirement": "ISO 27001 A.8.15, SOC 2 CC6.6",
+    "affectedFiles": [
+      "All services using Redis response caching"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-008",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Notification Service",
+    "category": "Cross-Org Broadcast",
+    "title": "Notification events (audit completion, risk threshold breach, policy expiry alerts) broadcast without verifying recipient org matches event org — org-scoped event data exposed cross-tenant via notification payload",
+    "requirement": "ISO 27001 A.8.15, GDPR Art.5(1)(f)",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/notifications/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-009",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Activity Log Endpoint",
+    "category": "Pagination Filter Drop",
+    "title": "Activity log pagination queries do not carry `organizationId` forward across page boundaries — page 2+ may return cross-tenant log entries when per-page query is rebuilt without org filter",
+    "requirement": "ISO 27001 A.8.15, SOC 2 CC7.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/activity/ or equivalent"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-010",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`assistant-service` — RAG Pipeline",
+    "category": "AI Cross-Tenant Leakage",
+    "title": "GRC Q&A vector store stores document embeddings from all orgs in a shared namespace without org-level partitioning — retrieval query returns cross-tenant document chunks as RAG context",
+    "requirement": "ISO 27001 A.8.15, GDPR Art.25",
+    "affectedFiles": [
+      "assistant-service/ vector store configuration"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-011",
+    "module": "tenant-isolation",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "New Project Compliance Dashboard",
+    "category": "Misleading Empty State",
+    "title": "New project compliance dashboard renders `0%` for unconfigured frameworks — metric implies active measurement; expected: \"No framework configured\" or hidden widget until framework is adopted",
+    "requirement": "—",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/compliance-manager/ or frameworks/overview/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  }
+]

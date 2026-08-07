@@ -1,0 +1,10 @@
+{
+  "slug": "tasks",
+  "name": "Centralised Tasks",
+  "scope": "feature",
+  "qaAgent": "Tasks_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Centralised Tasks live defect registry."
+}

@@ -1,0 +1,255 @@
+[
+  {
+    "id": "RR-003",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "CreateRiskModal — Step 4",
+    "category": "Compliance Gap",
+    "title": "`validateStep4 = () => true` — risks created with no Annex A control mapping, violating cl. 6.1.3(b)",
+    "requirement": "cl. 6.1.3(b)",
+    "affectedFiles": [
+      "components/risk-center/CreateRiskModal.jsx"
+    ],
+    "description": "`validateStep4` unconditionally returns `true`. Risks are saved with no Annex A control mapping, making it impossible to demonstrate treatment alignment with the control framework. ISO 27001 Clause 6.1.3(b) requires risks to be linked to applicable controls. Risks with no mapping cannot appear in the Statement of Applicability gap analysis. Auditor requesting control-to-risk traceability finds no data.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-004",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register Main Page",
+    "category": "UX / Audit Visibility",
+    "title": "`hideResolved: true` default filter hides treatment completion evidence — ISO auditor sees only open risks",
+    "requirement": "cl. 8.3",
+    "affectedFiles": [
+      "app/(private)/risk-register/page.jsx"
+    ],
+    "description": "Default filter state has `hideResolved: true`. Resolved risks with completed treatment evidence are hidden from the default view an ISO auditor sees when navigating to the risk register. Auditor reviewing the risk register sees only open risks. Cannot demonstrate continual improvement (Clause 10.1) or evidence of completed treatment without manually changing the filter — a non-obvious extra step.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-005",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AcceptanceRequestForm",
+    "category": "Validation Gap",
+    "title": "50-character justification minimum is advisory text only — single-character entry (`x`) passes submission handler",
+    "requirement": "cl. 6.1.2(e)(2)",
+    "affectedFiles": [
+      "components/risk-register/RiskAcceptanceWorkflow.jsx"
+    ],
+    "description": "The 50-character requirement is displayed as advisory hint text only. The `handleSubmit` handler does not validate `justification.length >= 50` before calling the acceptance API. Risk acceptance records with a single-character justification (`x`) are submitted and persisted. ISO 27001 Clause 6.1.2(e)(2) requires documented rationale for accepted risks. These acceptances are useless as audit evidence.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-006",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register Bulk Operations",
+    "category": "Data Integrity",
+    "title": "Bulk delete fires `AlertDialog` without checking for active (`status: 'approved'`) acceptance records — creates orphaned accepted-risk entries",
+    "requirement": "cl. 8.3",
+    "affectedFiles": [
+      "app/(private)/risk-register/page.jsx"
+    ],
+    "description": "Bulk delete fires a generic `AlertDialog` without querying whether any selected risks have `status: 'approved'` acceptance records. Deleting an accepted risk creates an orphaned acceptance entry. ISO 27001 Clause 8.3 requires retention of risk treatment records. Bulk delete of accepted risks destroys documented acceptance decisions, violating document control requirements.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-007",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register — Governance",
+    "category": "Process Gap",
+    "title": "`reviewFrequency` field collected in Step 2 but no background job or scheduler ever acts on the value — ISO cl. 9.1 monitoring not satisfied",
+    "requirement": "cl. 9.1",
+    "affectedFiles": [
+      "components/risk-center/CreateRiskModal.jsx",
+      "risk-management-service"
+    ],
+    "description": "Step 2 collects `reviewFrequency` (annual/quarterly/monthly) and stores it on the risk record, but no background job or scheduler in `risk-management-service` reads this field and triggers review notifications or auto-escalations. ISO 27001 Clause 9.1 requires monitoring and measurement of risk. Collecting a frequency value with no automated enforcement is cosmetic compliance — auditors will test the monitoring mechanism and find none.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-008",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "RiskTreatmentPanel",
+    "category": "UX / Data Availability",
+    "title": "Owner dropdown derives exclusively from Redux `state.users?.users` — empty on direct URL navigation with no fallback fetch inside the panel",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "components/risk-register/RiskTreatmentPanel.jsx"
+    ],
+    "description": "Owner dropdown derives exclusively from Redux `state.users?.users`. On direct URL navigation to a risk detail page, the users store is unpopulated and the dropdown renders empty with no fallback fetch inside the panel. Users navigating directly to a risk treatment URL (e.g., from a notification email link) cannot assign or change the treatment owner. Treatment records remain unowned.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-009",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Accepted Risks Page",
+    "category": "Process Gap",
+    "title": "No proactive expiry notification (30d/14d/7d/0d alerts) — passive row colour-coding only; expired acceptances may go unnoticed",
+    "requirement": "cl. 6.1.2(e)",
+    "affectedFiles": [
+      "app/(private)/risk-register/accepted-risks/page.jsx",
+      "risk-management-service"
+    ],
+    "description": "Accepted risks show passive row colour-coding only (red = expired). No background job sends proactive 30d/14d/7d/0d expiry alerts to risk owners or approvers. ISO 27001 Clause 6.1.2(e) requires that accepted risks be periodically reviewed. Expired acceptances with no notification may go unnoticed for months. Auditors reviewing accepted risk records will find no re-review evidence.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-010",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Governance Health Radar",
+    "category": "Analytics Integrity",
+    "title": "`Documentation = Math.min(100, approvalRate + 5)` — Documentation score is Policy Compliance + 5 constant; not an independent metric",
+    "requirement": "ISO/IEC 27007 §6.4.9",
+    "affectedFiles": [
+      "app/(private)/risk-center/governance/page.jsx"
+    ],
+    "description": "`Documentation = Math.min(100, approvalRate + 5)` — the Documentation governance radar score is the Policy Compliance score plus a constant 5. It is not derived from any independent documentation metric. The governance health radar is misleading — two dimensions that appear independent are completely correlated. Management review reports using this radar make false inferences about documentation quality separate from policy approval.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-011",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AI Predictions Page",
+    "category": "UX / Feature Completeness",
+    "title": "Page renders completely blank in production when AI service returns empty arrays — no explanatory empty state or configuration guidance",
+    "requirement": "cl. 9.1",
+    "affectedFiles": [
+      "app/(private)/risk-center/ai-predictions/page.jsx"
+    ],
+    "description": "Page renders its prediction cards only when the AI service returns non-empty arrays. When the service returns `[]` (e.g., first deployment, AI not yet configured), the page renders completely blank — no explanation, no setup guidance. New customers and auditors visiting the AI Predictions page see a blank screen with no context. Support load increases. Feature appears broken rather than unconfigured.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-026",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Acceptance Workflow — Backend",
+    "category": "Process Integrity",
+    "title": "`processAcceptanceDecision` sets `acceptance.status = 'approved'` on first approver's decision — multi-approver workflows resolved by single vote; quorum not enforced",
+    "requirement": "cl. 6.1.2(e)(2), A.5.2",
+    "affectedFiles": [
+      "risk-management-service/src/repositories/risk.repository.ts",
+      "risk-management-service/src/services/RiskRegisterService.ts"
+    ],
+    "description": "`processAcceptanceDecision` in the repository computes `newStatus = decision === 'approved' ? 'approved' : 'rejected'` and immediately persists `acceptance.status = newStatus` after any one named approver acts. When an acceptance is submitted with 3 named approvers, the first to call `PUT /risks/:riskId/acceptance/approve` resolves the entire workflow — the remaining approvers' decisions are never solicited or enforced. Multi-approver risk acceptance governance is completely broken. High/Critical risk acceptances designated for director + CISO + board approval can be resolved by any single approver in the list. ISO 27001 Annex A 5.2 and Clause 6.1.2(e)(2) require appropriate authority for risk acceptance decisions; a single-vote quorum undermines this entirely.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-035",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "Risk Register — Backend Query",
+    "category": "Security / False Positive",
+    "title": "MongoDB query scoping concern — `$or` arms potentially accessible across org boundaries",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "risk-management-service/src/repositories/risk.repository.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-036",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "CreateRiskModal — Data Structure",
+    "category": "Data Integrity",
+    "title": "`likelihood`/`impact` set at top level of risk object instead of inside `inherentRisk` sub-document — schema mismatch corrupts heat map placement",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "components/risk-center/CreateRiskModal.jsx"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-037",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register Routes — Backend",
+    "category": "Authorization Gap",
+    "title": "Delete, bulk-delete, approve, and clone routes missing permission preHandlers — unauthenticated or under-privileged requests not rejected at route layer",
+    "requirement": "A.5.3",
+    "affectedFiles": [
+      "risk-management-service/src/routes/risk-register.routes.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-038",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Alerts Job — Acceptance Expiry",
+    "category": "Process Gap / Security",
+    "title": "`alerts.job.ts` acceptance expiry uses single threshold and lacks `organizationId` scoping — cross-org notifications possible",
+    "requirement": "cl. 6.1.2(e)",
+    "affectedFiles": [
+      "risk-management-service/src/jobs/alerts.job.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-040",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "RiskCenterService — Governance",
+    "category": "False Positive",
+    "title": "`getGovernanceData` reviewCoverage division-by-zero on empty org — already guarded with `Math.max(stats.total, 1)` at line ~813",
+    "requirement": "cl. 9.1",
+    "affectedFiles": [
+      "risk-management-service/src/services/RiskCenterService.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-041",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "Alerts Job — SLA Check",
+    "category": "False Positive",
+    "title": "`runSLABreachCheck` missing orgId scope — already uses per-org iteration via `distinct('organizationId')` loop; correctly scoped",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "risk-management-service/src/jobs/alerts.job.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "slug": "nist-csf",
+  "name": "NIST Cybersecurity Framework",
+  "version": "2.0",
+  "frameworkType": "framework",
+  "family": "NIST",
+  "description": "NIST CSF Functions (Govern/Identify/Protect/Detect/Respond/Recover) and Categories/Subcategories.",
+  "testFocusAreas": [
+    "Function/Category/Subcategory hierarchy correctness",
+    "Requirement-to-UCL control mapping accuracy",
+    "v2.0 Govern function coverage (new vs v1.1)",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

@@ -6,15 +6,23 @@
     "subFeature": "CAR Lifecycle",
     "title": "Uploading evidence to an open CAR still auto-flips status to remediation_in_progress after deploy",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A CAR exists with status='open' and no evidence attached"],
+    "preconditions": [
+      "A CAR exists with status='open' and no evidence attached"
+    ],
     "steps": [
       "Attach a valid evidence file to the CAR via addEvidence",
       "Reload the CAR detail view"
     ],
     "expectedResult": "The CAR's status shows 'remediation_in_progress' immediately after the first evidence attachment, consistent with pre-deploy behavior.",
-    "tags": ["sanity", "car-lifecycle"],
+    "tags": [
+      "sanity",
+      "car-lifecycle"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,15 +35,23 @@
     "subFeature": "Audit Closure",
     "title": "Closure request-approval is blocked until every checklist item is marked complete",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An audit closure checklist has at least one incomplete item"],
+    "preconditions": [
+      "An audit closure checklist has at least one incomplete item"
+    ],
     "steps": [
       "Leave one checklist item unchecked",
       "Click 'Request Approval'"
     ],
     "expectedResult": "The request is rejected — requestApproval() (audit-closure.service.js:87-129) requires closure.checklist to be 100% completed before allowing a request to proceed.",
-    "tags": ["sanity", "audit-closure"],
+    "tags": [
+      "sanity",
+      "audit-closure"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,6 +64,9 @@
     "subFeature": "Management Review",
     "title": "Creating a management review with attendees and agenda persists and appears in the review list",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -55,7 +74,10 @@
       "Navigate back to the management reviews list for the audit"
     ],
     "expectedResult": "The new review appears in the list with status='planned', correct attendee count, and agenda items intact.",
-    "tags": ["sanity", "management-review"],
+    "tags": [
+      "sanity",
+      "management-review"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,14 +90,23 @@
     "subFeature": "Global Findings Search",
     "title": "Global findings search endpoint returns results without error for an organization with a large finding volume",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has 500+ findings across multiple audits"],
+    "preconditions": [
+      "Org has 500+ findings across multiple audits"
+    ],
     "steps": [
       "Call GET /api/audit-assurance/findings/search with a common search term"
     ],
     "expectedResult": "The endpoint returns within an acceptable response time, capped at 20 results per page, with no timeout or 500 error.",
-    "tags": ["sanity", "findings"],
+    "tags": [
+      "sanity",
+      "findings"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

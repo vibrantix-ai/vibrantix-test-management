@@ -1,0 +1,60 @@
+{
+  "categories": [
+    "unit",
+    "integration",
+    "e2e",
+    "security",
+    "smoke",
+    "sanity",
+    "regression",
+    "performance",
+    "accessibility"
+  ],
+  "entities": [
+    {
+      "slug": "iso-27001",
+      "name": "ISO/IEC 27001 Audit Report",
+      "framework": "iso-27001"
+    },
+    {
+      "slug": "soc-2-type-i",
+      "name": "SOC 2 Type I Audit Report",
+      "framework": "soc-2-type-i"
+    },
+    {
+      "slug": "soc-2-type-ii",
+      "name": "SOC 2 Type II Audit Report",
+      "framework": "soc-2-type-ii"
+    },
+    {
+      "slug": "gdpr",
+      "name": "GDPR Compliance Audit Report",
+      "framework": "gdpr"
+    },
+    {
+      "slug": "hipaa",
+      "name": "HIPAA Compliance Audit Report",
+      "framework": "hipaa"
+    },
+    {
+      "slug": "pci-dss",
+      "name": "PCI DSS Audit Report",
+      "framework": "pci-dss"
+    },
+    {
+      "slug": "nist-csf",
+      "name": "NIST CSF Assessment Report",
+      "framework": "nist-csf"
+    },
+    {
+      "slug": "cis-controls-v8",
+      "name": "CIS Controls v8 Assessment Report",
+      "framework": "cis-controls-v8"
+    },
+    {
+      "slug": "sox",
+      "name": "SOX Section 404 Audit Report",
+      "framework": "sox"
+    }
+  ]
+}

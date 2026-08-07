@@ -1,0 +1,47 @@
+[
+  {
+    "id": "TI-001",
+    "module": "tenant-isolation",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`authenticate.js` — Auth Middleware",
+    "category": "Tenant Bypass",
+    "title": "DEV_BYPASS path assigns hardcoded orgId `6897584a54a19172fda820b6` — cross-tenant auth bypass in any environment where env var is set",
+    "requirement": "ISO 27001 A.5.15, SOC 2 CC6.1",
+    "affectedFiles": [
+      "vibrantix-backend/src/middleware/authenticate.js"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-002",
+    "module": "tenant-isolation",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`scripts/seed-risk-data.js`",
+    "category": "Demo Data Exposure",
+    "title": "Seed script hardcodes Aventra demo org `6905ebf2653f926de25a0b18` with realistic sample risks — execution against production DB seeds demo data into real tenant",
+    "requirement": "ISO 27001 A.8.33, GDPR Art.25",
+    "affectedFiles": [
+      "vibrantix-backend/scripts/seed-risk-data.js"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-003",
+    "module": "tenant-isolation",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Compliance Dashboard",
+    "category": "Mock Data / Fabricated Metric",
+    "title": "`Math.random()` used for compliance score computation — new tenant immediately sees fabricated non-zero compliance percentages instead of zero or \"Not configured\"",
+    "requirement": "ISO 27001 A.8.15, SOC 2 CC4.1",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/compliance-manager/ or smart-compliance/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  }
+]

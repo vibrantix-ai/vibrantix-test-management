@@ -1,0 +1,60 @@
+[
+  {
+    "id": "TK-015",
+    "module": "tasks",
+    "title": "Trust Vault uses `expiryDate` as task `dueDate` — semantically misleading for assignment deadlines",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "**Files:** `trust-vault-service/src/routes/internal-tasks.routes.ts:113-115`\n\n**Root Cause:** `dueDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : undefined` — `expiryDate` is the certification renewal deadline, not the work assignment deadline. A certification assigned this week but expiring in 6 months shows dueDate = 6 months out. A certification expiring yesterday shows as \"overdue\" even if the user just received the assignment today.\n\n**Claude Fix Prompt:**\nCheck the `certifications` collection schema for a separate assignment deadline or review deadline field (e.g., `reviewDeadline`, `assignmentDueDate`). Use that instead of `expiryDate` for `dueDate`. If no such field exists, consider using `expiryDate` but adding a comment in the task title or `sourceEntityName` to clarify the date refers to certification expiry, not a work deadline.",
+    "firstDetected": "Sprint 3B",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 2,
+    "fixEvidence": "`trust-vault-service/internal-tasks.routes.ts`: `sourceEntityName: 'Expires ' + date` clarifies context",
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TK-016",
+    "module": "tasks",
+    "title": "`useTasks` staleTime 60s — newly assigned tasks take up to 60s to appear; no stale indicator",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "**Files:** `vibrantix-client-panel/src/hooks/useTasks.js:7-13`\n\n**Root Cause:** `staleTime: 60_000` means a cached result is served for 60 seconds without a network request. A task assigned to the user in another session will not appear for up to 60 seconds. The Refresh button exists but there is no visual indicator that data may be stale (e.g., a \"last refreshed X seconds ago\" label).\n\n**Claude Fix Prompt:**\nConsider reducing `staleTime` to 30_000ms for the tasks query since task assignments are time-sensitive. Optionally add a \"Last refreshed X minutes ago\" text near the Refresh button using the `dataUpdatedAt` value from `useQuery`:\n```jsx\nconst { data, dataUpdatedAt, isFetching, refetch } = useTasks(filters);\n// In the header:\nconst lastUpdated = dataUpdatedAt ? formatDistanceToNow(new Date(dataUpdatedAt), { addSuffix: true }) : null;\n```",
+    "firstDetected": "Sprint 3B",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 2,
+    "fixEvidence": "`useTasks.js`: `staleTime: 30_000`, `refetchInterval: 60_000`",
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TK-023",
+    "module": "tasks",
+    "title": "`DueDateCell` and `AssignedCell` return `null` on date parse error — cell renders blank instead of \"—\"",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "UX",
+    "description": "**Files:** `vibrantix-client-panel/src/app/(private)/tasks/page.jsx:132,158`\n\n**Root Cause:** Both `DueDateCell` and `AssignedCell` use `try { ... } catch { return null; }`. A `null` return from a React function component renders an empty cell — no \"—\" fallback, no visual indicator that the date was unparseable. Any task with a malformed `dueDate` or `assignedAt` ISO string will silently show a blank cell.\n\n**Claude Fix Prompt:**\nReplace `return null` with a fallback in both cells:\n```jsx\n// DueDateCell:\ntry { formatted = format(new Date(task.dueDate), 'MMM d, yyyy'); }\ncatch { return <Text fontSize=\"xs\" color={subColor}>—</Text>; }\n\n// AssignedCell:\ntry { rel = formatDistanceToNow(new Date(assignedAt), { addSuffix: true }); }\ncatch { return <Text fontSize=\"xs\" color={subColor}>—</Text>; }\n```",
+    "firstDetected": "Run 3",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TK-024",
+    "module": "tasks",
+    "title": "ManagementReview/CI composite task IDs collapse to `\"<parentId>_undefined\"` when `itemId`/`initId` missing",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Data Integrity",
+    "description": "**Files:** `vibrantix-backend/src/modules/tasks/tasks.normalise.js:281,328`\n\n**Root Cause:** `id: \\`${review._id}_${item.itemId}\\`` — if `item.itemId` is `undefined` or `null`, all action items without an `itemId` within the same `ManagementReview` document will share the id `\"<reviewId>_undefined\"`. Only the last one survives in any dedup-by-id logic. Same for ContinuousImprovement: `id: \\`${ci._id}_${initiative.initId}\\``. React table rows using `rowKey=\"id\"` will generate duplicate key warnings and potentially render wrong data.\n\n**Claude Fix Prompt:**\nUse a stable fallback: the array index is not stable across fetches, but the item's own MongoDB `_id` (if it has one) or a hash of its content is. Best approach — use the item's index in the array as a tie-breaker:\n```js\n// In normaliseActionItem, pass index from the flat-map:\n// Caller: .map((item, idx) => normaliseActionItem(review, item, idx))\nfunction normaliseActionItem(review, item, idx = 0) {\n  return {\n    id: item._id ? item._id.toString() : `${review._id}_${item.itemId ?? idx}`,\n    ...\n  };\n}\n// Same pattern for normaliseCIInitiative\n```",
+    "firstDetected": "Run 3",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  }
+]

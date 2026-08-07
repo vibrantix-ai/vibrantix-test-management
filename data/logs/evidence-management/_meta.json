@@ -1,0 +1,16 @@
+{
+  "slug": "evidence-management",
+  "name": "Evidence Management",
+  "sourceModule": "evidence-management",
+  "logTypes": [
+    "audit",
+    "activity"
+  ],
+  "description": "Logs emitted by the Evidence Management module (audit, activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

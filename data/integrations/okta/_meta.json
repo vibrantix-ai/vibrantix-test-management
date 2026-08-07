@@ -1,0 +1,20 @@
+{
+  "slug": "okta",
+  "name": "Okta",
+  "category": "identity",
+  "authMethod": "oauth2_pkce",
+  "capabilities": [
+    "users",
+    "groups",
+    "policies",
+    "logs"
+  ],
+  "description": "Identity provider connector — user/group/policy sync and auth log ingestion.",
+  "testFocusAreas": [
+    "Connection setup / OAuth flow correctness",
+    "Connection health check (testConnection) — valid vs invalid credentials",
+    "Per-capability sync correctness (users, groups, policies, logs)",
+    "Disconnect/revoke flow and credential cleanup",
+    "Multi-tenant isolation of synced data"
+  ]
+}

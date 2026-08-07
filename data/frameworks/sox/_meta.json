@@ -1,0 +1,14 @@
+{
+  "slug": "sox",
+  "name": "Sarbanes-Oxley Act (SOX)",
+  "version": "2002",
+  "frameworkType": "regulation",
+  "family": "US-Federal",
+  "description": "US SOX Section 404 internal controls over financial reporting.",
+  "testFocusAreas": [
+    "Section 404 requirement coverage",
+    "Requirement-to-UCL control mapping accuracy",
+    "ICFR (internal controls over financial reporting) traceability",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

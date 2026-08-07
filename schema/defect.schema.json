@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vibrantix.internal/test-management/defect.schema.json",
+  "title": "Vibrantix Defect",
+  "description": "One entry in a data/defects/<slug>/<severity>.json defect array. Converted from a QA_Tracker/*_QA_LIVE_TRACKER.md live defect registry or QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv — see sourceFile.",
+  "type": "object",
+  "required": ["id", "module", "title", "severity", "status", "sourceFile"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Original defect ID exactly as authored in the source tracker (e.g. 'EM-001', 'RR-014', 'CD-002'). For the Cloud Posture CSV (which has no native ID, only a row number), a sequential 'CP-NNN' ID was synthesized during conversion."
+    },
+    "module": {
+      "type": "string",
+      "description": "Module slug — must match the containing folder name in data/defects/ and a slug in data/defects/manifest.json. Reuses the existing Modules-system slug for the same feature."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short summary of the defect. For source trackers whose 'Title' column is itself a long description (e.g. Risk Register, Tenant Isolation), this holds that full text verbatim."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["Critical", "High", "Medium", "Low"],
+      "description": "Normalized from whatever severity/priority column/format the source used (e.g. 'P0 / Critical' -> Critical, 'P1 High' -> High). Also the category value for this record — matches the containing filename (without .json)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "fixed", "regressed", "in_progress", "new", "wont_fix", "cannot_verify"],
+      "description": "Normalized from the source tracker's own status legend/symbols (e.g. 🔴 OPEN, 🟢 FIXED, 🔁 REGRESSED, 🟡 IN_PROGRESS, 🆕 NEW, ⚪ WONT_FIX, ❓ CANNOT_VERIFY, or plain-text equivalents)."
+    },
+    "statusRaw": {
+      "type": "string",
+      "description": "Verbatim original status text/symbol from the source, preserved when normalization to the 'status' enum would lose nuance (e.g. 'REOPENED (partial)')."
+    },
+    "category": {
+      "type": "string",
+      "description": "Optional free-text domain tag from the source's own 'Category' column, e.g. 'Audit Trail', 'Validation Gap', 'ISO Compliance'. Distinct from 'severity', which drives the filename/category axis."
+    },
+    "description": {
+      "type": "string",
+      "description": "Full narrative for this defect, transcribed faithfully from the source tracker's 'Section 1B — Defect Detail Cards' when one exists for this ID. Never summarized or invented — omitted entirely if the source has no separate narrative beyond the title."
+    },
+    "requirement": {
+      "type": "string",
+      "description": "ISO clause / regulatory reference, from the source's 'ISO Ref' / 'ISO/Privacy Ref' column or an inline 'violates ...' callout in the narrative."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Free-form labels. Used to fold in CWE/OWASP classifications for Security Vulnerability defects (e.g. 'CWE-79', 'OWASP A03:2021 Injection')."
+    },
+    "component": {
+      "type": "string",
+      "description": "Optional UI component / affected-area name, from the source's 'Component' or 'Affected Area' column."
+    },
+    "affectedFiles": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional list of 'path/to/file.ext:line' references, from the source's 'Affected Files' column or inline code references in the narrative."
+    },
+    "fixEvidence": {
+      "type": "string",
+      "description": "Optional description of the actual code change that fixed this defect, from the source's 'Fix Evidence' column, present only when status is fixed/regressed-then-refixed."
+    },
+    "firstDetected": { "type": "string", "description": "Date the defect was first recorded in the source tracker, if present (not always strict YYYY-MM-DD in the source)." },
+    "lastVerified": { "type": "string", "description": "Date of the most recent QA run that re-checked this defect, if present." },
+    "runsOpen": { "type": "integer", "description": "Number of consecutive QA runs this defect has been open, if the source tracks it." },
+    "sourceRun": { "type": "string", "description": "Which run in the source tracker's Run History first surfaced this defect, when determinable, e.g. 'Run #1 (2026-06-11)'." },
+    "verified": {
+      "type": "boolean",
+      "description": "CSV-sourced defects only (Cloud Posture) — whether the finding was independently re-confirmed by the auditor, from the CSV's one-time 'Verified' column. Distinct from 'status', which this source does not track (no OPEN/FIXED lifecycle recorded)."
+    },
+    "sourceFile": {
+      "type": "string",
+      "description": "Provenance — repo-relative path to the QA_Tracker source this record was converted from, e.g. 'QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md'."
+    }
+  }
+}

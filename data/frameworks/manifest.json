@@ -1,0 +1,69 @@
+{
+  "categories": [
+    "unit",
+    "integration",
+    "e2e",
+    "security",
+    "smoke",
+    "sanity",
+    "regression",
+    "performance",
+    "accessibility"
+  ],
+  "entities": [
+    {
+      "slug": "iso-27001",
+      "name": "ISO/IEC 27001",
+      "version": "2022",
+      "frameworkType": "standard"
+    },
+    {
+      "slug": "soc-2-type-i",
+      "name": "SOC 2 Type I",
+      "version": "2017",
+      "frameworkType": "standard"
+    },
+    {
+      "slug": "soc-2-type-ii",
+      "name": "SOC 2 Type II",
+      "version": "2017",
+      "frameworkType": "standard"
+    },
+    {
+      "slug": "gdpr",
+      "name": "GDPR",
+      "version": "2016/679",
+      "frameworkType": "regulation"
+    },
+    {
+      "slug": "hipaa",
+      "name": "HIPAA",
+      "version": "1996",
+      "frameworkType": "regulation"
+    },
+    {
+      "slug": "pci-dss",
+      "name": "PCI DSS",
+      "version": "4.0",
+      "frameworkType": "standard"
+    },
+    {
+      "slug": "nist-csf",
+      "name": "NIST Cybersecurity Framework",
+      "version": "2.0",
+      "frameworkType": "framework"
+    },
+    {
+      "slug": "cis-controls-v8",
+      "name": "CIS Controls v8",
+      "version": "8.0",
+      "frameworkType": "standard"
+    },
+    {
+      "slug": "sox",
+      "name": "Sarbanes-Oxley Act (SOX)",
+      "version": "2002",
+      "frameworkType": "regulation"
+    }
+  ]
+}

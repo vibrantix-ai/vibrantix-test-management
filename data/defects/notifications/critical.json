@@ -1,0 +1,17 @@
+[
+  {
+    "id": "NOTIF-014",
+    "module": "notifications",
+    "title": "`ClientNotifications.js` crashes on mount: deps array references `fetchNotifications` before its `const` declaration (TDZ); also uses MUI (wrong library), hardcoded mock data, local-only state mutations",
+    "severity": "Critical",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Delivery",
+    "description": "**File:** `vibrantix-client-panel/src/components/notifications/ClientNotifications.js`\n**Lines:** 108–116, 128, 3–31\n**Root Cause (Crash):** `useEffect(..., [fetchNotifications])` at line 116 evaluates the deps array when `useEffect` is called. `fetchNotifications` is declared with `const` at line 128 — it is in the temporal dead zone at that point. Modern JS engines (V8 without `const→var` transpilation) throw `ReferenceError: Cannot access 'fetchNotifications' before initialization` on every mount.\n**Root Cause (Dead Component):** Even if hook ordering were fixed, `fetchNotifications` sets 4 hardcoded mock items and never calls the real API. All components are imported from `@mui/material` — the project uses Chakra UI everywhere. `markAsRead`, `markAllAsRead`, `deleteNotification` only mutate local state and never call the backend.\n**Impact:** Critical — the entire ClientNotifications page is inoperable. It crashes before rendering, users see a React error boundary, and no real notifications are ever displayed.\n**Fix:** Rewrite component to use `useNotifications()` context hook (real API, real socket data) and Chakra UI components. Move `fetchNotifications` declaration above `useEffect` to resolve the hook ordering issue.",
+    "firstDetected": "Run 2",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "Full rewrite using `useNotifications()` context hook + Chakra UI; TDZ eliminated (no local `fetchNotifications`); real API data via context",
+    "sourceFile": "QA_Tracker/NOTIFICATIONS_QA_LIVE_TRACKER.md"
+  }
+]

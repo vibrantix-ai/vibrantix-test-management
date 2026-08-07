@@ -1,0 +1,58 @@
+[
+  {
+    "id": "EM-035",
+    "module": "evidence-management",
+    "title": "Selection mode cross-page state stored in `localStorage` — unencrypted; two tabs corrupt each other's selection; bypasses Next.js router state in `EvidenceManagementContent.jsx`",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Technical Debt",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceManagementContent.jsx`\n**Root Cause:** `selectedEvidenceIds` is stored in `localStorage`, which is shared across all browser tabs on the same origin. Two tabs open to the evidence list overwrite each other's selection. The unencrypted storage also exposes selected IDs to any script running on the same origin.\n**Claude Fix Prompt:**\n```\nFile: EvidenceManagementContent.jsx\n\n1. Replace localStorage.setItem('selectedEvidenceIds', ...) with React state:\n   const [selectedIds, setSelectedIds] = useState([]);\n2. Remove all localStorage.getItem('selectedEvidenceIds') calls.\n3. If cross-navigation persistence is needed, use sessionStorage (tab-scoped) not localStorage.\n4. Grep for all localStorage usage in this file and replace with React state.\n```"
+  },
+  {
+    "id": "EM-036",
+    "module": "evidence-management",
+    "title": "Version picker loads max 100 items with no title search — `EvidenceVersionsContent.jsx` picker uses `limit: 100`; projects with >100 items require raw MongoDB ObjectId or EV-xxx format; no title-based search",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "UX",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceVersionsContent.jsx`\n**Root Cause:** The version picker fetches `limit: 100` and presents a raw list dropdown with no text search or date filter. Frequently updated evidence items (automated nightly scans) accumulate hundreds of versions. Users must know the exact ObjectId or EV-xxx code to find a specific version.\n**Claude Fix Prompt:**\n```\nFile: EvidenceVersionsContent.jsx\n\n1. Add text search input above the version dropdown.\n2. Add date-range filter.\n3. Change API call to paginated search:\n   GET /evidence/:id/versions?search=&startDate=&endDate=&limit=20&page=\n4. Implement server-side search on version title/description fields.\n5. For very large histories, use cursor-based pagination.\n```"
+  },
+  {
+    "id": "EM-037",
+    "module": "evidence-management",
+    "title": "Scan ID provider extraction fragile — `firstScanId.split('-').pop()` in `AutoCollectorsContent.jsx` returns last segment; format change returns incorrect provider; silent wrong identification",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Technical Debt",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/AutoCollectorsContent.jsx`\n**Root Cause:** Provider is extracted from `firstScanId.split('-').pop()` — taking the last segment of a hyphen-delimited ID. Any integration service changing its scan ID format (e.g. adding an environment suffix `aws-123456-prod`) would cause silent misidentification (`prod` instead of `aws`).\n**Claude Fix Prompt:**\n```\n1. Add explicit provider field to the connector/scan model: provider: { type: String, required: true }\n2. Backend: return provider directly from the collectors API.\n3. AutoCollectorsContent.jsx: use collector.provider instead of firstScanId.split('-').pop().\n4. If model change is not immediately feasible, add allowlist validation:\n   const KNOWN_PROVIDERS = ['aws', 'azure', 'okta', 'github', 'jira', 'crowdstrike'];\n   if (!KNOWN_PROVIDERS.includes(extracted)) console.warn('Unknown provider:', extracted);\n```"
+  },
+  {
+    "id": "EM-038",
+    "module": "evidence-management",
+    "title": "Hard navigation via `window.location.href` after AI upload — `AIUploadInterface.jsx` destroys React state, bypasses Next.js router, no unsaved-state warning",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Technical Debt",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/AIUploadInterface.jsx`\n**Root Cause:** Post-upload navigation uses `window.location.href = '/evidence'`, a full browser reload that destroys React state, bypasses Next.js router prefetch and scroll restoration, and fires with no unsaved-state check.\n**Claude Fix Prompt:**\n```\nFile: AIUploadInterface.jsx\n\n1. Import: import { useRouter } from 'next/router';\n2. Add: const router = useRouter(); at component top.\n3. Replace: window.location.href = '/evidence'\n   with: router.push('/evidence?uploaded=true')\n4. Remove the window.location.href line entirely.\n5. In EvidenceManagementContent.jsx: read the uploaded=true query param and show a success toast on mount.\n```"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "slug": "notifications",
+  "name": "Notifications",
+  "scope": "platform",
+  "qaAgent": "Notifications_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/NOTIFICATIONS_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Notifications live defect registry."
+}

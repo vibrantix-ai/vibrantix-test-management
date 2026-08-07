@@ -1,0 +1,191 @@
+[
+  {
+    "id": "RBACLOG-SEC-001",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Authentication Logging",
+    "title": "JWT authentication success emits a complete structured security audit entry",
+    "description": "vibrantix-backend's authenticate.js logs every successful Keycloak JWT validation as a structured security event. Verify the entry carries every field needed for forensic reconstruction of who authenticated, when, and from where.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Test org and user provisioned in Keycloak and MongoDB",
+      "KEYCLOAK_ISSUER configured so JWKS verification runs (SKIP_JWKS_VERIFY and DEV_BYPASS both off)"
+    ],
+    "steps": [
+      "Log in as the test user and obtain a valid Keycloak-issued Bearer JWT (RS256) via the normal OAuth flow.",
+      "Send an authenticated request to any protected endpoint (e.g. GET /api/activity-logs) with Authorization: Bearer <token>.",
+      "Capture the log stream (console/file transport, per vibrantix-backend/src/config/logger.js) and locate the entry from the JWT success path."
+    ],
+    "expectedResult": "A single log entry with type: \"security\", event: \"auth.token.validated\", authMethod: \"jwt\" is emitted with populated userId, email, orgId, ip, userAgent, path, and tokenExp fields (vibrantix-backend/src/middleware/authenticate.js lines 159-170). No raw token value appears in the entry.",
+    "tags": ["logging", "audit-trail", "rbac", "authentication"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-002",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Authentication Logging",
+    "title": "Each distinct authentication failure mode emits its own structured security log event",
+    "description": "authenticate.js distinguishes missing-token, expired-token, invalid-token, and JWKS-unavailable failures with separate event names. Verify each path actually logs distinctly rather than collapsing into a generic error.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Send a request to a protected endpoint with no Authorization header at all.",
+      "Send a request with a valid-format but expired JWT.",
+      "Send a request with a syntactically invalid JWT (garbage token string).",
+      "Inspect the log entry produced for each of the three cases."
+    ],
+    "expectedResult": "Three distinct type: \"security\" entries are produced: event: \"auth.token.missing\" (no Bearer header, authenticate.js lines 103-110), event: \"auth.token.expired\" (TokenExpiredError, lines 253-262), and event: \"auth.token.invalid\" (JsonWebTokenError, lines 264-274) — each with ip, userAgent, and path populated. The invalid-token entry's errorMessage does not include the raw token value or a full stack trace.",
+    "tags": ["logging", "audit-trail", "rbac", "authentication"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-003",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Authorization Logging",
+    "title": "Permission denial produces a complete authz.permission.denied audit entry across all three guard variants",
+    "description": "requirePermission.js has three guard functions (single/any/all) that each log on denial. Verify all three produce the same complete field set, since a gap in any one weakens the access-control audit trail.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Test user whose assigned role excludes a known permission, e.g. policy.approve"
+    ],
+    "steps": [
+      "Authenticate as the under-permissioned user and call a route gated by requirePermission('policy.approve').",
+      "Repeat against a route gated by requireAnyPermission([...]) with none of the listed permissions held.",
+      "Repeat against a route gated by requireAllPermissions([...]) with only some of the listed permissions held.",
+      "For each of the 3 calls, confirm the 403 response and inspect the emitted log entry."
+    ],
+    "expectedResult": "Each of the three guards emits a type: \"security\", event: \"authz.permission.denied\" entry (vibrantix-backend/src/middleware/requirePermission.js lines 30-46, 54-70, 79-96) containing userId, orgId, requiredPermission/requiredPermissions + requiredMode ('single'/'any'/'all'), heldPermissions (the caller's full current permission set), resource (req.path), action (HTTP method), and ip. The requireAllPermissions variant additionally includes missingPermissions listing exactly which of the required set was absent.",
+    "tags": ["logging", "audit-trail", "rbac", "authorization"],
+    "requirement": "ISO 27001 Annex A.5.15",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-004",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Audit Log Integrity",
+    "title": "Internal audit-log ingestion endpoint must reject writes when INTERNAL_SERVICE_SECRET is unset, not fail open",
+    "description": "The internal activity-log ingestion route is secret-gated so only trusted internal callers can inject ActivityLog entries. This guards against the audit trail's own write path being hijacked — the exact gap RBAC-017 originally found and which is now confirmed fixed (reverified 2026-08-02). This test case is now a regression guard, not a currently-failing case.",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Test environment where INTERNAL_SERVICE_SECRET is unset/empty in .env"
+    ],
+    "steps": [
+      "Confirm INTERNAL_SERVICE_SECRET is unset in the running vibrantix-backend environment.",
+      "Send POST /api/internal/activity-log with an arbitrary body (attacker-chosen userId, organizationId, action, detail) and no x-internal-secret header.",
+      "Observe the HTTP response and query MongoDB's activity_logs collection for the resulting document."
+    ],
+    "expectedResult": "The request must be rejected with 401 regardless of whether INTERNAL_SERVICE_SECRET is configured. Verified 2026-08-02: `vibrantix-backend/src/modules/activity/activity-log.routes.js` lines 14-16 now read `if (!INTERNAL_SECRET || header !== INTERNAL_SECRET) { return res.status(401)... }` with an inline \"fail closed\" comment — this is the originally-prescribed fix for RBAC-017, already applied. This test currently PASSES; it exists to catch a regression if the guard is ever changed back to the permissive form.",
+    "tags": ["logging", "audit-trail", "tamper-evidence", "rbac"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "linkedDefect": "RBAC-017",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-005",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Service-to-Service Auth Logging",
+    "title": "Service-to-service (x-service-token) audit trail cannot attribute actions to a specific calling service",
+    "description": "Every internal service that authenticates via the shared x-service-token gets the same hardcoded userId ('service-account') and SUPERADMIN-equivalent access. This flattens the audit trail's actor field across all internal callers, matching RBAC-020's 'no per-request audit trail distinguishing which service acted' finding.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Send a request carrying header x-service-token: <INTERNAL_SERVICE_TOKEN> and x-organization-id: <test org id>, with no service-identity header.",
+      "Perform a state-mutating call using this identity (e.g. an internal-only write endpoint).",
+      "Inspect the auth.service_account.access log entry emitted for the request, and any downstream AuditLog/ActivityLog entries created by the mutation.",
+      "Repeat with a different (hypothetical) internal caller using the same shared token and compare actor fields between the two runs."
+    ],
+    "expectedResult": "Per current code (vibrantix-backend/src/middleware/authenticate.js lines 60-88), req.userId is hardcoded to the literal 'service-account' for every internal-service caller, and the auth.service_account.access log entry contains only userId: 'service-account', orgId, ip, and path — no field identifies which internal service made the call. Two different services (or two different call sites of the same service) using the same INTERNAL_SERVICE_TOKEN are indistinguishable in the log. This test is expected to FAIL against current code as a forensic-traceability gap; target behavior is an x-service-name (or per-service token) that makes the actor field distinguish 'service:<name>' per caller.",
+    "tags": ["logging", "audit-trail", "rbac", "service-to-service"],
+    "requirement": "ISO 27001 Annex A.8.2",
+    "linkedDefect": "RBAC-020",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-006",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Admin Portal Access Logging",
+    "title": "Admin-portal access grant is not captured as a structured audit event with org context",
+    "description": "loadPermissions.js grants SUPERADMIN-equivalent, cross-organization access to any Keycloak user carrying the admin-portal resource_access claim, but only logs a bare unstructured string with the user's email — no type/event classification and no org context, unlike every other security-relevant log call in this codebase. This directly corresponds to RBAC-025's finding that admin-portal access lacks additional org validation and forensic logging.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Keycloak token with resource_access['admin-portal'] populated"
+    ],
+    "steps": [
+      "Authenticate with a token carrying resource_access['admin-portal'].",
+      "Make any authenticated request that reaches loadPermissions.js's admin-portal branch.",
+      "Inspect the log entry emitted at that branch and attempt to filter/alert on it as a security event."
+    ],
+    "expectedResult": "Current code (vibrantix-backend/src/middleware/loadPermissions.js line 141) emits only `` logger.info(`[loadPermissions] Admin-portal access granted for email=${req.userEmail}`) `` — a plain template-string message with no type: \"security\" field, no event name, no orgId/req.orgId, and no ip/path, unlike the structured shape used by auth.token.validated, authz.role.created, etc. This test is expected to FAIL against current code: the entry cannot be reliably queried/alerted on as a security event by log tooling that filters on type/event fields. Target behavior: type: \"security\", event: \"authz.admin_portal.access\" with userId, email, orgId (or an explicit sentinel if globally scoped), ip, and path, per RBAC-025's remediation guidance.",
+    "tags": ["logging", "audit-trail", "rbac", "admin-portal"],
+    "requirement": "ISO 27001 Annex A.8.2",
+    "linkedDefect": "RBAC-025",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  },
+  {
+    "id": "RBACLOG-SEC-007",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "security",
+    "subFeature": "Tamper-Evidence",
+    "title": "Security and compliance log entries carry a verifiable SHA-256 tamper-evidence hash chain",
+    "description": "logger.js chains every type: 'security'/'compliance' entry with previousHash/integrityHash/integrityTimestamp so reordering or editing a historical entry is detectable within a single process's log stream. Verify the chain actually links and that its documented per-process/per-replica limitation holds as designed, not as a silent surprise.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Within a single running vibrantix-backend process, trigger at least 3 type: 'security'/'compliance' log events in sequence (e.g. a failed login, a permission denial, a role update).",
+      "Capture the raw emitted entries in order.",
+      "For each entry, recompute sha256(previousHash + integrityTimestamp + JSON.stringify(entry-without-hash-fields)) and compare to that entry's own integrityHash.",
+      "Confirm entry N's previousHash equals entry N-1's integrityHash for consecutive security/compliance entries.",
+      "Restart the process and confirm the chain resets to \"GENESIS\" rather than continuing from the prior process's last hash."
+    ],
+    "expectedResult": "Every type: \"security\"/\"compliance\" entry carries previousHash, integrityHash, and integrityTimestamp (vibrantix-backend/src/config/logger.js lines 92-102, hashChainFormat), the chain is unbroken and independently recomputable across consecutive entries of those two types within one process lifetime, and — per the source's own documented 'Known limitation' — the chain resets to GENESIS on process restart and is independent per replica in a multi-instance deployment (i.e. it is not a substitute for centralized cross-replica chain verification once shipped to the SIEM). Entries of other types (e.g. plain 'info' logs) do not receive hash-chain fields.",
+    "tags": ["logging", "tamper-evidence", "audit-trail", "compliance"],
+    "requirement": "ISO 27001 Annex A.8.15 / A.8.16",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  }
+]

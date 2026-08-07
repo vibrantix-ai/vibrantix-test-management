@@ -1,0 +1,117 @@
+[
+  {
+    "id": "EVIDLOG-E2E-001",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "e2e",
+    "subFeature": "Review Workflow",
+    "title": "Evidence-level workflow history is permanently stubbed empty in the client, even though the generic backend history endpoint exists",
+    "description": "vibrantix-client-panel/src/services/evidenceService.js's getWorkflowHistory(evidenceId) (around line 425) is hardcoded: \"Route GET /:id/workflow-history does not exist in backend yet. Return empty stub until the endpoint is implemented.\" and always resolves { success: true, data: [] }. However, vibrantix-backend/src/modules/workflow/workflow.routes.js already exposes a generic GET /:entityType/:entityId/history route (backed by workflow-entry.model.js's WorkflowEntry collection) that works for entityType='evidence' the same way it already works for mappings. No UI currently calls it for evidence-level history — the stale stub silently wins.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An evidence item has at least two real WorkflowEntry documents (e.g. submitted then approved) recorded against it in workflow_entries",
+      "Tester has read access to the evidence item as an end user, plus separate access to call the generic workflow history route directly"
+    ],
+    "steps": [
+      "As an end user, open the evidence item's detail view in the client panel and look for any audit-trail/history timeline for the item's own lifecycle (not its control mappings).",
+      "In the browser network tab, confirm whether any request is made to a workflow-history-shaped endpoint for this evidenceId, or whether evidenceService.getWorkflowHistory returns immediately with no network request at all.",
+      "Independently call GET /api/workflow/evidence/:evidenceId/history (the generic route mounted by workflow.routes.js) with the same credentials.",
+      "Compare what the UI shows against what the generic route actually returns."
+    ],
+    "expectedResult": "The UI shows no evidence-level history timeline (or shows a permanently empty one) because evidenceService.getWorkflowHistory returns a hardcoded empty stub with no network call at all. The independent call to the generic /workflow/evidence/:evidenceId/history route in step 3 returns the real WorkflowEntry documents (submit/approve/etc. with actor and timestamp) that exist in the database — proving the gap is a stale frontend stub, not a missing backend capability, and that an end user can never see an evidence item's own approval history from the evidence UI today.",
+    "tags": ["logging", "audit-trail", "workflow"],
+    "requirement": "ISO 19011:2018 §6.7",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  },
+  {
+    "id": "EVIDLOG-E2E-002",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "e2e",
+    "subFeature": "Control Mapping",
+    "title": "Approved Mappings tab never surfaces the mapping's own approval history, despite MappingWorkflowPanel and the backend history endpoint both existing",
+    "description": "GET /api/evidence/mappings/:id/workflow-history is a real, working endpoint (evidence-mapping.controller.js's getMappingWorkflowHistory, populated with the approving user and sorted by changedAt) and vibrantix-client-panel/src/components/evidence-management/control-mapping/MappingWorkflowPanel.jsx already calls it via evidenceService.getMappingWorkflowHistory(mappingId). However, ApprovedMappingsTable.jsx (control-mapping/tabs/ApprovedMappingsTable.jsx) never renders MappingWorkflowPanel or calls getMappingWorkflowHistory anywhere, so a reviewer looking at an approved mapping has no way to see who approved it, when, or with what comment from that tab.",
+    "priority": "P2",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A control mapping exists that has gone through create -> assign -> approve, producing at least one WorkflowEntry with a comment",
+      "Tester has access to the Approved Mappings tab of Control Mapping"
+    ],
+    "steps": [
+      "Approve a control mapping with a review comment so a WorkflowEntry with note/changedBy/changedAt is persisted.",
+      "Open the Approved Mappings tab and locate the approved mapping's row.",
+      "Look for any affordance (link, icon, expandable row, side panel) that would show the approval's actor, date, or comment.",
+      "Separately confirm the data is retrievable by calling GET /api/evidence/mappings/:id/workflow-history for the same mapping id."
+    ],
+    "expectedResult": "Step 3 finds no way to view the approval history from the Approved Mappings tab — the row shows only the control/evidence names, not who approved it or when. Step 4 confirms the data does exist and is retrievable through the same API MappingWorkflowPanel.jsx already knows how to call elsewhere; the gap is that ApprovedMappingsTable.jsx simply never wires it in.",
+    "tags": ["logging", "audit-trail", "control-mapping"],
+    "requirement": "ISO 19011:2018 §6.4; ISO 27001 Annex A.5.33",
+    "linkedDefect": "EM-015",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  },
+  {
+    "id": "EVIDLOG-E2E-003",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "e2e",
+    "subFeature": "AI-Assisted Upload Review",
+    "title": "AI metadata validation review decisions (accept/reject/split) produce no audit trail anywhere because the backend evidence-validation module does not exist",
+    "description": "EvidenceValidationReviewDrawer.jsx's handleSplitFiles and the accept/reject resolution actions call evidenceValidationService.resolveWorkflow(workflow._id, resolutions) (vibrantix-client-panel/src/services/evidenceValidationService.js), which POSTs to /evidence-validation/workflow/:workflowId/resolve. No route, controller, or model matching 'evidence-validation' exists anywhere in vibrantix-backend, and src/index.js mounts only /api/evidence and /api/evidence-requests for this domain — so every one of these requests 404s before any business logic (let alone an audit write) runs.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An AI-uploaded evidence item is pending metadata validation review",
+      "Tester has network-inspection access (browser dev tools or a proxy) to observe the actual HTTP response"
+    ],
+    "steps": [
+      "Open the AI metadata validation review drawer (EvidenceValidationReviewDrawer.jsx) for a pending item.",
+      "Submit an Accept, a Reject, and a Split-Files resolution in three separate attempts, observing the network response for each.",
+      "Query workflow_entries and activity_logs for any record referencing this evidenceId or workflow id created around the time of the attempts.",
+      "Check the drawer's own error handling (evidenceValidationService.js's getValidationWorkflow already has explicit dead-route/404 handling) to see what the user is told."
+    ],
+    "expectedResult": "All three submissions receive a 404 (or the service's own dead-route fallback) because /evidence-validation/workflow/:workflowId/resolve has no backend implementation. No WorkflowEntry is created, and since the request never reaches an authenticated Express route handler with req.userId resolved for this domain, no ActivityLog backstop row exists for the decision either — the reviewer's Accept/Reject/Split decision leaves absolutely no trace in any log, which is a materially worse gap than a merely-missing reason field.",
+    "tags": ["logging", "audit-trail", "ai-classification"],
+    "requirement": "ISO 19011:2018 §6.4; ISO 27001 Annex A.5.33",
+    "linkedDefect": "EM-033",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  },
+  {
+    "id": "EVIDLOG-E2E-004",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "e2e",
+    "subFeature": "Export & Share",
+    "title": "Export/Share actions (secure link, portal access, email) produce no log entry anywhere because the backend routes do not exist",
+    "description": "ExportShareContent.jsx's handleShareAction/submitEmailShare have real click handlers that POST to /evidence/share/secure-link, /evidence/share/portal-access, /evidence/share/email, and GET /evidence/exports/history. None of these routes exist anywhere in vibrantix-backend. The catch blocks now honestly surface a 'Backend share API unavailable' message rather than fabricating data, but the practical audit-trail consequence is unchanged: no share/export action is ever recorded, anywhere, for any evidence item.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An evidence item exists that a user has permission to export/share",
+      "Tester has network-inspection access to confirm the actual HTTP response codes"
+    ],
+    "steps": [
+      "Attempt to generate a secure link, send via email, and grant portal access from ExportShareContent.jsx for a real evidence item.",
+      "Observe the network responses for each of the three actions (expect non-2xx / connection errors since the routes don't exist server-side).",
+      "Query workflow_entries and activity_logs for any record of an export/share event around the time of the attempts.",
+      "Note the user-facing message shown by the catch-block fallback for each action."
+    ],
+    "expectedResult": "All three share actions fail server-side (route not found) and the UI shows its 'Backend share API unavailable' fallback messaging. No WorkflowEntry, no ActivityLog row, and no other persisted record exists anywhere documenting that a user attempted to export or share this evidence item with an external party — a gap that matters specifically because export/share is the mechanism most likely to move evidence outside the org's control boundary.",
+    "tags": ["logging", "audit-trail", "export-share"],
+    "requirement": "ISO 27001:2022 Clause 7.5.3; ISO 27001 Annex A.5.36",
+    "linkedDefect": "EM-031",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  }
+]

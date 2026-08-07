@@ -7,6 +7,11 @@
     "title": "All six internal-token-secured microservices boot with their expected internal secret configured (no silent 503 on internal routes)",
     "description": "notification-internal.routes.js, risk-management-service's internal.routes.ts, and trust-vault-service's s2s.routes.ts all return 503 'not configured' when their respective env var (INTERNAL_API_TOKEN/INTERNAL_SERVICE_TOKEN/INTERNAL_API_KEY) is unset — a fast smoke check to run right after any deployment/config change.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +19,11 @@
       "Confirm none return 503 'Internal endpoint not configured' / 'S2S token not configured'"
     ],
     "expectedResult": "Every service's internal-token-secured route responds normally (200/401 depending on token correctness) — none respond 503 due to a missing internal secret env var post-deploy.",
-    "tags": ["smoke", "deployment", "internal-api"],
+    "tags": [
+      "smoke",
+      "deployment",
+      "internal-api"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +37,11 @@
     "title": "BACKEND_URL and INTERNAL_SERVICE_TOKEN are configured on every microservice that depends on the shared entitlement/project-scope clients",
     "description": "entitlement-client.cjs and project-scope-client.cjs both fall back to a placeholder 'https://billing.internal:5000' baseURL that never resolves in any real environment when neither ENTITLEMENT_BASE_URL nor BACKEND_URL is set. A missing config here fails closed (503) rather than crashing loudly, which means this misconfiguration can go unnoticed until a user hits a permission/entitlement check.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -35,7 +49,11 @@
       "Perform one action per service that exercises getScope() or resolve() (e.g. any permission-gated action)"
     ],
     "expectedResult": "No service silently falls back to the 'billing.internal:5000' placeholder host — every project-scope/entitlement lookup resolves against the real backend URL, and no user-facing action fails with a generic 503 caused by this misconfiguration.",
-    "tags": ["smoke", "deployment", "configuration"],
+    "tags": [
+      "smoke",
+      "deployment",
+      "configuration"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +67,11 @@
     "title": "audit-report-generator-service is reachable from vibrantix-backend at the configured AUDIT_REPORT_SERVICE_URL",
     "description": "auditReportService.js defaults to http://localhost:8005 when AUDIT_REPORT_SERVICE_URL is unset, which — like the AI policy service's port-8002 default — will not resolve inside a containerized deployment and silently breaks all report generation for every audit in every org.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -57,7 +80,11 @@
       "Confirm the job is accepted (not an immediate connection-refused error)"
     ],
     "expectedResult": "Report generation is accepted and progresses past job submission — no ECONNREFUSED/502 caused by AUDIT_REPORT_SERVICE_URL defaulting to an unreachable localhost port.",
-    "tags": ["smoke", "deployment", "report-generation"],
+    "tags": [
+      "smoke",
+      "deployment",
+      "report-generation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,13 +98,19 @@
     "title": "Core cross-service list/detail endpoints return the documented 'success' + 'data' envelope shape consistently",
     "description": "Across the codebase the convention is a top-level { success: boolean, data: {...} } (or { success, error } on failure) envelope — seen consistently in notification-internal.routes.js, s2s.routes.ts, and RiskManagementApiClient's expectations ({ success, data }). A service that deviates (e.g. returns the payload unwrapped, or uses 'result' instead of 'data') breaks every typed consumer silently at the type level.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Spot-check one representative endpoint from each of vibrantix-backend, vendor-service, risk-management-service, trust-vault-service for its top-level JSON response envelope on both success and error paths"
     ],
     "expectedResult": "Every checked endpoint uses the { success, data } / { success, error } envelope shape — no endpoint silently renames 'data' to 'result'/'payload' or omits 'success' entirely.",
-    "tags": ["api-contract", "field-shape"],
+    "tags": [
+      "api-contract",
+      "field-shape"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -1,0 +1,10 @@
+{
+  "slug": "rbac-security",
+  "name": "RBAC & Access Control",
+  "scope": "platform",
+  "qaAgent": "RBAC_Security_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/RBAC/RBAC_SECURITY_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the RBAC/Security live defect registry (QA_Tracker/RBAC/). Other RBAC/ documents (architecture analysis, gap analysis, permission matrix, test plans/specs, one-time audit findings) are reference/test-plan material, not defect registries, and were not converted."
+}

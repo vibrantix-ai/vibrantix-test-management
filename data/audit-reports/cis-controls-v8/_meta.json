@@ -1,0 +1,12 @@
+{
+  "slug": "cis-controls-v8",
+  "name": "CIS Controls v8 Assessment Report",
+  "framework": "cis-controls-v8",
+  "description": "Generated audit report fields and structure for the cis-controls-v8 framework (see audit-report-generator-service).",
+  "testFocusAreas": [
+    "Report field completeness (scope, period, findings, evidence references, sign-off)",
+    "Report field accuracy against underlying audit-assurance data",
+    "Report generation triggers correct data snapshot (no stale/mismatched framework version)",
+    "Export format fidelity (PDF/data correctness)"
+  ]
+}

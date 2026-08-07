@@ -7,6 +7,9 @@
     "title": "Sending a compliance question streams a response with rendered blocks, citations, and follow-up chips",
     "description": "Full path: page.jsx streamRealAPI() -> aiAssistantService.sendChatMessageStream() -> POST /api/assistant/chat/stream (SSE) -> assistant-service chat.routes.ts pipes python-ai's blocks/content/followups/done events back to the browser.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationRef": "test-framework/tests/e2e/ai-assistant.spec.ts",
     "preconditions": [
@@ -28,9 +31,9 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-01",
+    "updatedAt": "2026-08-04",
     "execution": {
-      "result": "not_run",
+      "result": "pass",
       "notes": ""
     },
     "automationStatus": "not_automated"
@@ -43,6 +46,9 @@
     "title": "Switching the active project mid-session clears the chat and starts a fresh, project-scoped conversation",
     "description": "page.jsx's project-change effect clears sessionStorage (CHAT_SESSION_KEY), resets conversationId to null, and replaces messages with a 'Project switched!' prompt — conversations are project-scoped and must never continue silently under a different project's context.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -72,6 +78,10 @@
     "title": "Logging out and a different user logging in on the same tab never shows the previous user's chat",
     "description": "sessionStorage is scoped to the browser tab, not the login session, so a shared-machine logout/login previously left the first user's compliance conversation rendered for the second. The v3 session blob is stamped with userId; page.jsx's ownership-validation effect discards it on mismatch.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "preconditions": [
@@ -101,6 +111,9 @@
     "subFeature": "Conversational Interface",
     "title": "Clicking a suggested follow-up question chip submits it and produces a new streamed response",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -128,6 +141,9 @@
     "title": "Stop button aborts an in-flight stream and offers a Retry action, without losing the user's original message",
     "description": "handleStop() aborts the AbortController; sendChatMessageStream() treats the resulting AbortError as a user-initiated cancel (not an error toast) and keeps whatever narrative had streamed so far.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -154,6 +170,9 @@
     "subFeature": "Conversation History",
     "title": "Renaming and deleting a conversation from the History tab updates the sidebar immediately",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -182,6 +201,9 @@
     "title": "Evidence Preview panel renders full metadata, mapped controls, and audit history for an evidence item surfaced by the assistant",
     "description": "EvidencePreviewModal.jsx renders Details/Content/Controls/History tabs from the evidence object passed in. Its audit history falls back to a synthesised 2-entry timeline ('Status changed to X' / 'Evidence uploaded') when evidence.auditHistory is not supplied by the caller — verify which case is actually wired for assistant-surfaced evidence.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/assistant/EvidencePreviewModal.jsx:159",

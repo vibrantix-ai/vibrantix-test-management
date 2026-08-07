@@ -7,15 +7,23 @@
     "title": "Trial expiry is computed as trialStartedAt + plan.trialDays",
     "description": "subscription.service.js (~lines 459-485) sets trialStartedAt=now and accessExpiresAt=trialExpiresAt only when status==='trial' and plan.trialDays is set. Verifies the pure calculation in isolation from Stripe.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A subscription-plan fixture with planType='trial' and trialDays=14"],
+    "preconditions": [
+      "A subscription-plan fixture with planType='trial' and trialDays=14"
+    ],
     "steps": [
       "Call the tier-subscribe function with status='trial' for an org and the 14-day trial plan",
       "Inspect the returned SubscriptionOrg fields"
     ],
     "expectedResult": "trialStartedAt equals the call time, trialExpiresAt equals trialStartedAt + 14*86400000 ms, and accessExpiresAt equals trialExpiresAt exactly.",
-    "tags": ["trial", "subscription-service"],
+    "tags": [
+      "trial",
+      "subscription-service"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -29,15 +37,24 @@
     "title": "requireFeature() denies a request when the key is absent from req.entitlements.features",
     "description": "middleware/requireEntitlement.js requireFeature(key) checks req.entitlements.features.includes(key). This is the actual server-side enforcement that TierGate.jsx's client-side alert is only cosmetic for.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["req.entitlements resolved with features=['evidenceManagement.export']"],
+    "preconditions": [
+      "req.entitlements resolved with features=['evidenceManagement.export']"
+    ],
     "steps": [
       "Invoke requireFeature('vciso.advisor') as middleware on a mock request whose entitlements.features does not include 'vciso.advisor'",
       "Inspect the response"
     ],
     "expectedResult": "Middleware short-circuits with 403 and body { success:false, errorCode:'FEATURE_NOT_AVAILABLE', message:'Feature \"vciso.advisor\" is not included in your plan.', details:{ feature:'vciso.advisor', tier } }; next() is not called.",
-    "tags": ["feature-gate", "middleware", "entitlements"],
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "entitlements"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -51,14 +68,23 @@
     "title": "requireFeature(key, {strict:true}) denies when entitlements have not resolved yet",
     "description": "Distinguishes the strict-mode failure (ENTITLEMENTS_UNAVAILABLE) from the normal feature-absent failure (FEATURE_NOT_AVAILABLE) so callers can tell 'plan doesn't have it' from 'we don't know yet'.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["req.entitlements is undefined/null (tierContext middleware did not run or failed)"],
+    "preconditions": [
+      "req.entitlements is undefined/null (tierContext middleware did not run or failed)"
+    ],
     "steps": [
       "Invoke requireFeature('cloudPosture.multiCloud', { strict: true }) with req.entitlements unset"
     ],
     "expectedResult": "403 { success:false, errorCode:'ENTITLEMENTS_UNAVAILABLE' }. With strict left at default (false), the same input instead fails open per the documented 'defaults to showing children' behavior mirrored server-side.",
-    "tags": ["feature-gate", "middleware", "entitlements"],
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "entitlements"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -72,6 +98,9 @@
     "title": "Over-cap comparison flags every usage dimension exceeding the target tier's limits",
     "description": "customer.controller.js downgrade over-cap logic compares current usage (users, projects, storageGB, cloudAssets, vendors) against the target tier's limits object and builds the details.overCap breakdown returned in the 422 OVER_CAP_NOT_ACKNOWLEDGED response.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "testData": "Current usage: users=12, projects=4, storageGB=80, cloudAssets=50, vendors=20. Target tier limits: users=10, projects=5, storageGB=100, cloudAssets=25, vendors=20.",
@@ -79,7 +108,11 @@
       "Call the over-cap comparison function with the current usage and target-tier limits above"
     ],
     "expectedResult": "Returned overCap object flags exactly 'users' (12>10) and 'cloudAssets' (50>25) as over-cap; 'projects', 'storageGB', and 'vendors' are not flagged since they are within or equal to the target limit.",
-    "tags": ["downgrade", "over-cap", "subscription-service"],
+    "tags": [
+      "downgrade",
+      "over-cap",
+      "subscription-service"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,14 +125,23 @@
     "subFeature": "Feature Gate Enforcement",
     "title": "requireModuleConfig() returns TIER_LOCKED when a per-module field is not enabled in plan.moduleDefaults",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Org's moduleConfig.auditAssurance.aiPlanGeneration = false (snapshotted from a lower tier's moduleDefaults)"],
+    "preconditions": [
+      "Org's moduleConfig.auditAssurance.aiPlanGeneration = false (snapshotted from a lower tier's moduleDefaults)"
+    ],
     "steps": [
       "Invoke requireModuleConfig('auditAssurance', 'aiPlanGeneration') as middleware for this org"
     ],
     "expectedResult": "403 { success:false, errorCode:'TIER_LOCKED', message:'Feature \"aiPlanGeneration\" is not available on your plan.' }.",
-    "tags": ["feature-gate", "middleware", "module-config"],
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "module-config"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -113,14 +155,23 @@
     "title": "A stripe_events record already marked status='processed' short-circuits re-processing of a duplicate webhook delivery",
     "description": "Stripe redelivers webhooks on timeout/ack failure; stripe.webhook.controller.js dedups via the stripe-event.model.js collection keyed by event.id before running any handler.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A stripe_events document exists for event.id='evt_123' with status='processed'"],
+    "preconditions": [
+      "A stripe_events document exists for event.id='evt_123' with status='processed'"
+    ],
     "steps": [
       "Re-deliver the same webhook payload (event.id='evt_123') to the dedup check"
     ],
     "expectedResult": "Handler for the event type is not invoked a second time; response is 200 { received:true, deduped:true }.",
-    "tags": ["stripe", "webhook", "idempotency"],
+    "tags": [
+      "stripe",
+      "webhook",
+      "idempotency"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -134,6 +185,9 @@
     "title": "tierCode is accepted as free text and is not validated against the suggested enum on plan save",
     "description": "subscription-plan.model.js documents tierCode's suggested defaults (growth/scale/enterprise/trial/legacy_unlimited) explicitly as 'NOT enforced. tierCode is free text.' This is a real gap: a typo'd tierCode (e.g. 'entreprise') will save successfully and silently create an unreachable plan rather than failing validation.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -141,7 +195,11 @@
       "Reload the saved document"
     ],
     "expectedResult": "Current behavior: save succeeds with no validation error despite the misspelled tierCode not matching any of the conventional values — flagged as a data-integrity gap; recommend an enum or admin-side validation before this ships more tiers.",
-    "tags": ["plan-model", "data-integrity", "gap"],
+    "tags": [
+      "plan-model",
+      "data-integrity",
+      "gap"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -154,14 +212,23 @@
     "subFeature": "Feature Gate Enforcement",
     "title": "requireScanFrequency() rejects a scan frequency not permitted for the org's tier",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Org's plan.moduleDefaults.cloudPosture.allowedScanFrequencies = ['weekly','monthly'] (no 'hourly')"],
+    "preconditions": [
+      "Org's plan.moduleDefaults.cloudPosture.allowedScanFrequencies = ['weekly','monthly'] (no 'hourly')"
+    ],
     "steps": [
       "Invoke requireScanFrequency() as middleware on a request whose body/query requests frequency='hourly'"
     ],
     "expectedResult": "403 { success:false, errorCode:'SCAN_FREQUENCY_NOT_ALLOWED' }.",
-    "tags": ["feature-gate", "middleware", "cloud-posture"],
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "cloud-posture"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

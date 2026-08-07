@@ -1,0 +1,12 @@
+{
+  "slug": "iso-27001",
+  "name": "ISO/IEC 27001 Audit Report",
+  "framework": "iso-27001",
+  "description": "Generated audit report fields and structure for the iso-27001 framework (see audit-report-generator-service).",
+  "testFocusAreas": [
+    "Report field completeness (scope, period, findings, evidence references, sign-off)",
+    "Report field accuracy against underlying audit-assurance data",
+    "Report generation triggers correct data snapshot (no stale/mismatched framework version)",
+    "Export format fidelity (PDF/data correctness)"
+  ]
+}

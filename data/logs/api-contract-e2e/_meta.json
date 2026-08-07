@@ -1,0 +1,15 @@
+{
+  "slug": "api-contract-e2e",
+  "name": "API Contract & Cross-Service E2E",
+  "sourceModule": "api-contract-e2e",
+  "logTypes": [
+    "system"
+  ],
+  "description": "Logs emitted by the API Contract & Cross-Service E2E module (system).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

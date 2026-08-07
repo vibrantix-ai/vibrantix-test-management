@@ -1,0 +1,12 @@
+{
+  "slug": "soc-2-type-ii",
+  "name": "SOC 2 Type II Audit Report",
+  "framework": "soc-2-type-ii",
+  "description": "Generated audit report fields and structure for the soc-2-type-ii framework (see audit-report-generator-service).",
+  "testFocusAreas": [
+    "Report field completeness (scope, period, findings, evidence references, sign-off)",
+    "Report field accuracy against underlying audit-assurance data",
+    "Report generation triggers correct data snapshot (no stale/mismatched framework version)",
+    "Export format fidelity (PDF/data correctness)"
+  ]
+}

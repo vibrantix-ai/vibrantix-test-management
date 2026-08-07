@@ -1,0 +1,133 @@
+[
+  {
+    "id": "CP-004",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture/scans/[scanId]",
+    "category": "UI/UX - incomplete data shown",
+    "title": "The backend correctly supports page/limit with a real total, and the header shows 'Loaded X of Y findings' using that real total - but nothing in the UI ever increments pagination.page or wires a page-change callback into CustomTable. CustomTable's own Prev/Next pager only paginates within the already-fetched slice (client-side).",
+    "description": "Any scan with more findings than the selected page size (max 100) permanently hides all findings beyond the first page from the on-screen table - e.g. header says 'Loaded 100 of 3,482 findings' but there is no way to reach finding #101+.",
+    "affectedFiles": [
+      "vibrantix-client-panel/.../scans/[scanId]/page.jsx:121-124,895-933",
+      "components/common/CustomTable.jsx:36-37,52-53 (no onPageChange prop at all)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified (not in my spot-check sample)"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-005",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture/scans/[scanId]",
+    "category": "Wrong data source - export ignores filters",
+    "title": "handleExport's request body only ever sends {format, includeFindings:true, includeRemediation:true} - none of the on-screen severity/status/provider/service/region/search filters are forwarded, and the backend has no parameters for most of them anyway (only an unused severityFilter body field).",
+    "description": "A user filters the on-screen table to e.g. 'Critical + FAIL + us-east-1' for an audit evidence pack, clicks Export, and the exported PDF/CSV/Excel/JSON silently contains EVERY finding in the scan, unfiltered - not the reviewed subset they intended to hand over.",
+    "affectedFiles": [
+      "vibrantix-client-panel/.../scans/[scanId]/page.jsx:256-267 (handleExport)",
+      "vibrantix-backend/.../scan.controller.js:320-344 (exportScanResults)"
+    ],
+    "verified": true,
+    "tags": [
+      "verified-note: Yes - confirmed request body has no filter fields"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-006",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "Scan Comparison modal (reached from scan history on scans/[scanId] flow)",
+    "category": "Wrong data displayed",
+    "title": "The backend only computes improved/regressed COUNTS at the summary level but never attaches a per-finding changeType field to individual 'changed' entries. The frontend's badge logic is `finding.changeType === 'improved' ? 'BETTER' (green) : 'WORSE' (orange)` - since changeType is always undefined, every changed finding renders as orange 'WORSE', including ones that improved FAIL->PASS.",
+    "description": "Compare two scans where 10 checks moved FAIL->PASS (real fixes) and 2 moved PASS->FAIL (real regressions) - the 'Status Changed' tab shows all 12 rows tagged 'WORSE' in orange, misrepresenting fixed issues as new problems.",
+    "affectedFiles": [
+      "vibrantix-backend/.../scan.controller.js:1041-1042 (compareScans, never sets changeType)",
+      "vibrantix-client-panel/components/cloud-posture/ScanComparisonModal.jsx:422-429"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified (not in my spot-check sample)"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-008",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture/[provider]/[service] and .../security-checks",
+    "category": "Dead route / broken navigation",
+    "title": "Both routes are deliberately disabled via a hard Next.js redirect() (comment: 'temporarily disabled') - but CloudProviderDashboard.jsx (the actual, live, imported component per app/(private)/cloud-posture/[provider]/page.jsx) still has a real onViewDetails handler at line 817 pushing to the now-dead route.",
+    "description": "User clicks 'View Details' on any service card in the live provider dashboard; the app briefly navigates then silently bounces back to the same page with zero explanation - looks like a broken button. This directly contradicts an earlier implementation-status review that had marked per-service drill-down and the security-checks list as 'Implemented' based on the components existing - the components exist but their ROUTES are switched off.",
+    "affectedFiles": [
+      "vibrantix-client-panel/.../[provider]/[service]/page.jsx:1-18 and .../security-checks/page.jsx:1-18 (both hard `redirect()` back to the provider page, real components commented out)",
+      "dangling links in the LIVE CloudProviderDashboard.jsx:817 and dead-but-present CloudProviderDetail.jsx:796,1338,1348"
+    ],
+    "verified": true,
+    "tags": [
+      "verified-note: Yes - directly read both page.jsx files (confirmed hard redirect) and confirmed CloudProviderDashboard.jsx is the live component with the dangling link at line 817"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-014",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture/[provider] (per-provider dashboard)",
+    "category": "Filter applied to one query but not a sibling feeding the same page",
+    "title": "The resource list query applies search/service/severity filters, but the summary-card metrics (getProviderSummaryDetails) are computed with none of them, and the frontend prefers the always-unfiltered summary.passFindings/failFindings/totalFindings over values derived from the filtered resource list.",
+    "description": "On /cloud-posture/aws, filtering by Severity=Critical or typing a search term correctly narrows the resource table below, but the metric cards above ('Security Findings', 'Risk Level', 'Compliance Score') keep showing the provider's full unfiltered totals - the page visibly disagrees with itself.",
+    "affectedFiles": [
+      "vibrantix-backend/.../resource.controller.js:233-318 (getCloudProviderResources, passes no search/service/severity to getProviderSummaryDetails at line 316)",
+      "vibrantix-client-panel/components/cloud-posture/CloudProviderDashboard.jsx:308-385,346-350"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-016",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture/[provider] (rapid project switching)",
+    "category": "Race condition (unsequenced concurrent fetches)",
+    "title": "Unlike the main dashboard's fetch function, the per-provider dashboard's fetch has no abort controller or 'is this response still relevant' check.",
+    "description": "Rapidly switching the selected project in the sidebar twice while on /cloud-posture/aws can let an earlier (now-stale) request's response resolve after a newer one, silently overwriting the current project's correct data with the previous project's stale resources/services - no error shown.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/CloudProviderDashboard.jsx:137-216 (fetchDashboardData, no AbortController/staleness guard) vs. CloudPostureMainDashboard.jsx:258-260,472-562 (has one, documented as fix 'CP-010')"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-017",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture main dashboard",
+    "category": "Missing status filter (inconsistent with sibling query)",
+    "title": "totalFindings is computed from ALL Finding documents regardless of status (including PASS), while the critical-count sibling query in the exact same Promise.all correctly restricts to FAIL/ERROR only.",
+    "description": "A project with mostly-passing scans (e.g. 900 PASS + 50 FAIL) shows 'Total Findings ~950' on the cloud-posture dashboard, while the Executive Dashboard's Resource Board (which does filter by status for its equivalent metric) shows 'Total Findings = 50' for the identical underlying data - the two dashboards disagree because one filters by status and the other doesn't.",
+    "affectedFiles": [
+      "vibrantix-backend/.../dashboard.controller.js:76-80 (findingStats, no status filter) vs. :82-85 (criticalFailFindingsStats, correctly filters status IN [FAIL,ERROR]) - both in the SAME function"
+    ],
+    "verified": true,
+    "tags": [
+      "verified-note: Yes - directly confirmed both aggregations at the exact lines cited"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  }
+]

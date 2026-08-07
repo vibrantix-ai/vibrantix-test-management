@@ -1,0 +1,10 @@
+{
+  "slug": "policy-management",
+  "name": "Policy Management",
+  "scope": "feature",
+  "qaAgent": "Policy_Management_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Policy Management live defect registry."
+}

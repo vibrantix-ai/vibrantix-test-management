@@ -6,15 +6,24 @@
     "subFeature": "Upgrade Flow",
     "title": "Upgrade action is available to SUPERADMIN on the Plans tab after a deploy",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as SUPERADMIN", "Org is on a self-serve tier below the top public plan"],
+    "preconditions": [
+      "Logged in as SUPERADMIN",
+      "Org is on a self-serve tier below the top public plan"
+    ],
     "steps": [
       "Open /billing-plans Plans tab",
       "Confirm an upgrade CTA is present and clickable for at least one higher self-serve tier"
     ],
     "expectedResult": "Upgrade CTA is visible and opens UpgradeModal; no regression hid the action after the last deploy.",
-    "tags": ["sanity", "upgrade"],
+    "tags": [
+      "sanity",
+      "upgrade"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,15 +36,24 @@
     "subFeature": "Downgrade Flow",
     "title": "Downgrade UI correctly blocks an enterprise-tier org and surfaces the CSM contact path",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org currently on 'enterprise' tier"],
+    "preconditions": [
+      "Org currently on 'enterprise' tier"
+    ],
     "steps": [
       "Open /billing-plans Plans tab",
       "Attempt to select a downgrade target"
     ],
     "expectedResult": "DowngradeModal shows its 'blocked' state referencing csm@vibrantix.ai, matching the backend's 409 DOWNGRADE_NOT_ALLOWED — the UI does not let the request silently no-op or show a generic error.",
-    "tags": ["sanity", "downgrade", "enterprise"],
+    "tags": [
+      "sanity",
+      "downgrade",
+      "enterprise"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,15 +66,23 @@
     "subFeature": "Feature Gate Labels",
     "title": "TierGate renders the correct required-tier name for a known gated feature",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org on a tier below the one required for a known gated feature (e.g. vciso.advisor)"],
+    "preconditions": [
+      "Org on a tier below the one required for a known gated feature (e.g. vciso.advisor)"
+    ],
     "steps": [
       "Navigate to the gated feature's page",
       "Read the TierGate alert text"
     ],
     "expectedResult": "Alert text names the actual required tier for that feature (matches plan.features/moduleDefaults), not a stale or hardcoded tier name left over from a previous pricing revision.",
-    "tags": ["sanity", "tier-gate"],
+    "tags": [
+      "sanity",
+      "tier-gate"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -69,14 +95,22 @@
     "subFeature": "Payment Setup",
     "title": "'Set up payment' CTA appears only when plan.status or a framework's status is pending_payment",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has an active, fully-paid subscription with no pending_payment states"],
+    "preconditions": [
+      "Org has an active, fully-paid subscription with no pending_payment states"
+    ],
     "steps": [
       "Open /billing-plans Overview tab"
     ],
     "expectedResult": "'Set up payment' CTA is absent, since neither plan.status nor any framework is pending_payment.",
-    "tags": ["sanity", "payment-setup"],
+    "tags": [
+      "sanity",
+      "payment-setup"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -89,15 +123,23 @@
     "subFeature": "Renewal Display",
     "title": "'Renews In N Days' stat recalculates correctly immediately after a plan upgrade",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org just completed a self-serve upgrade in the current session"],
+    "preconditions": [
+      "Org just completed a self-serve upgrade in the current session"
+    ],
     "steps": [
       "Complete an upgrade",
       "Check the 'Renews In N Days' stat card on Overview"
     ],
     "expectedResult": "N reflects the days between now and the (possibly updated) renewsAt returned by the upgrade response, not a stale value cached from before the upgrade.",
-    "tags": ["sanity", "renewal"],
+    "tags": [
+      "sanity",
+      "renewal"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

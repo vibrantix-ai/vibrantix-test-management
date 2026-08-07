@@ -1,0 +1,14 @@
+{
+  "slug": "cis-controls-v8",
+  "name": "CIS Controls v8",
+  "version": "8.0",
+  "frameworkType": "standard",
+  "family": "CIS",
+  "description": "Center for Internet Security Critical Security Controls, Implementation Groups 1-3.",
+  "testFocusAreas": [
+    "Safeguard CRUD & Implementation Group (IG1/IG2/IG3) tagging",
+    "Requirement-to-UCL control mapping accuracy",
+    "Cross-framework UCL coverage aggregation",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "slug": "vendor-management",
+  "name": "Vendor Management",
+  "scope": "feature",
+  "qaAgent": "Vendor_Management_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Vendor Management live defect registry."
+}

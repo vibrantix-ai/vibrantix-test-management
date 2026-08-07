@@ -7,9 +7,14 @@
     "title": "extractPrimaryRole() maps JWT roles to a GRC persona in priority order",
     "description": "chat.routes.ts extractPrimaryRole() scans GRC_ROLES = ['ciso','auditor','security_analyst','risk_manager','compliance_officer'] in that fixed order, then falls back: admin/superadmin -> 'ciso', plain 'user' -> 'compliance_officer', otherwise 'compliance_officer'. This is the fallback used when the UI does not send an explicit persona.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Unit test harness for assistant-service chat.routes.ts"],
+    "preconditions": [
+      "Unit test harness for assistant-service chat.routes.ts"
+    ],
     "steps": [
       "Call extractPrimaryRole(['auditor','ciso']) and assert result is 'ciso' (first GRC_ROLES match wins)",
       "Call extractPrimaryRole(['superadmin']) and assert result is 'ciso'",
@@ -17,7 +22,10 @@
       "Call extractPrimaryRole(['some_unmapped_role']) and assert result is 'compliance_officer' (default)"
     ],
     "expectedResult": "Each call returns the persona per GRC_ROLES priority order and the documented fallback rules, with no throw on an empty or unrecognised roles array.",
-    "tags": ["intent-routing", "persona"],
+    "tags": [
+      "intent-routing",
+      "persona"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -31,6 +39,9 @@
     "title": "chatRequestSchema rejects a message over 4,000 characters with an actionable 400",
     "description": "MAX_MESSAGE_CHARS in chat.routes.ts is deliberately pinned to the Python AI service's own ceiling (AgentChatRequest.message in vibrantix-python-ai) so an over-limit message is rejected here as a clear 400 instead of round-tripping to the backend and surfacing as a bare 'PythonBackendError: Request failed: 422'.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/chat.routes.ts:54",
@@ -39,7 +50,10 @@
       "Run it through chatRequestSchema.safeParse()"
     ],
     "expectedResult": "safeParse returns success:false with an error message containing 'Message is too long (limit 4,000 characters)'. A message of exactly 4000 chars passes validation.",
-    "tags": ["validation", "zod"],
+    "tags": [
+      "validation",
+      "zod"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,6 +67,9 @@
     "title": "toStoredNarrative() strips rendered <table> markup and keeps only prose, clipped to 4,000 chars",
     "description": "ConversationService.ts toStoredNarrative() removes <table>...</table> blocks (tables are reconstructable from metadata.blocks) and any ir-table/ir-empty section wrapper, un-escapes HTML entities, collapses whitespace, then clips to MAX_ASSISTANT_CHARS. Guards against a single answer writing >1MB into one Mongo document, which previously poisoned every later turn's replayed history.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/ConversationService.ts:39",
@@ -62,7 +79,10 @@
       "Call toStoredNarrative() with a pure-table answer that has no surviving prose"
     ],
     "expectedResult": "Case 1 returns 'Intro Outro' with the table markup removed. Case 2 returns text clipped to 4,000 chars followed by '… [truncated]'. Case 3 never returns an empty string — it falls back to a stripped remnant of the original HTML so the conversation history is never blank.",
-    "tags": ["conversation-persistence", "storage-limits"],
+    "tags": [
+      "conversation-persistence",
+      "storage-limits"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -75,6 +95,9 @@
     "subFeature": "RAG Query Classification",
     "title": "RAGBridgeService.isComplianceQuery() matches against the COMPLIANCE_KEYWORDS list case-insensitively",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/RAGBridgeService.ts:166",
@@ -84,7 +107,10 @@
       "Call isComplianceQuery('What's the weather today?')"
     ],
     "expectedResult": "First two calls return true (matches 'iso 27001'/'gap analysis' and 'show me evidence' respectively, case-insensitively). Third call returns false — no keyword from COMPLIANCE_KEYWORDS is present.",
-    "tags": ["rag", "intent-routing"],
+    "tags": [
+      "rag",
+      "intent-routing"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -98,6 +124,9 @@
     "title": "calculateConfidence() boosts for sources/tools and caps at 0.95",
     "description": "Base confidence starts at 0.7, +0.1 flat if any sources present plus up to +0.1 more scaled by source count (0.02 each), +0.05 if any tool was used, hard-capped at 0.95 regardless of how many sources/tools are present.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/RAGBridgeService.ts:286",
@@ -107,7 +136,10 @@
       "Call it with 20 citations and 3 tools -> expect the value clamped to 0.95, not 0.7+0.1+0.4+0.05"
     ],
     "expectedResult": "Confidence scores match the documented additive formula for the first two cases and are hard-capped at 0.95 for the high-source case.",
-    "tags": ["rag", "confidence-scoring"],
+    "tags": [
+      "rag",
+      "confidence-scoring"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -120,6 +152,9 @@
     "subFeature": "Backend Resilience",
     "title": "isRetryableError() classifies transport failures as retryable, application errors as not",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/PythonBackendClient.ts:272",
@@ -130,7 +165,10 @@
       "Call isRetryableError(new PythonBackendUnavailableError())"
     ],
     "expectedResult": "ECONNREFUSED and ETIMEDOUT messages both return true. A PythonBackendError constructed with isRetryable=false returns false. PythonBackendUnavailableError (isRetryable=true by construction) returns true.",
-    "tags": ["resilience", "retry-logic"],
+    "tags": [
+      "resilience",
+      "retry-logic"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -144,6 +182,9 @@
     "title": "parseSseFrame() parses event/data lines and ignores heartbeat/comment frames",
     "description": "PythonBackendClient.parseSseFrame() reads a raw 'event: x\\ndata: {...}' frame, defaults event to 'message' if absent, joins multi-line data payloads, and returns null for a frame containing only ':' comment/heartbeat lines so the caller's buffer loop skips it.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/PythonBackendClient.ts:428",
@@ -153,7 +194,10 @@
       "Parse a raw frame with unparseable JSON in the data line"
     ],
     "expectedResult": "Case 1 returns {event:'token', data:{content:'Hello'}}. Case 2 returns null. Case 3 returns {event:'message', data:{raw: <the unparsed string>}} rather than throwing.",
-    "tags": ["streaming", "sse"],
+    "tags": [
+      "streaming",
+      "sse"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -166,6 +210,9 @@
     "subFeature": "Conversation Persistence",
     "title": "generateConversationTitle() truncates a long first user message to 50 characters",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/ConversationService.ts:493",
@@ -175,7 +222,9 @@
       "Call generateConversationTitle([{role:'user', content:'Short question'}])"
     ],
     "expectedResult": "Case 1 returns exactly 50 characters: 47 'a's followed by '...'. Case 2 (no user message found) returns 'New Conversation'. Case 3 returns 'Short question' unmodified (under the 50-char threshold).",
-    "tags": ["conversation-persistence"],
+    "tags": [
+      "conversation-persistence"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

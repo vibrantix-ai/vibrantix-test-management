@@ -7,9 +7,15 @@
     "title": "Org owner adds a payment method via Stripe-hosted Checkout (setup mode), then the checkout.session.completed webhook records it",
     "description": "There is no embedded Stripe Elements/card form anywhere in the client — 'add card' is a full-page redirect to a Stripe Checkout Session created in mode:'setup'. Verifies the real end-to-end path, not a fabricated in-app card form.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as SUPERADMIN (Org Admin)", "Org has no stripeCustomerId yet; plan.status='pending_payment'"],
+    "preconditions": [
+      "Logged in as SUPERADMIN (Org Admin)",
+      "Org has no stripeCustomerId yet; plan.status='pending_payment'"
+    ],
     "steps": [
       "Navigate to /billing-plans Overview tab and confirm the 'Set up payment' CTA is shown",
       "Click the CTA, which calls billingService.startCheckoutSetup() -> POST /billing/v1/billing/checkout-session",
@@ -18,7 +24,11 @@
       "Wait for the checkout.session.completed webhook to be processed"
     ],
     "expectedResult": "Org's billing.stripeCustomerId is now set, the 'Set up payment' CTA no longer appears on Overview, and any frameworks previously pending payment are activated.",
-    "tags": ["stripe", "checkout", "payment-method"],
+    "tags": [
+      "stripe",
+      "checkout",
+      "payment-method"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -31,9 +41,15 @@
     "subFeature": "Upgrade Flow",
     "title": "Selecting a higher tier on the Plans tab upgrades the plan and updates Overview without a full page reload",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org on 'growth' tier with a payment method already on file", "Target tier 'scale' has ctaType='get_started' (self-serve)"],
+    "preconditions": [
+      "Org on 'growth' tier with a payment method already on file",
+      "Target tier 'scale' has ctaType='get_started' (self-serve)"
+    ],
     "steps": [
       "Navigate to /billing-plans, open the Plans tab",
       "Select the 'scale' plan and confirm via UpgradeModal",
@@ -41,7 +57,10 @@
       "Switch to the Overview tab without reloading the browser"
     ],
     "expectedResult": "Overview now shows tier 'scale', updated moduleConfig limits/usage bars, and no 'requires_contact' prompt since this tier is self-serve.",
-    "tags": ["upgrade", "plans-page"],
+    "tags": [
+      "upgrade",
+      "plans-page"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -55,9 +74,15 @@
     "title": "Downgrade is scheduled for the next renewal date, plan access is unchanged until then, and the scheduled change can be cancelled",
     "description": "Downgrades are never immediate — they are stored as a pending-tier-change applied at renewsAt. PendingDowngradeBanner surfaces the scheduled date and a Cancel action.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org on 'scale' tier, usage within 'growth' tier limits", "renewsAt is set (active paid subscription)"],
+    "preconditions": [
+      "Org on 'scale' tier, usage within 'growth' tier limits",
+      "renewsAt is set (active paid subscription)"
+    ],
     "steps": [
       "On the Plans tab, choose to downgrade to 'growth'",
       "Confirm via DowngradeModal (no over-cap dialog expected since usage is within limits)",
@@ -66,7 +91,11 @@
       "Click 'Cancel' on PendingDowngradeBanner"
     ],
     "expectedResult": "Banner reads 'scheduled to downgrade to growth on <renewsAt date>'. Scale-tier features remain accessible while the downgrade is pending. After clicking Cancel, DELETE /billing/v1/billing/plan/pending-change succeeds and the banner disappears with the org remaining on 'scale' tier indefinitely.",
-    "tags": ["downgrade", "pending-change", "grace-period"],
+    "tags": [
+      "downgrade",
+      "pending-change",
+      "grace-period"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -80,9 +109,15 @@
     "title": "A TierGate-wrapped premium feature shows the upgrade alert on a lower tier and unlocks after a real upgrade",
     "description": "TierGate.jsx is documented as cosmetic-only and 'fails open' if entitlements haven't resolved; real enforcement is the backend requireFeature middleware. This case verifies the two actually agree end-to-end, since a UI-only gate with no backend check would be a security gap.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org on 'growth' tier, which lacks feature 'vciso.advisor'"],
+    "preconditions": [
+      "Org on 'growth' tier, which lacks feature 'vciso.advisor'"
+    ],
     "steps": [
       "Navigate to a vCISO page/section gated behind TierGate for 'vciso.advisor'",
       "Observe the Alert: '<Feature> feature — This feature requires the <tier> plan or above.' with an 'Upgrade plan' button",
@@ -90,7 +125,11 @@
       "Upgrade the org to a tier that includes 'vciso.advisor', then revisit the same page"
     ],
     "expectedResult": "Direct API call is rejected 403 FEATURE_NOT_AVAILABLE even though the button is merely hidden client-side (confirms server-side parity, not just a UI label). After the real upgrade, the page renders the actual feature content instead of the gate alert.",
-    "tags": ["feature-gate", "tier-gate", "parity"],
+    "tags": [
+      "feature-gate",
+      "tier-gate",
+      "parity"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -104,9 +143,14 @@
     "title": "Invoice history lists Stripe invoices with correctly formatted amount/date, and PDF is obtained via Stripe's hosted invoice page",
     "description": "There is no backend PDF proxy/download endpoint — the app only stores and links to Stripe's hosted_invoice_url, which itself offers a PDF download on Stripe's own page.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has at least 2 historical Stripe invoices with different amounts and currencies formatting"],
+    "preconditions": [
+      "Org has at least 2 historical Stripe invoices with different amounts and currencies formatting"
+    ],
     "steps": [
       "Navigate to the invoice history page (/billing/invoices)",
       "Verify each row's amount matches the Stripe invoice's amount_due, formatted as currency",
@@ -115,7 +159,11 @@
       "On the Stripe-hosted page, download the PDF"
     ],
     "expectedResult": "Amounts and dates render correctly and match the Stripe dashboard for the same invoices. The PDF download happens entirely on Stripe's hosted page; there is no in-app 'Download PDF' button that produces a locally-generated file.",
-    "tags": ["invoices", "pdf", "stripe"],
+    "tags": [
+      "invoices",
+      "pdf",
+      "stripe"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -129,16 +177,25 @@
     "title": "Full-account cancellation (customer.subscription.deleted) revokes access immediately with no grace period",
     "description": "Unlike framework-level cancellation, a whole-org Stripe subscription deletion sets Organization.subscription.status and SubscriptionOrg.status to 'cancelled' immediately — there is no org-level grace window.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has an active org-level Stripe subscription"],
+    "preconditions": [
+      "Org has an active org-level Stripe subscription"
+    ],
     "steps": [
       "Cancel the org's Stripe subscription (via Stripe dashboard/test mode) so a customer.subscription.deleted event fires",
       "Wait for the webhook to be processed",
       "Log in as an org user and attempt to access any paid-tier feature"
     ],
     "expectedResult": "Both Organization.subscription.status and SubscriptionOrg.status read 'cancelled' immediately after the webhook, and paid-tier features are inaccessible with no grace period grant.",
-    "tags": ["cancellation", "webhook", "grace-period"],
+    "tags": [
+      "cancellation",
+      "webhook",
+      "grace-period"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -152,9 +209,14 @@
     "title": "Cancelling a single framework's subscription enters a 90-day grace period and revokes the framework license immediately",
     "description": "Framework-scoped cancellation is handled differently from full-account cancellation: frameworkSubscriptions.$.status becomes 'grace' with graceEndsAt = now + 90 days, while ClientFramework.status is set to 'license_revoked' right away — i.e. the license is revoked immediately even though billing calls it a 'grace period'. Worth confirming this naming doesn't mislead users into thinking they retain framework access during the 90 days.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has 2+ frameworks each with their own framework-level Stripe subscription"],
+    "preconditions": [
+      "Org has 2+ frameworks each with their own framework-level Stripe subscription"
+    ],
     "steps": [
       "Cancel only one framework's Stripe subscription so a framework-scoped customer.subscription.deleted event fires",
       "Wait for the webhook to be processed",
@@ -162,7 +224,11 @@
       "As an org user, attempt to access that framework's compliance map"
     ],
     "expectedResult": "frameworkSubscriptions status='grace' with graceEndsAt ~90 days out, but ClientFramework.status='license_revoked' immediately, and the framework's compliance map/features are inaccessible right away (grace period does not extend feature access, only likely data-retention/reactivation window).",
-    "tags": ["cancellation", "grace-period", "framework-subscription"],
+    "tags": [
+      "cancellation",
+      "grace-period",
+      "framework-subscription"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -176,16 +242,25 @@
     "title": "Overview tab's 'Renews In N Days' stat is the only renewal/trial countdown surfaced — there is no dedicated trial-ending banner",
     "description": "No trial countdown banner component exists anywhere in vibrantix-client-panel. The closest analog is BillingOverview.jsx's generic 'Renews In N Days' stat card computed from plan.renewsAt, shown for any plan status, not specifically flagged during a trial or when trial-ending is imminent.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org is on a 'trial' status plan with trialExpiresAt 2 days out"],
+    "preconditions": [
+      "Org is on a 'trial' status plan with trialExpiresAt 2 days out"
+    ],
     "steps": [
       "Navigate to /billing-plans Overview tab",
       "Locate the 'Renews In N Days' stat card",
       "Confirm no separate persistent trial-ending warning banner is present anywhere in the app shell (top nav, dashboard, or billing pages)"
     ],
     "expectedResult": "Current behavior: only the generic 'Renews In N Days' stat reflects the approaching trialExpiresAt; there is no visually distinct 'trial ending soon' banner or in-app countdown beyond this stat card. Document as a gap versus the commonly expected trial-countdown-banner UX rather than a defect against a feature that was implemented differently.",
-    "tags": ["trial", "renewal", "gap"],
+    "tags": [
+      "trial",
+      "renewal",
+      "gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

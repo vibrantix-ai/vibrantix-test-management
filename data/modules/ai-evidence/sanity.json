@@ -6,6 +6,9 @@
     "subFeature": "AI Classification",
     "title": "AI-suggested evidenceType always falls within the 22-item enum accepted by confirmAI",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -13,7 +16,10 @@
       "Check the AI-suggested evidenceType on the review page"
     ],
     "expectedResult": "The suggested evidenceType is always one of the 22 values in the shared ALLOWED_EVIDENCE_TYPES enum used by both the review page and the confirmAI validator — never an out-of-enum free-text value.",
-    "tags": ["sanity", "ai-classification"],
+    "tags": [
+      "sanity",
+      "ai-classification"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,13 +33,20 @@
     "title": "Quick check: /ai-evidence layout still gates on evidence.read after any recent layout.jsx change",
     "description": "Fast regression sanity check for the CP-1 permission-gating fix — not the full RBAC audit, just a quick confirm the gate is still wired after any touch to layout.jsx.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "As a user without evidence.read, hit /ai-evidence/upload directly"
     ],
     "expectedResult": "Access is still denied/redirected — the PermissionGate wrapper has not been removed or weakened.",
-    "tags": ["sanity", "permission-gating"],
+    "tags": [
+      "sanity",
+      "permission-gating"
+    ],
     "linkedDefect": "CP-1",
     "owner": "QA",
     "status": "active",
@@ -47,13 +60,19 @@
     "subFeature": "AI Upload",
     "title": "Quick check: 50MB client-side file-size limit message still reads 'Maximum file size is 50MB' after any AIUploadInterface.jsx edit",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Attempt to drop a file larger than 50MB into the AI Evidence dropzone"
     ],
     "expectedResult": "The toast/error still reads 'Maximum file size is 50MB' (or an intentionally updated equivalent) and the file is not uploaded.",
-    "tags": ["sanity", "file-upload"],
+    "tags": [
+      "sanity",
+      "file-upload"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -66,13 +85,19 @@
     "subFeature": "Review & Override",
     "title": "Quick check: uploading a plain .txt file still flows through AI extraction to the review page without crashing",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Upload a short .txt file via /ai-evidence/upload"
     ],
     "expectedResult": "The review page loads without a client-side exception, even if AI suggestions for a plain-text file are sparse or low-confidence.",
-    "tags": ["sanity", "ai-classification"],
+    "tags": [
+      "sanity",
+      "ai-classification"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

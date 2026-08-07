@@ -1,0 +1,10 @@
+{
+  "slug": "cloud-posture",
+  "name": "Cloud Posture",
+  "scope": "feature",
+  "qaAgent": "Cloud_Posture_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  ],
+  "description": "Defects converted from the Cloud Posture bug-found CSV (not a live tracker .md — has severity + description but no OPEN/FIXED status lifecycle, just a one-time 'Verified' flag; status defaulted to 'open' for all rows, verified flag carried separately)."
+}

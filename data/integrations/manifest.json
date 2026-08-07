@@ -1,0 +1,25 @@
+{
+  "categories": [
+    "unit",
+    "integration",
+    "e2e",
+    "security",
+    "smoke",
+    "sanity",
+    "regression",
+    "performance",
+    "accessibility"
+  ],
+  "entities": [
+    {
+      "slug": "okta",
+      "name": "Okta",
+      "category": "identity"
+    },
+    {
+      "slug": "jira",
+      "name": "Jira",
+      "category": "itsm"
+    }
+  ]
+}

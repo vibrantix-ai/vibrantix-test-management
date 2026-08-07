@@ -1,0 +1,10 @@
+{
+  "slug": "risk-register",
+  "name": "Risk Register & Risk Center",
+  "scope": "feature",
+  "qaAgent": "Risk_Register_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Risk Register live defect registry. Source uses an alternate column schema (Priority/Component/ISO Ref/Affected Files, no Sev/Runs-Open/Fix-Evidence columns)."
+}

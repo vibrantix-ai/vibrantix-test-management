@@ -6,6 +6,9 @@
     "subFeature": "Intent Routing",
     "title": "Persona selector changes the quick-action set and the role sent on subsequent chat requests",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,10 @@
       "Send a message and inspect the request body's role field"
     ],
     "expectedResult": "Quick Actions immediately reflect the CISO-specific set (roleActions.ciso), and the outgoing chat request carries role:'ciso' instead of the previous persona — the UI-selected persona overrides the JWT-derived default (extractPrimaryRole fallback).",
-    "tags": ["persona", "intent-routing"],
+    "tags": [
+      "persona",
+      "intent-routing"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +34,10 @@
     "title": "Markdown response renders headings, lists, tables, and links safely via marked + DOMPurify",
     "description": "BlockRenderer's MarkdownBlock parses with marked (breaks:true, gfm:true) and sanitizes with DOMPurify before dangerouslySetInnerHTML — no hand-rolled markdown parsing exists on this path.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/assistant/BlockRenderer.jsx:182",
@@ -36,7 +46,11 @@
       "Inspect the rendered bubble"
     ],
     "expectedResult": "Headings render bold/larger, bullet lists render with indentation, links render underlined and are clickable — no raw markdown syntax (##, -, [text](url)) is visible as literal text, and no injected <script>/onerror attributes execute if present in the source text.",
-    "tags": ["markdown", "rendering", "xss-sanity"],
+    "tags": [
+      "markdown",
+      "rendering",
+      "xss-sanity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +63,9 @@
     "subFeature": "Conversational Interface",
     "title": "Table block shows a 'Showing X of Y rows' caption only when rows are truncated",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/assistant/BlockRenderer.jsx:150",
@@ -57,7 +74,10 @@
       "Trigger a second response whose table has total_rows equal to rows.length"
     ],
     "expectedResult": "The first case shows 'Showing 20 of N rows' below the table. The second case shows no such caption — it only appears when total_rows exceeds the displayed row count.",
-    "tags": ["rendering", "tables"],
+    "tags": [
+      "rendering",
+      "tables"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,6 +91,9 @@
     "title": "Donut chart block only renders when there are at least 2 segments",
     "description": "DonutBlock returns null when segments map to fewer than 2 data points — a single-segment pie chart is not a meaningful visualization and should silently not render rather than show a broken/degenerate chart.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/assistant/BlockRenderer.jsx:91",
@@ -79,7 +102,10 @@
       "Trigger a response whose donut block has 2+ segments"
     ],
     "expectedResult": "The 1-segment case renders nothing for that block (no empty chart frame). The 2+-segment case renders the pie/donut with a legend and tooltip.",
-    "tags": ["rendering", "charts"],
+    "tags": [
+      "rendering",
+      "charts"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,6 +118,9 @@
     "subFeature": "Conversational Interface",
     "title": "Voice input appends transcribed text to the composer without overwriting what was already typed",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -99,7 +128,10 @@
       "Click the microphone/voice input button and dictate additional text"
     ],
     "expectedResult": "The transcribed text is appended after the existing input (separated by a space), not replacing it; the composer remains editable afterward.",
-    "tags": ["voice-input", "ux"],
+    "tags": [
+      "voice-input",
+      "ux"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -113,16 +145,25 @@
     "title": "A Python backend timeout surfaces as a retryable, human-readable error rather than a raw stack trace",
     "description": "PythonBackendClient's AbortController fires PythonBackendTimeoutError (504, isRetryable:true) on a fetch abort; chat.routes.ts maps this to the response's error/message/retryable fields, which the client toasts as 'Service error'.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/PythonBackendClient.ts:406",
-    "preconditions": ["Ability to simulate a slow/unresponsive Python AI backend (> configured timeout)"],
+    "preconditions": [
+      "Ability to simulate a slow/unresponsive Python AI backend (> configured timeout)"
+    ],
     "steps": [
       "Trigger a chat request against a mocked/delayed backend exceeding AI_ASSISTANT_TIMEOUT",
       "Observe the UI's error handling"
     ],
     "expectedResult": "A toast reading something like 'AI Assistant is temporarily unavailable' or the specific timeout message appears; the message is marked retryable, and no raw exception/stack trace is shown to the end user.",
-    "tags": ["error-handling", "timeout"],
+    "tags": [
+      "error-handling",
+      "timeout"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

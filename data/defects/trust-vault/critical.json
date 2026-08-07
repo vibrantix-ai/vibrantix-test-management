@@ -1,0 +1,47 @@
+[
+  {
+    "id": "TV-001",
+    "module": "trust-vault",
+    "title": "Closing a review captures no mandatory justification note — `RevisionModal` uses `resolvedNoteRequired = noteRequired ?? !isClose`; when `targetState === 'closed'` note is optional; approval decisions have no documented basis; violates ISO 19011:2018 §6.4.9",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Workflow Integrity",
+    "description": "Files: vibrantix-client-panel/src/components/trust-vault/RevisionModal.jsx\n\nRoot Cause: `resolvedNoteRequired = noteRequired ?? !isClose` — when `targetState === 'closed'`, `isClose` is `true`, so `resolvedNoteRequired` evaluates to `false`. The note field is optional precisely when it should be mandatory.\n\nImpact: Every certification approval creates a workflow record with a blank justification. ISO 19011:2018 §6.4.9 requires documented basis for review decisions. No approval in the system has a verifiable rationale.\n\nClaude Fix Prompt: Change to `resolvedNoteRequired = noteRequired ?? true` — always require a note. Add minimum length: in the submit handler, `if (!resolvedNote || resolvedNote.trim().length < 30) { setError('Justification required (minimum 30 characters) when closing a review'); return; }`.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "requirement": "ISO 19011:2018 §6.4.9",
+    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TV-002",
+    "module": "trust-vault",
+    "title": "Revoking a certification captures no mandatory reason — `WorkflowActionPanel` `revoke` action key has no `modal: 'note'` prop; calls `transitionCertification` directly with no note parameter; revocation has no documented rationale; violates ISO 27001:2022 Annex A 5.33",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Workflow Integrity",
+    "description": "Files: vibrantix-client-panel/src/components/trust-vault/WorkflowActionPanel.jsx\n\nRoot Cause: The `revoke` action key in `CERT_STATUS_ACTIONS` has no `modal: 'note'` prop. `transitionCertification` is called directly with only `targetState: 'revoked'` — no reason string is ever sent to the API.\n\nImpact: Revocation records contain no documented rationale. ISO 27001:2022 Annex A 5.33 requires documented handling of certification changes. Auditors reviewing revocations will find blank reason fields throughout.\n\nClaude Fix Prompt: In `CERT_STATUS_ACTIONS`, add to the `revoke` entry: `modal: 'note', noteRequired: true, noteMinLength: 50, notePlaceholder: 'Reason for revocation (required — minimum 50 characters)'`. Wire `transitionNote` through `onTransition(targetState, note)` → `POST /certifications/:id/revoke` with `{reason: note}`.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "requirement": "ISO 27001:2022 Annex A 5.33",
+    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TV-003",
+    "module": "trust-vault",
+    "title": "Self-review not prevented — `MyReviewsTab` shows entities where `currentUser` is assigned reviewer with no guard against `currentUser._id === entity.createdBy._id`; submitter can approve own document; violates ISO 27001:2022 Annex A 5.3",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Workflow Integrity",
+    "description": "Files: vibrantix-client-panel/src/components/trust-vault/MyReviewsTab.jsx\n\nRoot Cause: `MyReviewsTab` renders all entities where `currentUser` is assigned as reviewer with no guard checking whether `currentUser._id === entity.createdBy._id`. The document submitter can be assigned as its own reviewer.\n\nImpact: The certification review process provides no segregation of duties. ISO 27001:2022 Annex A 5.3 is violated. Auditors sampling reviewed certifications may find the submitter and reviewer are the same person.\n\nClaude Fix Prompt: In `MyReviewsTab`, filter items before rendering: `const reviewableItems = items.filter(e => String(e.createdBy?._id) !== String(currentUser._id));`. Display a notice: `{items.length !== reviewableItems.length && <Alert>Some items were hidden because you are the submitter — segregation of duties requires an independent reviewer.</Alert>}`. Add backend guard on review submit endpoint.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "requirement": "ISO 27001:2022 Annex A 5.3",
+    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md"
+  }
+]

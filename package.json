@@ -5,6 +5,14 @@
   "description": "Modular JSON test case repository + HTML viewer/exporter for the Vibrantix GRC platform.",
   "scripts": {
     "start": "node server.js",
-    "seed": "node scripts/seed-modules.js"
+    "seed": "node scripts/seed-modules.js",
+    "seed:modules": "node scripts/seed-modules.js",
+    "seed:frameworks": "node scripts/seed-frameworks.js",
+    "seed:logs": "node scripts/seed-logs.js",
+    "seed:audit-reports": "node scripts/seed-audit-reports.js",
+    "seed:integrations": "node scripts/seed-integrations.js",
+    "seed:defects": "node scripts/seed-defects.js",
+    "seed:systems": "node scripts/seed-systems.js",
+    "seed:all": "npm run seed:systems && npm run seed:modules && npm run seed:frameworks && npm run seed:logs && npm run seed:audit-reports && npm run seed:integrations && npm run seed:defects"
   }
 }

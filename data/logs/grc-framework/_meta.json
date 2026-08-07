@@ -1,0 +1,16 @@
+{
+  "slug": "grc-framework",
+  "name": "GRC Framework",
+  "sourceModule": "grc-framework",
+  "logTypes": [
+    "audit",
+    "activity"
+  ],
+  "description": "Logs emitted by the GRC Framework module (audit, activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

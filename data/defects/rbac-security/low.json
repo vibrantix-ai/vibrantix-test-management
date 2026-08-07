@@ -1,0 +1,62 @@
+[
+  {
+    "id": "RBAC-022",
+    "module": "rbac-security",
+    "title": "Baseline permissions always granted regardless of role (project.read/user.read/dashboard.read)",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Permission Model",
+    "description": "**Files:** `vibrantix-backend/src/middleware/loadPermissions.js`\n**Root Cause:** `BASELINE_PERMISSIONS = ['project.read', 'user.read', 'dashboard.read']` are always injected into every authenticated user's permission set, regardless of their assigned role. A user explicitly restricted to zero permissions (e.g., a deactivated account being cleaned up, or a role with only write-specific permissions) would still retain these three read permissions.\n**Claude Fix Prompt:**\nDocument the intentional design decision in a code comment. Consider moving the baseline permission injection to only apply during JIT provisioning (not every request), and expose a configuration option `STRICT_BASELINE=true` that disables the injection for organizations that need tighter control. Add this design decision to `RBAC_GAP_ANALYSIS.md` as an accepted risk with documented rationale.",
+    "firstDetected": "2026-06-15",
+    "lastVerified": "2026-06-15",
+    "runsOpen": 1,
+    "fixEvidence": "CWE-269 — loadPermissions.js — even users with no assigned role receive 3 read permissions",
+    "sourceFile": "QA_Tracker/RBAC/RBAC_SECURITY_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RBAC-023",
+    "module": "rbac-security",
+    "title": "JIT provisioning silently creates VIEWER role for any unknown Keycloak user",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Permission Model",
+    "description": "**Files:** `vibrantix-backend/src/middleware/loadPermissions.js`\n**Root Cause:** When a Keycloak-authenticated user has no corresponding MongoDB user record in an organization, `loadPermissions` automatically creates a new user with the VIEWER system role. This means any Keycloak user who authenticates to any organization's domain receives org-wide read access without an explicit admin invitation or approval step — potentially exposing sensitive GRC data.\n**Claude Fix Prompt:**\nAdd a configuration flag `ALLOW_JIT_PROVISIONING` (default: false). When false, return 403 for users not found in the organization's user collection rather than auto-creating them. When true (development/onboarding scenarios), log a warning and create the VIEWER user. Organizations should opt-in to JIT provisioning explicitly. Update `RBAC_GAP_ANALYSIS.md` with this recommendation.",
+    "firstDetected": "2026-06-15",
+    "lastVerified": "2026-06-15",
+    "runsOpen": 1,
+    "fixEvidence": "CWE-732 — loadPermissions.js — any KC-authenticated user auto-onboarded with org-wide read access",
+    "sourceFile": "QA_Tracker/RBAC/RBAC_SECURITY_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RBAC-024",
+    "module": "rbac-security",
+    "title": "Frontend wildcard permission (policy.*) not enforced on backend — behaviour diverges",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Inconsistency",
+    "description": "**Files:** `vibrantix-client-panel/src/hooks/usePermission.js`, `vibrantix-backend/src/middleware/requirePermission.js`\n**Root Cause:** The frontend `usePermission` hook supports wildcard matching: a user with `policy.*` in their permission set is treated as having all policy sub-permissions. The backend `requirePermission` middleware uses exact string matching (`req.permissions.has(permission)`) and does not support wildcards. If role permissions are stored with wildcards in the DB, they work only on the frontend — the backend rejects them.\n**Claude Fix Prompt:**\nEither (a) remove wildcard support from the frontend and always store explicit permissions in the DB, or (b) add wildcard expansion to `loadPermissions.js`: when a permission like `policy.*` is found in the DB, expand it to all valid `policy.<action>` permissions before populating `req.permissions`. Option (b) is safer — eliminates the frontend/backend inconsistency.",
+    "firstDetected": "2026-06-15",
+    "lastVerified": "2026-06-15",
+    "runsOpen": 1,
+    "fixEvidence": "CWE-284 — usePermission.js vs requirePermission.js — frontend permits wildcard; backend exact-match only; RBAC model is incoherent",
+    "sourceFile": "QA_Tracker/RBAC/RBAC_SECURITY_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RBAC-025",
+    "module": "rbac-security",
+    "title": "Admin portal access detected via unverified Keycloak claim without org scoping",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Admin Separation",
+    "description": "**Files:** `vibrantix-backend/src/middleware/authenticate.js` (admin portal path)\n**Root Cause:** The code checks `req.kcResourceAccess?.['admin-portal']` to detect admin portal users and grant SUPERADMIN-equivalent access. While this claim is in the JWT payload verified by JWKS (so it can't be forged), it is not additionally validated against the organization context — an admin-portal Keycloak user would receive global SUPERADMIN access regardless of which org's API they hit.\n**Claude Fix Prompt:**\nAdd an explicit organization check for admin-portal users. When `req.kcResourceAccess['admin-portal']` is truthy, additionally verify that `req.orgId` matches an organization the admin is authorized to manage (via a separate admin-org-mapping lookup or Keycloak group membership). Log every admin-portal access with full context to the AuditLog for post-incident forensics.",
+    "firstDetected": "2026-06-15",
+    "lastVerified": "2026-06-15",
+    "runsOpen": 1,
+    "fixEvidence": "CWE-284 — authenticate.js (admin portal path) — kcResourceAccess['admin-portal'] claim trusted without additional org validation",
+    "sourceFile": "QA_Tracker/RBAC/RBAC_SECURITY_QA_LIVE_TRACKER.md"
+  }
+]

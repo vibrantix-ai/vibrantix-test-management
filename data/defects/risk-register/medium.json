@@ -1,0 +1,239 @@
+[
+  {
+    "id": "RR-012",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register Toolbar",
+    "category": "Authorization Gap",
+    "title": "Clone risk action gated only on `risk.read` — no `risk.write`/`risk.create` check; no classification warning for Restricted/Confidential risks",
+    "requirement": "A.5.12",
+    "affectedFiles": [
+      "app/(private)/risk-register/page.jsx"
+    ],
+    "description": "Clone risk action button only checks `risk.read` permission. No `risk.write` or `risk.create` guard. No warning when cloning a `Restricted` or `Confidential` risk that the clone will inherit the same classification.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-013",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "RiskHeatMap",
+    "category": "Visual Analytics",
+    "title": "`getRiskColor` maps score < 5 and score 5–9 to identical green — no \"Very Low\" zone; negligible risks indistinguishable from Low",
+    "requirement": "ISO 31000 §6.4",
+    "affectedFiles": [
+      "components/risk-center/RiskHeatMap.jsx"
+    ],
+    "description": "`getRiskColor` maps both `score < 5` and `score 5–9` to green. There is no \"Very Low\" zone. Negligible risks (score 1–4) are visually identical to Low risks (score 5–9).",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-014",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Governance Health Radar",
+    "category": "Analytics Integrity",
+    "title": "`reviewCadence = Math.max(0, 100 − reviewDue × 10)` penalises large organisations disproportionately — flat 0% for ≥ 10 overdue reviews",
+    "requirement": "cl. 9.1",
+    "affectedFiles": [
+      "app/(private)/risk-center/governance/page.jsx"
+    ],
+    "description": "`reviewCadence = Math.max(0, 100 − reviewDue × 10)` — any organisation with 10+ overdue reviews scores 0% regardless of total risk count. A 500-risk org with 10 overdue is penalised identically to a 20-risk org with 10 overdue.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-015",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AI Predictions Page",
+    "category": "Audit Trail",
+    "title": "Prediction factor strings not linked to source data — `riskId` exists but no UI link; auditor cannot verify basis for AI-generated predictions",
+    "requirement": "ISO/IEC 27007 §6.4.9",
+    "affectedFiles": [
+      "app/(private)/risk-center/ai-predictions/page.jsx"
+    ],
+    "description": "Prediction factor strings contain a `riskId` reference but no clickable UI link. Auditors cannot navigate from a prediction to the underlying risk record that generated it.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-016",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Trends Page",
+    "category": "Analytics Completeness",
+    "title": "No year-over-year comparison — single time-window only; auditor cannot demonstrate continual improvement per ISO cl. 10.1",
+    "requirement": "cl. 10.1",
+    "affectedFiles": [
+      "app/(private)/risk-center/trends/page.jsx"
+    ],
+    "description": "Trends page supports only a single time-window selection. No option to overlay a prior period or compare current year vs. prior year risk counts/scores.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-017",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "ModuleRiskTriageQueue",
+    "category": "Data Quality",
+    "title": "No staleness indicator on triage items — queue may contain findings from a 6-week-old Prowler scan that are already remediated",
+    "requirement": "cl. 8.2",
+    "affectedFiles": [
+      "components/risk-register/ModuleRiskTriageQueue.jsx"
+    ],
+    "description": "Triage queue items from Prowler, VendorService, etc. show no `lastScanAt` or age indicator. A finding from a 6-week-old Prowler scan that has since been remediated appears identical to a fresh finding.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-018",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AIRiskDraftModal",
+    "category": "Data Validation",
+    "title": "AI-returned `likelihood` and `impact` stored as-is without bounds clamping — out-of-range values (0 or 6) produce invalid score (0 or 30)",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "components/risk-register/AIRiskDraftModal.jsx"
+    ],
+    "description": "AI-returned `likelihood` and `impact` values stored as-is. Out-of-range values (0 or 6+) produce invalid scores (0 or 30+) that fall outside the 5×5 heat map grid, causing rendering errors or misplacement.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-019",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Accepted Risks Page",
+    "category": "Process Gap",
+    "title": "No self-acceptance prevention — risk owner can select themselves as approver; four-eyes principle not enforced",
+    "requirement": "A.5.3",
+    "affectedFiles": [
+      "components/risk-register/RiskAcceptanceWorkflow.jsx",
+      "risk-management-service"
+    ],
+    "description": "The approver dropdown is not filtered to exclude the risk owner or creator. Risk owners can select themselves as the approver for their own risk acceptance.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-020",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "RiskTreatmentPanel",
+    "category": "Validation Gap",
+    "title": "Treatment description has no minimum length — trivial entries (`TBD`, `see ticket`) accepted as documented treatment evidence",
+    "requirement": "cl. 6.1.3",
+    "affectedFiles": [
+      "components/risk-register/RiskTreatmentPanel.jsx"
+    ],
+    "description": "Treatment description input has no minimum length validation. Entries like `TBD` or `see ticket` are accepted as documented treatment evidence.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-027",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Acceptance Workflow — Backend",
+    "category": "Data Integrity / Audit Trail",
+    "title": "`submitAcceptanceRequest` stores `email: ''` and `name: ''` for all approvers — acceptance audit trail contains no human-readable approver identity beyond `ObjectId`",
+    "requirement": "cl. 7.5.3, A.8.15",
+    "affectedFiles": [
+      "risk-management-service/src/repositories/risk.repository.ts"
+    ],
+    "description": "In `submitAcceptanceRequest`, approvers are constructed as `data.approverIds.map((id) => ({ userId: new ObjectId(id), email: '', name: '' }))`. No user lookup is performed to populate `email` and `name`. All acceptance records in the database store blank string identity for every approver — only `userId` (ObjectId) is preserved.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-028",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Acceptance Request Validation — Backend",
+    "category": "Validation Gap",
+    "title": "`AcceptanceRequestSchema` enforces `justification: z.string().min(1)` — server-side accepts single-char justification; 50-char advisory is frontend-only",
+    "requirement": "cl. 6.1.2(e)(2)",
+    "affectedFiles": [
+      "risk-management-service/src/utils/validation.ts"
+    ],
+    "description": "`AcceptanceRequestSchema` defines `justification: z.string().min(1).max(2000)`. The frontend shows an advisory hint of 50 characters minimum, but the backend schema accepts any non-empty string. A one-character justification (`x`) passes Zod validation and is persisted as a documented risk acceptance rationale. `RenewalRequestSchema` has the same gap: `justification: z.string().min(1).max(2000)`.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-039",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Trends — Backend Aggregation",
+    "category": "Analytics Integrity",
+    "title": "`getTrends` `$group` stage groups by month only, not month+year — data from different years collapses into the same bucket",
+    "requirement": "cl. 10.1",
+    "affectedFiles": [
+      "risk-management-service/src/repositories/risk.repository.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-042",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "CreateRiskModal",
+    "category": "False Positive",
+    "title": "`riskReduction` NaN when inherentRiskScore = 0 — already guarded with `inherentRiskScore > 0 ? ... : 0` at line ~840",
+    "requirement": "cl. 6.1.2(d)",
+    "affectedFiles": [
+      "components/risk-center/CreateRiskModal.jsx"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-043",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "RiskAcceptanceWorkflow",
+    "category": "UX / Data Accuracy",
+    "title": "`new Date(acceptance?.expiryDate).toLocaleDateString()` passes null to `Date()` — displays 1970-01-01 epoch instead of \"No expiry set\"",
+    "requirement": "cl. 7.5.3",
+    "affectedFiles": [
+      "components/risk-register/RiskAcceptanceWorkflow.jsx"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-044",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "Acceptance Expiry Notifier",
+    "category": "False Positive",
+    "title": "Expiry notifier uses stale risk title snapshot — notifier fetches directly from `risksCollection` (live data), not a snapshot",
+    "requirement": "cl. 7.5.3",
+    "affectedFiles": [
+      "risk-management-service/src/jobs/acceptance-expiry-notifier.job.ts"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  }
+]

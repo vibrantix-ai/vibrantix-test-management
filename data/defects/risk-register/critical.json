@@ -1,0 +1,35 @@
+[
+  {
+    "id": "RR-001",
+    "module": "risk-register",
+    "severity": "Critical",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "CreateRiskModal — Step 2",
+    "category": "Validation Gap",
+    "title": "`validateStep2 = () => true` — 67% risk reduction with no justification or residual documentation",
+    "requirement": "cl. 6.1.2(d)",
+    "affectedFiles": [
+      "components/risk-center/CreateRiskModal.jsx"
+    ],
+    "description": "`validateStep2` unconditionally returns `true`. Users can claim any residual risk score (e.g., 67% reduction) with zero documentation, justification, or treatment rationale. Risk assessment results are not reproducible or comparable. ISO 27001 Clause 6.1.2(d) requires documented, repeatable criteria. An auditor cannot verify any residual risk score in the system — immediate Stage 2 non-conformity.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-002",
+    "module": "risk-register",
+    "severity": "Critical",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AcceptanceRequestForm",
+    "category": "Authorization Gap",
+    "title": "Authority matrix (`RISK_LEVELS.minLevel`) defined in code but approver dropdown completely unfiltered — manager-level user can approve Critical risk",
+    "requirement": "A.5.2",
+    "affectedFiles": [
+      "app/(private)/risk-register/accepted-risks/page.jsx",
+      "components/risk-register/RiskAcceptanceWorkflow.jsx"
+    ],
+    "description": "`RISK_LEVELS.minLevel` authority matrix is defined in code but the approver dropdown is populated from all org users without filtering to the required authority tier. A manager can approve a Critical risk that requires director-level sign-off. Formal risk governance is legally invalid. All existing Critical risk acceptances may have the wrong authorisation tier. ISO 27001 Annex A 5.2 requires defined risk ownership and acceptance authority at the appropriate level.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  }
+]

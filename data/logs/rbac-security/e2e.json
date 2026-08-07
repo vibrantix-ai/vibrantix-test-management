@@ -1,0 +1,27 @@
+[
+  {
+    "id": "RBACLOG-E2E-001",
+    "system": "logs",
+    "module": "rbac-security",
+    "category": "e2e",
+    "subFeature": "Log Immutability",
+    "title": "No API route exists to modify or delete an existing activity/audit log entry",
+    "description": "Log immutability for the RBAC activity-log trail is currently enforced by the absence of any mutation route rather than by an explicit application-level guard on the ActivityLog model. Verify this end-to-end across the full routing surface, and flag it as a review gate for any future route addition.",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Enumerate every route registered under /api/activity-logs and /api/internal/activity-log (vibrantix-backend/src/index.js lines 65 and 78, and the handlers in activity-log.routes.js and activity-logs.routes.js).",
+      "Attempt PUT, PATCH, and DELETE requests against /api/activity-logs/:id-style paths and against /api/internal/activity-log.",
+      "Attempt the same verbs directly against a known ActivityLog _id.",
+      "Confirm the framework returns 404/405 (no matching route) rather than any handler executing."
+    ],
+    "expectedResult": "Only POST /api/internal/activity-log (create, internal-secret gated) and GET /api/activity-logs, GET /api/activity-logs/dashboard (read) are registered. No PUT/PATCH/DELETE handler exists for this collection via the HTTP API — every mutation attempt returns a routing-level 404/405, not an authorization-level 403. Document this as a required review item: any future PR that adds a PUT/PATCH/DELETE route touching the activity_logs collection must justify why immutability is still preserved.",
+    "tags": ["logging", "tamper-evidence", "immutability", "audit-trail"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02",
+    "updatedAt": "2026-08-02"
+  }
+]

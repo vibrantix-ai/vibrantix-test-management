@@ -1,0 +1,30 @@
+[
+  {
+    "id": "TK-001",
+    "module": "tasks",
+    "title": "Microservice URL path included `/api` prefix — all 3 services unreachable",
+    "severity": "Critical",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Integration",
+    "firstDetected": "Sprint 3B",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "`tasks.service.js` all 3 URLs changed to `/internal/tasks`",
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TK-002",
+    "module": "tasks",
+    "title": "Risk service auth header mismatch — backend sent `X-Internal-Token`, risk read `X-Internal-API-Key`",
+    "severity": "Critical",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Auth",
+    "firstDetected": "Sprint 3B",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "`risk-management-service/internal-tasks.routes.ts` unified to `x-internal-token`",
+    "sourceFile": "QA_Tracker/TASKS_QA_LIVE_TRACKER.md"
+  }
+]

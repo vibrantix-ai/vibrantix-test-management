@@ -1,0 +1,12 @@
+{
+  "slug": "sox",
+  "name": "SOX Section 404 Audit Report",
+  "framework": "sox",
+  "description": "Generated audit report fields and structure for the sox framework (see audit-report-generator-service).",
+  "testFocusAreas": [
+    "Report field completeness (scope, period, findings, evidence references, sign-off)",
+    "Report field accuracy against underlying audit-assurance data",
+    "Report generation triggers correct data snapshot (no stale/mismatched framework version)",
+    "Export format fidelity (PDF/data correctness)"
+  ]
+}

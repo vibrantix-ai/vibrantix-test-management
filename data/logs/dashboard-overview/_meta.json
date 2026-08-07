@@ -1,0 +1,15 @@
+{
+  "slug": "dashboard-overview",
+  "name": "Dashboard Overview",
+  "sourceModule": "dashboard-overview",
+  "logTypes": [
+    "activity"
+  ],
+  "description": "Logs emitted by the Dashboard Overview module (activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://vibrantix.internal/test-management/test-case.schema.json",
   "title": "Vibrantix Test Case",
-  "description": "One entry in a data/modules/<slug>/<category>.json test case array.",
+  "description": "One entry in a data/<system>/<slug>/<category>.json test case array.",
   "type": "object",
   "required": ["id", "module", "category", "title", "priority", "type", "steps", "expectedResult", "status"],
   "additionalProperties": false,
@@ -12,9 +12,14 @@
       "description": "Stable unique ID. Convention: <MODULE-PREFIX>-<CATEGORY-CODE>-<3-digit sequence>, e.g. EVID-E2E-001. Never renumber/reuse an existing ID once published — deprecate instead.",
       "pattern": "^[A-Z0-9]+-[A-Z0-9]+-[0-9]{3}$"
     },
+    "system": {
+      "type": "string",
+      "enum": ["modules", "frameworks", "logs", "audit-reports", "integrations"],
+      "description": "Which top-level test-management system this case belongs to. Absent means 'modules' (every case written before this field existed) — no migration needed for existing data."
+    },
     "module": {
       "type": "string",
-      "description": "Module slug, must match the containing folder name in data/modules/ and the slug in data/manifest.json."
+      "description": "Entity slug within the case's system — must match the containing folder name (e.g. data/<system>/<slug>/) and a slug in that system's manifest.json. Named 'module' for historical/back-compat reasons; for non-'modules' systems it holds the framework/log-source/connector/etc. slug, not a product module."
     },
     "category": {
       "type": "string",
@@ -37,6 +42,13 @@
       "type": "string",
       "enum": ["P0", "P1", "P2", "P3"],
       "description": "P0=blocker/release-gating, P1=critical, P2=major, P3=minor."
+    },
+    "environment": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["dev", "stage", "prod"] },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Which deployed environment(s) this case is intended to run in. dev=fast-feedback/mocked or requires fault-injection unsafe elsewhere; stage=full deployed stack, side-effecting or heavy flows, pre-release gate; prod=safe, non-destructive, no fault-injection, verifiable continuously (via a dedicated internal/synthetic tenant, never real customer data). Absent means not yet classified."
     },
     "type": {
       "type": "string",

@@ -20,7 +20,11 @@
       "On success, click 'Save Configuration'"
     ],
     "expectedResult": "Test connection returns success within the 15s timeout window; providers.aws.credentialConfigured becomes true; connectionHealth.status='verified' and lastTestedAt is set; the raw credential bundle is never present in any API response (only has*/isConfigured booleans).",
-    "tags": ["provider-onboarding", "aws", "vault"],
+    "tags": [
+      "provider-onboarding",
+      "aws",
+      "vault"
+    ],
     "requirement": "ISO 27001 Annex A.8.9",
     "owner": "QA",
     "status": "active",
@@ -37,19 +41,30 @@
     "priority": "P1",
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["vibrantix-prowler service is unreachable or returns a validation failure for the submitted credentials"],
+    "preconditions": [
+      "vibrantix-prowler service is unreachable or returns a validation failure for the submitted credentials"
+    ],
     "steps": [
       "On /cloud-posture/configure, submit AWS credentials with a deliberately invalid secretAccessKey",
       "Click 'Test Connection'",
       "Inspect the response and, if possible, the Vault path used for staging"
     ],
     "expectedResult": "UI shows 'Credential validation service unavailable. Please try again later.' (or the specific AWS rejection reason) without the app hanging past ~15s; providers.aws.credentialConfigured is not set to true; the staged Vault secret no longer exists after the call returns.",
-    "tags": ["provider-onboarding", "aws", "error-handling", "vault"],
+    "tags": [
+      "provider-onboarding",
+      "aws",
+      "error-handling",
+      "vault"
+    ],
     "requirement": "ISO 27001 Annex A.8.9",
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-02",
+    "execution": {
+      "result": "blocked",
+      "notes": ""
+    }
   },
   {
     "id": "CLPO-E2E-003",
@@ -61,14 +76,19 @@
     "type": "both",
     "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/cloud-posture.spec.ts",
-    "preconditions": ["A project has a configured and verified AWS provider"],
+    "preconditions": [
+      "A project has a configured and verified AWS provider"
+    ],
     "steps": [
       "From the Cloud Posture dashboard, click 'Run Scan' for the AWS provider",
       "Poll the scan detail page at /cloud-posture/scans/[scanId] until status leaves the active set",
       "Once status is 'completed', return to the main dashboard"
     ],
     "expectedResult": "Scan record transitions through the active-status set (queued/running/processing/processing_results) and lands on 'completed'; the dashboard's overallComplianceScore, criticalFindings count, and service breakdown all update to reflect the new Finding documents without a manual page reload being required to see fresh data on next navigation.",
-    "tags": ["scan-lifecycle", "dashboard"],
+    "tags": [
+      "scan-lifecycle",
+      "dashboard"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -84,14 +104,20 @@
     "priority": "P1",
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A scan is currently in status 'running' for a project the tester administers"],
+    "preconditions": [
+      "A scan is currently in status 'running' for a project the tester administers"
+    ],
     "steps": [
       "Open /cloud-posture/scans/[scanId] for the running scan",
       "Click 'Cancel Scan'",
       "Observe the status immediately after the click, then again after a few seconds"
     ],
     "expectedResult": "Status flips to 'cancelling' immediately; within a short interval it resolves to 'cancelled' once Prowler confirms the underlying job stopped. A second cancel attempt while already 'cancelling' does not throw a 409 conflict (idempotent no-op), but cancelling an already-terminal scan (e.g. 'completed') is rejected.",
-    "tags": ["scan-lifecycle", "cancellation", "state-machine"],
+    "tags": [
+      "scan-lifecycle",
+      "cancellation",
+      "state-machine"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -117,7 +143,12 @@
       "Locate the mapped control"
     ],
     "expectedResult": "The control's cloud coverage score reflects the scan's dominant pass/fail outcome for that check (FAIL if failCount>passCount, else PASS if passCount>0, else SKIP). Re-running the same completed scan's sync logic a second time does not double-count or duplicate the update (idempotency via complianceSyncFired).",
-    "tags": ["compliance-mapping", "cross-module", "iso27001", "prowler-integration"],
+    "tags": [
+      "compliance-mapping",
+      "cross-module",
+      "iso27001",
+      "prowler-integration"
+    ],
     "requirement": "ISO 27001 Annex A.8.7",
     "owner": "QA",
     "status": "active",
@@ -133,14 +164,21 @@
     "priority": "P1",
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A completed scan exists with at least one FAIL finding on a known service (e.g. S3)"],
+    "preconditions": [
+      "A completed scan exists with at least one FAIL finding on a known service (e.g. S3)"
+    ],
     "steps": [
       "From the Cloud Posture dashboard, click into the AWS provider card",
       "Filter or locate the S3 service row and open it",
       "Open the failing security check's detail view"
     ],
     "expectedResult": "The check detail shows status FAIL, the resource(s) affected, the CIS/ISO27001/SOC2 framework tags carried in prowlerRaw (CheckCIS/CheckISO27001/CheckSOC2), and Prowler's static remediation/recommendation text (finding.recommendation) — not a blank or AI-generated field.",
-    "tags": ["drill-down", "remediation", "cis", "iso27001"],
+    "tags": [
+      "drill-down",
+      "remediation",
+      "cis",
+      "iso27001"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -156,13 +194,19 @@
     "priority": "P1",
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A project has a recurring scan schedule configured with frequency='hourly' and nextRun set to a few seconds in the past"],
+    "preconditions": [
+      "A project has a recurring scan schedule configured with frequency='hourly' and nextRun set to a few seconds in the past"
+    ],
     "steps": [
       "Wait for the scheduler's 5-second poll interval to pass",
       "Query the scan record for that project/schedule"
     ],
     "expectedResult": "A new scan is created and triggered via prowlerService.triggerScan; the schedule document's metadata.lastRun is updated to the current time, metadata.runCount increments by 1, and metadata.lastRunStatus reflects the trigger outcome. nextRun advances per nextRun()'s hourly cadence (+1 hour).",
-    "tags": ["scheduling", "prowler-integration", "regression"],
+    "tags": [
+      "scheduling",
+      "prowler-integration",
+      "regression"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -187,7 +231,11 @@
       "Compare it against a manually computed resource-weighted average"
     ],
     "expectedResult": "Overall score equals the simple average of the two providers' complianceScore values (e.g. (90+40)/2=65), not a resource-weighted figure closer to AWS's 90. This is documented current behavior, not a defect fix verification — flag to product if resource-weighting is later desired.",
-    "tags": ["multi-cloud", "dashboard", "aggregation"],
+    "tags": [
+      "multi-cloud",
+      "dashboard",
+      "aggregation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

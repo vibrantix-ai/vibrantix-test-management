@@ -1,0 +1,77 @@
+[
+  {
+    "id": "TI-021",
+    "module": "tenant-isolation",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Dashboard KPI Cards",
+    "category": "UX — Misleading Zero State",
+    "title": "KPI cards display literal `0` for completely uninitialized metrics (assets, controls, risks, evidence items) rather than `--`, `N/A`, or \"No data yet\" — creates false impression that the platform has measured and found zero",
+    "requirement": "—",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/dashboard/ KPI card components"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-022",
+    "module": "tenant-isolation",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Onboarding Walkthrough / Tooltips",
+    "category": "Demo Data Embedded in UI",
+    "title": "Onboarding tooltip screenshots and walkthrough step illustrations contain embedded Aventra demo org data (sample finding names, risk descriptions, vendor names) visible to every new tenant during product onboarding",
+    "requirement": "GDPR Art.5(1)(f)",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/onboarding/ or walkthrough assets"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-023",
+    "module": "tenant-isolation",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Organization Switcher Component",
+    "category": "Org Name Info Disclosure",
+    "title": "Multi-org user's organization selector renders all org names the Keycloak account is associated with — includes suspended, inactive, or formerly-accessed orgs — org name exposed outside authorized active context",
+    "requirement": "ISO 27001 A.5.18",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/ org switcher or header nav"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-024",
+    "module": "tenant-isolation",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Data Export File Naming",
+    "category": "Privacy / Export Ambiguity",
+    "title": "Exported files named `vibrantix-export-{timestamp}.csv/xlsx/pdf` without org or project identifier — multi-org users cannot distinguish exports; misidentification risk when acting on wrong org's exported data",
+    "requirement": "—",
+    "affectedFiles": [
+      "All export handlers across vibrantix-backend/src/modules/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-025",
+    "module": "tenant-isolation",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "System Audit Log Viewer",
+    "category": "Infrastructure Info Disclosure",
+    "title": "System-level log events (pod restarts, scheduled job completions, cron executions, config reloads) appear in the audit log viewer accessible to all org admins — infrastructure topology details exposed to tenant-level users",
+    "requirement": "ISO 27001 A.8.15",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/audit-log/ or activity log viewer"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  }
+]

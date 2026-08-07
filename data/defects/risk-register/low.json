@@ -1,0 +1,99 @@
+[
+  {
+    "id": "RR-021",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "RiskHeatMap",
+    "category": "Data Accuracy",
+    "title": "`getRisksInCell` uses strict `===` equality — float or string `likelihood`/`impact` values silently misplace risks into wrong cell",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "components/risk-center/RiskHeatMap.jsx"
+    ],
+    "description": "`getRisksInCell` filters with `r.likelihood === cellLikelihood && r.impact === cellImpact` using strict `===`. If `likelihood` or `impact` are stored as floats (e.g., `2.5`) or strings (`\"3\"`), they never match any integer cell.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-022",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Register Layout",
+    "category": "Authorization Gap",
+    "title": "Single `PermissionGate permission='risk.read'` wraps all routes — no sub-permission differentiation for write, delete, or accept actions",
+    "requirement": "A.5.3",
+    "affectedFiles": [
+      "app/(private)/risk-register/layout.jsx",
+      "app/(private)/risk-register/page.jsx",
+      "risk-management-service"
+    ],
+    "description": "All risk register routes are behind a single `PermissionGate permission='risk.read'`. No differentiated gates for write, delete, accept, or governance actions.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-023",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Governance Health Radar",
+    "category": "Analytics Integrity",
+    "title": "`Documentation` and `Policy Compliance` radar dimensions differ by ≤ 5 points always — completely correlated; redundant governance view",
+    "requirement": "ISO/IEC 27007 §6.4.9",
+    "affectedFiles": [
+      "app/(private)/risk-center/governance/page.jsx"
+    ],
+    "description": "`Documentation = Math.min(100, approvalRate + 5)` — always within 5 points of Policy Compliance. The governance radar has two nearly-identical dimensions instead of two independent signals.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-024",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "AIRiskDraftModal",
+    "category": "UX / Audit Trail",
+    "title": "Similar-risk deduplication warning is informational only — user can save without acknowledging; duplicate risks can be created",
+    "requirement": "cl. 6.1.2",
+    "affectedFiles": [
+      "components/risk-register/AIRiskDraftModal.jsx"
+    ],
+    "description": "When a similar existing risk is detected, the deduplication warning is shown as informational text only. Users can dismiss or ignore it and save the duplicate without any friction or forced acknowledgement.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-025",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "✅ FIXED",
+    "component": "Risk Trends Page",
+    "category": "Export / Evidence",
+    "title": "Trends CSV/PDF export lacks metadata (time range, export timestamp, org name, active filters) — evidence package incomplete for audit",
+    "requirement": "cl. 7.5.3",
+    "affectedFiles": [
+      "app/(private)/risk-center/trends/page.jsx"
+    ],
+    "description": "Trends CSV/PDF export contains data rows only — no metadata header with time range, export timestamp, org name, or active filter state. Evidence packages are incomplete without this context.",
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-045",
+    "module": "risk-register",
+    "severity": "Low",
+    "status": "wont_fix",
+    "statusRaw": "🔵 CLOSED",
+    "component": "ModuleRiskTriageQueue",
+    "category": "False Positive",
+    "title": "`promotedAt` set client-side — `promotedAt` field does not exist in this codebase; false positive",
+    "requirement": "cl. 8.2",
+    "affectedFiles": [
+      "components/risk-register/ModuleRiskTriageQueue.jsx"
+    ],
+    "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  }
+]

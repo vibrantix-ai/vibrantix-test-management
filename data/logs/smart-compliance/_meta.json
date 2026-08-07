@@ -1,0 +1,15 @@
+{
+  "slug": "smart-compliance",
+  "name": "Smart Compliance",
+  "sourceModule": "smart-compliance",
+  "logTypes": [
+    "activity"
+  ],
+  "description": "Logs emitted by the Smart Compliance module (activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

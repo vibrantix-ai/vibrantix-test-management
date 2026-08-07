@@ -1,0 +1,10 @@
+{
+  "slug": "grc-framework",
+  "name": "GRC Framework",
+  "scope": "feature",
+  "qaAgent": "GRC_Framework_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the GRC Framework live defect registry."
+}

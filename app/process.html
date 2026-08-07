@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QA Process Flow — Vibrantix Test Management System</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="process.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__title">
+      <h1>QA Process Flow</h1>
+      <span class="app-header__subtitle">Module development → tests → QA agents → defect lifecycle</span>
+    </div>
+    <div class="app-header__actions">
+      <a href="modules" class="btn btn--secondary">← Back to viewer</a>
+    </div>
+  </header>
+
+  <main class="process-layout">
+    <div class="process-intro">
+      <p>This is the baseline standard process for how a Vibrantix module moves from
+      development through test authoring, QA agent validation, defect logging, and defect
+      resolution. For the full written procedure (cadence table, onboarding checklist, field
+      conventions), see <a href="/PROCESS.md" target="_blank" rel="noopener">PROCESS.md</a> in
+      the repo root.</p>
+      <p><strong>Source of truth for defects going forward:</strong> new defects are written
+      directly into the AI Defects Management System — not into <code>QA_Tracker/*.md</code>,
+      which stays frozen as historical record.</p>
+    </div>
+
+    <div class="process-legend">
+      <span class="legend-item legend-item--developer">Developer</span>
+      <span class="legend-item legend-item--qa-agent">QA Agent</span>
+      <span class="legend-item legend-item--qa-tester">QA Tester / SDET</span>
+      <span class="legend-item legend-item--release">Release Manager</span>
+    </div>
+
+    <ol class="process-timeline">
+      <li class="process-step process-step--developer">
+        <div class="process-step__marker">1</div>
+        <div class="process-step__body">
+          <h3>Module development</h3>
+          <p>Developer implements or changes a feature in the module's actual code
+          (<code>vibrantix-backend</code>, <code>vibrantix-client-panel</code>, or the relevant
+          microservice). No test-management-system involvement yet.</p>
+        </div>
+      </li>
+
+      <li class="process-step process-step--developer">
+        <div class="process-step__marker">2</div>
+        <div class="process-step__body">
+          <h3>Developer authors test cases</h3>
+          <p>In the <strong>same PR</strong> as the code change, the developer adds/updates test
+          cases covering what they built — status starts <code>draft</code> until reviewed.
+          Minimum bar: one test case per new user-facing behavior or bug fixed.</p>
+          <div class="process-writes">
+            <span class="badge">→ Modules system</span>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="process-branch">
+      <div class="process-branch__body">
+        <strong>New module?</strong> Register its slug (<code>scripts/seed-modules.js</code> +
+        <code>scripts/seed-defects.js</code>) and provision a dedicated QA agent once there's
+        real code and a baseline of tests to validate against — see the onboarding checklist in
+        PROCESS.md. Existing modules already have their agent; only update it when the module
+        changes materially.
+      </div>
+    </div>
+
+    <ol class="process-timeline" start="3">
+      <li class="process-step process-step--qa-agent">
+        <div class="process-step__marker">3</div>
+        <div class="process-step__body">
+          <h3>QA agent provisioning / maintenance</h3>
+          <p>The module's dedicated QA agent (e.g. <code>Evidence_Management_QA_Agent</code>)
+          exists and is kept current — updated when real code paths change materially, or when a
+          recurring defect class isn't yet being caught. Lower-frequency than every PR.</p>
+        </div>
+      </li>
+
+      <li class="process-step process-step--qa-agent">
+        <div class="process-step__marker">4</div>
+        <div class="process-step__body">
+          <h3>QA agent run</h3>
+          <p>The agent reads the real source code, the module's existing test cases (to find
+          coverage gaps), and its existing open defects (to avoid duplicates and to re-verify
+          previous findings). It produces two outputs:</p>
+          <p>• <strong>Gap-fill test cases</strong> — new cases, <code>status: draft</code>,
+          <code>owner: QA</code>, reviewed same as developer-authored ones (Stage 5).</p>
+          <p>• <strong>Defects</strong> — real findings with concrete file/line detail, severity,
+          and <code>status: open</code>.</p>
+          <div class="process-writes">
+            <span class="badge">→ Modules system</span>
+            <span class="badge">→ AI Defects Management System</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="process-step process-step--qa-tester">
+        <div class="process-step__marker">5</div>
+        <div class="process-step__body">
+          <h3>QA tester review, promotion &amp; automation</h3>
+          <p>1. Review draft test cases (developer- or agent-authored) — promote to
+          <code>active</code>, or <code>deprecated</code> if wrong/redundant.</p>
+          <p>2. Automate promoted cases — write the real spec, set <code>automationStatus</code>
+          and a verified <code>automationRef</code>.</p>
+          <p>3. Execute runs — Mark Pass/Fail/Blocked/Skipped in the viewer, on whatever cadence
+          applies.</p>
+          <div class="process-writes">
+            <span class="badge">→ Modules system</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="process-step process-step--qa-tester">
+        <div class="process-step__marker">6</div>
+        <div class="process-step__body">
+          <h3>Defect triage</h3>
+          <p><span class="badge badge--Critical">Critical</span> — fix immediately, blocks
+          release. <span class="badge badge--High">High</span> — fix before next release.
+          <span class="badge badge--Medium">Medium</span> / <span class="badge badge--Low">Low</span>
+          — scheduled normally. Set <code>status: in_progress</code> once picked up.</p>
+        </div>
+      </li>
+
+      <li class="process-step process-step--developer">
+        <div class="process-step__marker">7</div>
+        <div class="process-step__body">
+          <h3>Fix and re-verify</h3>
+          <p>Developer fixes the defect; developer or QA tester sets
+          <code>status: fixed</code> with a <code>statusRaw</code> note referencing the fix
+          (e.g. "Fixed in PR #482") via the viewer's Status editor.</p>
+          <p>On the module's <strong>next QA agent run</strong>, the agent specifically
+          re-checks: genuinely fixed → stays <code>fixed</code>; reintroduced → flips to
+          <code>regressed</code>; can't verify → <code>cannot_verify</code>.</p>
+          <div class="process-loop">Regressed defects loop back to Stage 6 — triage again</div>
+        </div>
+      </li>
+
+      <li class="process-step process-step--release">
+        <div class="process-step__marker">8</div>
+        <div class="process-step__body">
+          <h3>Release gate</h3>
+          <p>Before a release, filter the Defects system by
+          <span class="badge badge--Critical">Critical</span>/<span class="badge badge--High">High</span>
+          severity and an open-ish status. Export the filtered view as the sign-off artifact.
+          Anything on that list gets fixed first or is explicitly accepted as known risk — never
+          silently shipped.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="process-section">
+      <h2>Cadence &amp; triggers</h2>
+      <table class="process-table">
+        <thead>
+          <tr><th>Step</th><th>Trigger</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Developer test authoring</td><td>Every PR that changes module behavior</td></tr>
+          <tr><td>QA agent maintenance</td><td>When the module changes materially, or a recurring defect class isn't caught</td></tr>
+          <tr><td>QA agent run</td><td>On-demand before a release, or a scheduled cadence per module</td></tr>
+          <tr><td>Test review / promotion / automation</td><td>As draft cases accumulate — don't let them pile up unreviewed</td></tr>
+          <tr><td>Defect triage</td><td>Continuous — as soon as new defects land</td></tr>
+          <tr><td>Re-verification</td><td>Every subsequent QA agent run for that module</td></tr>
+          <tr><td>Release gate</td><td>Before every release</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

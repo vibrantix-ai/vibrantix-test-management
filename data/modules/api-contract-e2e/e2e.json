@@ -7,6 +7,9 @@
     "title": "New org onboarding through framework activation to first evidence upload reflects correctly across services",
     "description": "Critical flow 1 (part A). A brand-new organization has zero data in every service — risk-management-service, trust-vault-service, vendor-service all rely on vibrantix-backend as the source of truth for org/project existence via the shared project-scope-client (GET /internal/users/:userId/projects, cached 10s TTL / 5min hard expiry). Verifies the chain from org creation through the first framework activation to the first evidence upload does not require a service restart or cache-bust to become visible.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -20,7 +23,11 @@
       "Immediately check the GRC framework compliance map for this project without reloading the session"
     ],
     "expectedResult": "The activated framework's controls are visible immediately after activation (no stale cache from project-scope-client's 10s TTL blocking access), the uploaded evidence appears in the review queue, and the compliance map reflects the new mapping's presence (even if 'Pending Review' rather than covered) within the same session.",
-    "tags": ["onboarding", "cross-service", "fresh-tenant"],
+    "tags": [
+      "onboarding",
+      "cross-service",
+      "fresh-tenant"
+    ],
     "requirement": "ISO 27001 Clause 7.5",
     "owner": "QA",
     "status": "active",
@@ -35,6 +42,9 @@
     "title": "First audit created against activated framework generates a report via audit-report-generator-service without manual intervention",
     "description": "Critical flow 1 (part B). vibrantix-backend's auditReportService.js calls audit-report-generator-service (FastAPI, default http://localhost:8005) with an 'x-service-token' header sourced from INTERNAL_SERVICE_TOKEN — note this is a THIRD distinct internal-auth header name on the platform (vs 'X-Internal-Token' used elsewhere and 'X-Internal-API-Key' used by risk-management-service). Report generation there is async (job submitted, polled to completion).",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -48,7 +58,12 @@
       "Download and open the generated report"
     ],
     "expectedResult": "The report job reaches a terminal 'completed' status without the UI hanging on an indefinite spinner; the downloaded report's evidence count and control coverage match what is shown live in /evidence-management and /grc-framework for the same project — no drift between the report snapshot and current app state for data that did not change during generation.",
-    "tags": ["onboarding", "cross-service", "report-generation", "async-job"],
+    "tags": [
+      "onboarding",
+      "cross-service",
+      "report-generation",
+      "async-job"
+    ],
     "requirement": "ISO 27001 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -63,6 +78,9 @@
     "title": "Vendor assessment failing its passing-score threshold on close stages a pending VendorRisk in risk-management-service",
     "description": "Critical flow 2 (part A). vendor-service's AssessmentService computes a score against the linked QuestionnaireTemplate's passingScore/riskThresholds on transition to 'closed' (computeAssessmentScore). When the assessment fails, vendor-service is expected to notify risk-management-service (POST /internal/vendor-risks/events with eventType 'assessment_failed', authenticated via X-Internal-API-Key), which VendorRiskIntegrationService stages as a VendorRisk document with status 'pending' — NOT yet a promoted Risk. Verifies this staging step actually fires end-to-end rather than only recalculating the vendor's trust score.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -75,7 +93,11 @@
       "Navigate to the Risk Register's vendor risk triage / module risk queue"
     ],
     "expectedResult": "A new vendor risk entry appears in the triage queue with status 'pending', triggerType 'assessment_failed', correct vendorId/vendorName, and a suggestedRiskLevel derived from the score — it does not silently disappear or require a manual sync trigger to surface.",
-    "tags": ["cross-service", "vendor-management", "risk-auto-promotion"],
+    "tags": [
+      "cross-service",
+      "vendor-management",
+      "risk-auto-promotion"
+    ],
     "requirement": "ISO 27001 Annex A.5.19",
     "owner": "QA",
     "status": "active",
@@ -90,9 +112,14 @@
     "title": "Promoting a staged vendor risk to a full Risk record allows a treatment plan to be created against it",
     "description": "Critical flow 2 (part B) — completes the chain from APIE-E2E-003. A pending VendorRisk is only a triage staging record; promoting it ('added' status) must create an actual Risk (with createdRiskId back-referenced on the VendorRisk) that behaves identically to a manually-created risk for treatment-plan purposes.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A pending VendorRisk exists in the triage queue (from a failed vendor assessment)"],
+    "preconditions": [
+      "A pending VendorRisk exists in the triage queue (from a failed vendor assessment)"
+    ],
     "steps": [
       "As a risk analyst, open the pending vendor risk and choose 'Add to Risk Register' (promote)",
       "Confirm the suggested risk level/category or adjust before promotion",
@@ -100,7 +127,12 @@
       "Create a treatment plan against it and mark it approved"
     ],
     "expectedResult": "The VendorRisk's status flips to 'added' with createdRiskId populated; the linked Risk shows the vendor as its source (RiskSource attribution), and the treatment plan lifecycle (created -> approved) behaves the same as for any organically-created risk, including eventually allowing risk closure once treatment is verified.",
-    "tags": ["cross-service", "vendor-management", "risk-auto-promotion", "treatment-plan"],
+    "tags": [
+      "cross-service",
+      "vendor-management",
+      "risk-auto-promotion",
+      "treatment-plan"
+    ],
     "requirement": "ISO 27001 Clause 8.3",
     "owner": "QA",
     "status": "active",
@@ -115,6 +147,9 @@
     "title": "AI-generated policy flows from Brain 1 generation through review/approval to control mapping",
     "description": "Critical flow 3. vibrantix-backend's PolicyAIProxyService proxies policy generation to the Python ai_policy_generator_python service (POST /api/v1/policy/generate on port 8002, async job polled via GET /api/v1/policy/status/{task_id}, with an X-Target-DB header for tenant DB routing). The client panel never calls Python directly. Verifies the generated draft actually lands in the normal draft->review->approval workflow and becomes mappable to framework controls afterward, rather than existing as an orphaned AI artifact.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -128,7 +163,12 @@
       "Once approved/active, map the policy to one or more framework controls"
     ],
     "expectedResult": "The AI-generated draft appears in the standard policy list with status 'draft' and a traceable AI-generation marker; review/approval follows the same state machine as manually authored policies (including self-review rejection); once active, the control mapping appears on the compliance map exactly as a manually mapped policy would.",
-    "tags": ["cross-service", "ai", "policy-management", "framework-mapping"],
+    "tags": [
+      "cross-service",
+      "ai",
+      "policy-management",
+      "framework-mapping"
+    ],
     "requirement": "ISO 27001 Clause 5.2",
     "owner": "QA",
     "status": "active",
@@ -143,6 +183,9 @@
     "title": "Prowler cloud scan results propagate through connector-service's ingestion pipeline to updated compliance controls and a refreshed dashboard",
     "description": "Critical flow 4. vibrantix-connector-service's ingestion pipeline runs Stage 4 (Deduplicate) -> Stage 5 (Store) -> Stage 6 (Map/Verdict engine, persisting EvidenceControlVerdict docs) -> Stage 7 (Risk Notify + Compliance Notify via durable outboxes: RiskEventOutboxService and ComplianceEventOutboxService). The compliance event carries schemaVersion '1.0', eventType 'integration_compliance_snapshot_completed', and a controlStates[] array (uclId/status/score/passCount/failCount) marked authoritative:true. Verifies the full chain surfaces in /cloud-posture and the compliance map, not just in connector-service's own logs.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -156,7 +199,12 @@
       "Check the cloud-posture dashboard's overall security score and service breakdown"
     ],
     "expectedResult": "The scan transitions cleanly through its state machine to 'complete' (not stuck at 'running'); the mapped control's status/score on the compliance map reflects the new controlStates verdict without requiring a manual page hard-refresh trigger; the dashboard's aggregate score updates to match the new finding counts.",
-    "tags": ["cross-service", "cloud-posture", "prowler", "compliance-mapping"],
+    "tags": [
+      "cross-service",
+      "cloud-posture",
+      "prowler",
+      "compliance-mapping"
+    ],
     "requirement": "ISO 27001 Annex A.8.9",
     "owner": "QA",
     "status": "active",
@@ -171,6 +219,9 @@
     "title": "Risk closure requires both a linked evidence item and an approved treatment plan, and reopens if either is later invalidated",
     "description": "Critical flow 5. EvidenceRiskIntegrationService links evidence-management uploads to risks (evidence-based risk mitigation); a risk should not be closable purely on treatment approval without supporting evidence, since ISO 27001 Clause 8.3 expects treatment effectiveness to be evidenced.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -183,7 +234,12 @@
       "Attempt closure again"
     ],
     "expectedResult": "The first closure attempt (no evidence, no treatment) is rejected or requires override justification; after linking evidence and approving treatment, closure succeeds and the risk's status becomes 'closed' with both the evidence link and treatment reference retained in its audit history for traceability.",
-    "tags": ["cross-service", "risk-register", "evidence-linkage", "treatment-plan"],
+    "tags": [
+      "cross-service",
+      "risk-register",
+      "evidence-linkage",
+      "treatment-plan"
+    ],
     "requirement": "ISO 27001 Clause 8.3",
     "owner": "QA",
     "status": "active",
@@ -198,9 +254,15 @@
     "title": "A downstream microservice 500 during a cross-service flow surfaces a user-friendly error, not a blank screen or unhandled rejection",
     "description": "Exercises the failure path of any of the 5 flows (using vendor-service's assessment-close call chain as the concrete example) when risk-management-service or trust-vault-service returns an unexpected 500. vendor-service's BackendApiClient has retry (2 attempts, 200/500ms backoff) and a circuit breaker (opens after 5 consecutive 5xx for 30s) — but the ORIGINATING user-facing request must not itself hang for the full retry+circuit-breaker duration before responding.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A way to simulate/force a 500 from a downstream microservice (staging toggle, fault injection, or temporarily stopping the dependency)"],
+    "preconditions": [
+      "A way to simulate/force a 500 from a downstream microservice (staging toggle, fault injection, or temporarily stopping the dependency)"
+    ],
     "steps": [
       "Force risk-management-service (or trust-vault-service) to return HTTP 500 for its next call",
       "As a user, perform an action in vibrantix-client-panel that triggers a call chain into that service (e.g. closing a vendor assessment that triggers vendor-risk staging)",
@@ -208,7 +270,11 @@
       "Restore the dependency and repeat the same action"
     ],
     "expectedResult": "The primary user action (e.g. closing the assessment) completes successfully in the UI with a clear non-blocking notice that the secondary cross-service effect (risk staging) failed and will retry, rather than the whole page hanging, showing a blank screen, or throwing an unhandled promise rejection to the console with no user-visible feedback.",
-    "tags": ["error-propagation", "resilience", "cross-service"],
+    "tags": [
+      "error-propagation",
+      "resilience",
+      "cross-service"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

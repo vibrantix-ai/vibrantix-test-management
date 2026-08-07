@@ -1,0 +1,45 @@
+[
+  {
+    "id": "NOTIF-009",
+    "module": "notifications",
+    "title": "Missing compound index on `{organizationId, targetUserId, isRead, createdAt}` — slow unread queries",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Data",
+    "firstDetected": "Pre-seed",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "`notification.model.js`: compound index `{ organizationId:1, targetUserId:1, isRead:1, createdAt:-1 }` added",
+    "sourceFile": "QA_Tracker/NOTIFICATIONS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "NOTIF-010",
+    "module": "notifications",
+    "title": "Multi-tab sync gap — marking read in Tab A not reflected in Tab B without reload",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "firstDetected": "Pre-seed",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "`NotificationContext.js`: 60-second `setInterval(fetchNotifications)` added via useEffect",
+    "sourceFile": "QA_Tracker/NOTIFICATIONS_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "NOTIF-013",
+    "module": "notifications",
+    "title": "`getNotificationColor` maps legacy enum values ('alert'/'warning'/'success') — current `notificationType` never matches — all notifications render blue",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "**File:** `vibrantix-client-panel/src/components/notifications/NotificationMenu.js` (and `NotificationMenu_chakra.js`)\n**Line:** 43–53\n**Root Cause:** `getNotificationColor(notification.type)` passes `notification.type` (the legacy DB field, set to the `notificationType` value by `dispatch()`) and the switch checks 'alert' | 'warning' | 'success'. Actual `notificationType` enum values are 'task_assigned', 'general', 'evidence_approved', 'evidence_rejected', 'deadline_approaching', 'review_reminder', etc. No match is ever found — always falls through to `default: 'blue.500'`.\n**Impact:** All notifications render blue regardless of urgency. High-priority 'evidence_rejected' and 'deadline_approaching' items cannot be visually differentiated from routine 'general' items.\n**Fix:** Update switch cases to match the actual `notificationType` enum (red for rejected/deadline, orange for reminders, green for approved) and pass `notification.notificationType` instead of `notification.type`.",
+    "firstDetected": "Run 2",
+    "lastVerified": "2026-06-20",
+    "runsOpen": 0,
+    "fixEvidence": "Both menu files: switch cases updated to 'evidence_rejected'/'deadline_approaching'/'review_reminder'/'evidence_approved'; arg changed to `notification.notificationType`",
+    "sourceFile": "QA_Tracker/NOTIFICATIONS_QA_LIVE_TRACKER.md"
+  }
+]

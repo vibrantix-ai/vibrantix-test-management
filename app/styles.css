@@ -13,6 +13,7 @@
   --chip-active-bg: #3457d5;
   --chip-active-text: #ffffff;
   --shadow: 0 2px 10px rgba(20, 24, 32, 0.08);
+  --role-agent: #7b6fd6;
   font-size: 15px;
 }
 
@@ -32,6 +33,7 @@
     --chip-active-bg: #6c8cff;
     --chip-active-text: #0d0f13;
     --shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
+    --role-agent: #9b8fee;
   }
 }
 
@@ -73,6 +75,27 @@ body {
 .btn--primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
 .btn--secondary { background: var(--chip-bg); }
 .btn--link { background: none; border: none; color: var(--accent); font-weight: 600; padding: 4px; }
+
+.system-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.system-tab {
+  border: 1px solid var(--border);
+  background: var(--chip-bg);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.system-tab:hover { border-color: var(--accent); }
+.system-tab.active { background: var(--chip-active-bg); color: var(--chip-active-text); border-color: var(--chip-active-bg); }
 
 .stats {
   display: grid;
@@ -207,7 +230,28 @@ tbody tr:last-child td { border-bottom: none; }
 .badge--skipped { background: #7b6fd6; color: #fff; }
 .badge--not_run { background: var(--chip-bg); color: var(--text-muted); }
 
+/* Defects system: severity + status badges */
+.badge--Critical { background: var(--danger); color: #fff; }
+.badge--High { background: #e08a3c; color: #fff; }
+.badge--Medium { background: var(--warning); color: #1a1d24; }
+.badge--Low { background: var(--chip-bg); }
+.badge--open { background: var(--danger); color: #fff; }
+.badge--new { background: #e08a3c; color: #fff; }
+.badge--in_progress { background: var(--warning); color: #1a1d24; }
+.badge--regressed { background: #7b6fd6; color: #fff; }
+.badge--wont_fix { background: var(--chip-bg); color: var(--text-muted); }
+.badge--cannot_verify { background: var(--chip-bg); color: var(--text-muted); }
+.badge--fixed { background: var(--success); color: #fff; }
+
 .cat-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+
+/* Environment (dev/stage/prod) — a case can run in more than one tier, so it renders
+   as a small stack of badges rather than one badge like priority/status. */
+.env-badges { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.badge--env-dev { background: var(--chip-bg); color: var(--text-muted); }
+.badge--env-stage { background: var(--warning); color: #1a1d24; }
+.badge--env-prod { background: var(--danger); color: #fff; }
+.text-muted { color: var(--text-muted); }
 
 .empty-row td { text-align: center; color: var(--text-muted); padding: 40px 12px; }
 

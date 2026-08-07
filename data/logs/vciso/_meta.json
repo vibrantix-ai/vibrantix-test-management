@@ -1,0 +1,15 @@
+{
+  "slug": "vciso",
+  "name": "vCISO Suite",
+  "sourceModule": "vciso",
+  "logTypes": [
+    "activity"
+  ],
+  "description": "Logs emitted by the vCISO Suite module (activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

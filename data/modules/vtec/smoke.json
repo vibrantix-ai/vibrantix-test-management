@@ -1,0 +1,156 @@
+[
+  {
+    "id": "VTEC-SMK-001",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Connector Startup",
+    "title": "Connector binary boots, loads config, and serves /metrics on loopback within 5 seconds",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A valid config.yaml and reachable CA chain"
+    ],
+    "steps": [
+      "Start the connector binary from a cold process start",
+      "curl http://127.0.0.1:9090/metrics"
+    ],
+    "expectedResult": "The /metrics endpoint responds 200 with real Prometheus text within 5 seconds of process start.",
+    "tags": [
+      "startup",
+      "smoke"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-SMK-002",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Management Service Startup",
+    "title": "vtec-management-service starts, connects to MongoDB, and its health check returns 200",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A reachable MongoDB and Vault instance configured via env"
+    ],
+    "steps": [
+      "Start the service",
+      "curl https://localhost:3000/health"
+    ],
+    "expectedResult": "The service logs 'connected to MongoDB' and 'started', and /health returns 200.",
+    "tags": [
+      "startup",
+      "smoke"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-SMK-003",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Config Defaults",
+    "title": "A fresh checkout with no local config.yaml still boots to sane defaults",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A repo checkout with configs/config.yaml deleted"
+    ],
+    "steps": [
+      "Start the connector binary"
+    ],
+    "expectedResult": "The connector boots using Load()'s built-in defaults (metrics_addr, cache paths, etc.) without crashing, and fails only on the genuinely-required tenant_id/license_key.",
+    "tags": [
+      "config",
+      "defaults"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-SMK-004",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Client-Panel Module",
+    "title": "The /vtec sidebar item and fleet page load without a console error",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Logged in as a user with nav.vtec and vtec.read"
+    ],
+    "steps": [
+      "Load the client-panel",
+      "Click the VTEC sidebar entry"
+    ],
+    "expectedResult": "Sidebar shows VTEC with Fleet/Workflows sub-items; clicking navigates to /vtec/fleet, which loads without an unhandled error in the browser console.",
+    "tags": [
+      "ui",
+      "smoke"
+    ],
+    "owner": "QA",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-SMK-005",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Docker Deployment",
+    "title": "docker compose up brings up a running, healthy connector container with default Site A settings",
+    "priority": "P0",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A valid .env with VTEC_TENANT_ID/VTEC_LICENSE_KEY set"
+    ],
+    "steps": [
+      "Run docker compose -f configs/docker-compose.yml up -d",
+      "docker compose logs"
+    ],
+    "expectedResult": "The container starts, registers, and logs 'mTLS identity established' with no restart loop.",
+    "tags": [
+      "docker",
+      "smoke"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-SMK-006",
+    "module": "vtec",
+    "category": "smoke",
+    "subFeature": "Graceful Shutdown",
+    "title": "SIGTERM to the connector process triggers a graceful shutdown within the target time budget",
+    "priority": "P1",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A running connector inside a real Linux container (SIGTERM semantics differ on native Windows)"
+    ],
+    "steps": [
+      "docker stop the running container with a 10s grace period"
+    ],
+    "expectedResult": "The container returns well under the grace period with a 'shutdown signal received, exiting' log line present, not a forced kill.",
+    "tags": [
+      "shutdown",
+      "lifecycle"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
+  }
+]

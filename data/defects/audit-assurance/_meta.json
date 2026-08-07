@@ -1,0 +1,10 @@
+{
+  "slug": "audit-assurance",
+  "name": "Audit Assurance",
+  "scope": "feature",
+  "qaAgent": "Audit_Assurance_QA_Agent",
+  "sourceTrackers": [
+    "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
+  ],
+  "description": "Defects converted from the Audit Assurance live defect registry. Source IDs use mixed prefixes (CD-/D-/H-/M-) segmented by severity rather than one module prefix — all assigned module='audit-assurance', original IDs preserved as-is."
+}

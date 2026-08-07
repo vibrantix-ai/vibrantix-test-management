@@ -1,0 +1,139 @@
+[
+  {
+    "id": "TI-012",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Evidence Coverage Widget",
+    "category": "Zero-Division Unguarded",
+    "title": "Evidence coverage formula: when total mapped controls = 0 for new tenant, widget displays `NaN%` or `Infinity%` — division by zero not caught, corrupts first impression of platform",
+    "requirement": "—",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/evidence-management/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-013",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Compliance Framework Picker",
+    "category": "Global Template Pollution",
+    "title": "Global-scope compliance framework templates appear in new tenant's framework picker as available without explicit org adoption — new org's Statement of Applicability appears pre-populated with global controls",
+    "requirement": "ISO 27001 A.5.15",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/compliance/",
+      "vibrantix-client-panel/src/app/(private)/frameworks/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-014",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Report Generation Service",
+    "category": "Template Metadata Contamination",
+    "title": "PDF/Excel report generator may render prior org's name, logo, or framework from cached template metadata — report header shows another tenant's branding if template cache is not invalidated per org per request",
+    "requirement": "GDPR Art.5(1)(f)",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/reports/ or dedicated report service"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-015",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Billing Cap Evaluation Worker",
+    "category": "Background Job Filter Gap",
+    "title": "`cap-evaluation.worker.js` evaluates subscription usage caps — if the aggregation query for user/project/asset counts is missing `organizationId` on one code path, usage figures are cross-org aggregated and limits mis-applied",
+    "requirement": "ISO 27001 A.8.15",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/billing/workers/cap-evaluation.worker.js"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-016",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Global Search Endpoint",
+    "category": "Search Index Isolation",
+    "title": "MongoDB `$text` search queries do not include `organizationId` in the same query document — text search scans all documents in the collection and returns cross-tenant matches to the caller",
+    "requirement": "ISO 27001 A.5.15",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/search/ or equivalent global search route"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-017",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Cloud Posture (Prowler)",
+    "category": "Shared Cloud Account Findings",
+    "title": "Multiple orgs connecting the same AWS/GCP/Azure account receive identical Prowler scan findings — cloud resource records are not uniquely attributed to the scanning org; Org A's assets visible in Org B's cloud posture",
+    "requirement": "ISO 27001 A.5.19",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/cloud-posture/",
+      "vibrantix-prowler/"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-018",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Project-Scoped Queries (all services)",
+    "category": "Project Isolation Fallback",
+    "title": "Queries with `null` or `undefined` `projectId` silently fall back to org-wide result set — new project (zero data) inherits sibling project records instead of returning an empty set or rejecting the request",
+    "requirement": "ISO 27001 A.5.15",
+    "affectedFiles": [
+      "All controllers accepting projectId as optional parameter"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-019",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "`ai_policy_generator_python` — RAG",
+    "category": "AI Cross-Tenant Policy Leakage",
+    "title": "LiteLLM/RAG pipeline stores policy document embeddings in a shared vector store without org-specific namespace partition — cross-tenant policy content surfaces in generated policy context for other orgs",
+    "requirement": "GDPR Art.25, ISO 27001 A.8.15",
+    "affectedFiles": [
+      "ai_policy_generator_python/ vector store and retrieval pipeline"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "TI-020",
+    "module": "tenant-isolation",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Vendor Trust Score — Shared Vendor Entity",
+    "category": "Cross-Org Vendor Data Exposure",
+    "title": "Same external vendor (matched by email domain or external vendor ID) shared across multiple org assessments — trust score or assessment data updated in Org A's context becomes visible in Org B's vendor risk dashboard",
+    "requirement": "ISO 27001 A.5.19",
+    "affectedFiles": [
+      "vendor-service/ vendor entity model and trust score update logic"
+    ],
+    "sourceFile": "QA_Tracker/TENANT_ISOLATION/TENANT_ISOLATION_QA_LIVE_TRACKER.md"
+  }
+]

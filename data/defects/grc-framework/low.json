@@ -1,0 +1,62 @@
+[
+  {
+    "id": "GRC-015",
+    "module": "grc-framework",
+    "title": "Sync success toast fires immediately — before sync actually completes",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "Files: vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx — handleSync() — toast call after syncPCL() returns\n\nRoot Cause: complianceService.syncPCL() returns HTTP 200 as soon as the sync job is enqueued, not when it completes. The toast \"PCL sync triggered successfully. Data will refresh in a moment.\" fires immediately after this 200 response. The actual sync runs asynchronously in the background. The phrase \"Data will refresh in a moment\" is misleading for large frameworks where sync takes 15–30 seconds.\n\nClaude Fix Prompt:\n1. Change the immediate toast to a neutral enqueue confirmation: \"PCL sync started. Coverage data will update once the snapshot is ready.\" with status: 'info'.\n2. Per GRC-001 fix: after polling detects completion (status === 'ready'), show a success toast: \"PCL sync complete. Coverage data is now up to date.\" with status: 'success'.\n3. If polling times out (10 attempts), show: \"Sync is taking longer than expected. Check back in a few minutes.\" with status: 'warning'.",
+    "firstDetected": "2026-06-19",
+    "lastVerified": "2026-06-19",
+    "runsOpen": 1,
+    "fixEvidence": "Run #2 verified — immediate toast is info \"PCL sync started\" (line 652); success toast fires on poll completion (line 665)",
+    "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "GRC-016",
+    "module": "grc-framework",
+    "title": "CSV export filename has no date suffix — duplicate filenames on multiple exports",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Export",
+    "description": "Files: vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx — exportCSV() — const filename = `${frameworkName}-compliance-map.csv`\n\nRoot Cause: The export filename is constructed as {frameworkTitle}-compliance-map.csv with no date component. Compliance officers who export the compliance map weekly or before/after a sync will produce files with identical names, causing the browser to rename them with (1), (2) suffixes or overwrite depending on browser settings. Audit packages with multiple point-in-time snapshots cannot be distinguished by filename.\n\nClaude Fix Prompt: In exportCSV(), update the filename construction:\n```js\nconst dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD\nconst filename = `${frameworkName}-compliance-map-${dateStr}.csv`;\n```\nThis produces ISO27001-compliance-map-2026-06-19.csv — stable, sortable, and distinguishable across multiple exports on different dates.",
+    "firstDetected": "2026-06-19",
+    "lastVerified": "2026-06-19",
+    "runsOpen": 1,
+    "fixEvidence": "Run #2 verified — filename construction (FrameworkComplianceMap lines 106–107): `{framework}-compliance-map-YYYY-MM-DD.csv`",
+    "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "GRC-017",
+    "module": "grc-framework",
+    "title": "Region filter dropdown is empty during initial data load",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "Files: vibrantix-client-panel/src/components/grc/FrameworksManager.jsx — region Select built from allFrameworks prop\n\nRoot Cause: The region dropdown options are derived from [...new Set(allFrameworks.filter(fw => fw.region).map(fw => fw.region))].sort() where allFrameworks = [...activeFrameworks, ...inactiveFrameworks]. During the initial load phase (before frameworks prop is populated), both arrays are empty, so the dropdown renders only the \"All Regions\" placeholder option. Users who open the dropdown immediately after navigation see an empty list.\n\nClaude Fix Prompt: In FrameworksManager.jsx, guard the region filter Select with a isDisabled={allFrameworks.length === 0} prop and add a placeholder=\"Loading regions...\" when allFrameworks.length === 0. Alternatively, memoize the region list from the parent frameworks prop in grc-framework/page.jsx and pass it as a regionOptions prop so it is available as soon as the API response arrives, independently of the internal split into active/inactive.",
+    "firstDetected": "2026-06-19",
+    "lastVerified": "2026-06-19",
+    "runsOpen": 1,
+    "fixEvidence": "Run #2 verified — isDisabled={availableRegions.length === 0} (FrameworksManager line 430); placeholder \"Loading regions…\"",
+    "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "GRC-021",
+    "module": "grc-framework",
+    "title": "Clear-filters button does not save scrollY before clearing, causing stale scroll restore",
+    "severity": "Low",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "UX",
+    "description": "Files: vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx — lines 937–942\n\nRoot Cause: The \"Clear filters\" button sets all four filter states to their defaults in one click:\n```jsx\nonClick={() => { setSearch(''); setStatusFilter('all'); setDomainFilter('all'); setAssetFilter('all'); }}\n```\nIt does not save scrollYRef.current = window.scrollY before clearing. The useEffect on filteredDomains then fires and restores to whatever stale Y coordinate was saved from the previous filter interaction. For a user who has scrolled to domain 8, applied a filter (saving Y=1400), scrolled back to the top, and then cleared filters, the page jumps back to Y=1400 unexpectedly.\n\nClaude Fix Prompt: In FrameworkComplianceMap.jsx, update the Clear filters onClick handler to save the scroll position first:\n```jsx\nonClick={() => {\n  scrollYRef.current = window.scrollY;\n  setSearch('');\n  setStatusFilter('all');\n  setDomainFilter('all');\n  setAssetFilter('all');\n}}\n```\nThis is a one-line change consistent with how all other filter onChange handlers already save the scroll position.",
+    "firstDetected": "2026-06-19",
+    "lastVerified": "2026-06-19",
+    "runsOpen": 1,
+    "fixEvidence": "Run #2 fix — Clear filters onClick now saves `scrollYRef.current = window.scrollY` before clearing all four filters",
+    "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  }
+]

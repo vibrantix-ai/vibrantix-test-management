@@ -1,0 +1,10 @@
+{
+  "slug": "vtec",
+  "name": "VTEC (Vibrantix Trust Edge Connector)",
+  "scope": "feature",
+  "routes": [
+    "/vtec"
+  ],
+  "qaAgent": null,
+  "description": "On-premises edge connector fleet (Go binary + vtec-management-service) for OT/air-gapped evidence collection: mTLS bootstrap/rotation, credential relay via Vault, 9-stage edge pipeline (mask/compress/encrypt before anything leaves the network), offline buffering, Prometheus monitoring, and the client-panel fleet/workflow/credentials UI. See Architecture/VTEC/VTEC_IT_LAN_P1_ADAPTERS_IMPLEMENTATION_PLAN.md."
+}

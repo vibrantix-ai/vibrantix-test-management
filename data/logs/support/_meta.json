@@ -1,0 +1,15 @@
+{
+  "slug": "support",
+  "name": "Support",
+  "sourceModule": "support",
+  "logTypes": [
+    "activity"
+  ],
+  "description": "Logs emitted by the Support module (activity).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

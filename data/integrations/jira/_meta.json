@@ -1,0 +1,23 @@
+{
+  "slug": "jira",
+  "name": "Jira",
+  "category": "itsm",
+  "authMethod": "oauth2",
+  "capabilities": [
+    "issues",
+    "projects",
+    "workflows",
+    "change_management",
+    "incident_management",
+    "access_requests",
+    "audit_log"
+  ],
+  "description": "ITSM connector — issue/project sync, change & incident management records, audit log ingestion.",
+  "testFocusAreas": [
+    "Connection setup / OAuth flow correctness",
+    "Connection health check (testConnection) — valid vs invalid credentials",
+    "Per-capability sync correctness (issues, projects, workflows, change_management, incident_management, access_requests, audit_log)",
+    "Disconnect/revoke flow and credential cleanup",
+    "Multi-tenant isolation of synced data"
+  ]
+}

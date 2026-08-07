@@ -1,0 +1,62 @@
+[
+  {
+    "id": "PM-001",
+    "module": "policy-management",
+    "title": "Policies can be set to `active` status without any approved workflow history — `PolicyEdit.handleSave()` and `PolicyDetailView` Activate button accept `status: 'active'` with no `workflow_history` gate; entire review cycle bypassable; violates ISO 27001:2022 Clause 5.2",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Authorization Gap",
+    "requirement": "ISO 27001:2022 Clause 5.2",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/policy-management/PolicyEdit.jsx`, `vibrantix-client-panel/src/components/policy-management/PolicyDetailView.jsx`, `vibrantix-backend/src/modules/policy/controllers/policy.controller.js`\n**Root Cause:** `PolicyEdit.handleSave()` and the Activate button in `PolicyDetailView` both accept `status: 'active'` without querying `workflow_history` for a completed approval event. No backend guard rejects the transition.\n**Impact:** Any `policy.write` user can publish any policy without a review cycle. ISO 27001 Clause 5.2 requires approved policies; an auditor requesting approval evidence finds none for any policy in the system.\n**Claude Fix Prompt:**\nIn `policy.controller.js` `updatePolicy`: `if (body.status === 'active') { const approved = await PolicyWorkflowHistory.findOne({policyId: id, event: 'approved'}); if (!approved) return res.status(403).json({error: 'Policy must have an approved review before activation'}); }`. In `PolicyDetailView.jsx`, hide the Activate button unless `policy.workflowHistory?.some(h => h.event === 'approved')`."
+  },
+  {
+    "id": "PM-002",
+    "module": "policy-management",
+    "title": "`approveOutcome` hardcoded to `'closed'` in `ReviewDetail` — reviewer approval transitions policy to end-of-life `closed` state, not `active`; all approved policies labelled closed; auditor cannot identify active policy set; violates Clause 7.5",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Lifecycle Bug",
+    "requirement": "ISO 27001:2022 Clause 7.5",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/policy-management/ReviewDetail.jsx`\n**Root Cause:** `const [approveOutcome, setApproveOutcome] = useState('closed')` — initialized to `'closed'` with no UI control to change it. Every approval transitions the policy to end-of-life state.\n**Impact:** Every policy completing the review workflow ends up `closed` (end-of-life) instead of `active`. Auditors cannot find any active policies. All reviewer effort produces the wrong lifecycle outcome on every use.\n**Claude Fix Prompt:**\nChange `useState('closed')` to `useState('active')` in `ReviewDetail.jsx`. Optionally expose a select for `['active', 'active_pending_changes']` for cases where minor revisions are required before final activation."
+  },
+  {
+    "id": "PM-003",
+    "module": "policy-management",
+    "title": "Required review checklist items not validated before approval — `handleSubmitAction` submits approval with all 4 required items unchecked; checklist is presentational only; violates ISO 27001:2022 Clause 7.5",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Process Enforcement",
+    "requirement": "ISO 27001:2022 Clause 7.5",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/policy-management/ReviewDetail.jsx`\n**Root Cause:** `handleSubmitAction` does not validate `checklistItems` state before calling the approval API. All four required items can be unchecked and the approval still submits.\n**Impact:** Review approval provides no assurance the policy meets quality standards. ISO 27001 Clause 7.5 audit evidence is invalidated — approved policies may be incomplete or non-compliant documents.\n**Claude Fix Prompt:**\nIn `ReviewDetail.jsx` `handleSubmitAction`, add before `setSubmitting(true)`: `const unchecked = REQUIRED_CHECKLIST_IDS.filter(id => !checkedItems.includes(id)); if (unchecked.length > 0) { setError(\\`Complete all required checklist items before approving (\\${unchecked.length} remaining)\\`); return; }`."
+  },
+  {
+    "id": "PM-024",
+    "module": "policy-management",
+    "title": "XSS via `dangerouslySetInnerHTML` without DOMPurify — `PolicyDetailView.jsx` line 738 renders `policy.content` as raw HTML with no sanitization; malicious scripts execute for all viewers; OWASP A03:2021",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Security (XSS)",
+    "requirement": "OWASP A03:2021",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-12",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `vibrantix-client-panel/src/components/policy-management/PolicyDetailView.jsx`\n**Root Cause:** Policy content rendered as raw HTML: `<div dangerouslySetInnerHTML={{ __html: policy.content }} />` with no sanitization. Any user with `policy.write` access can embed executable JavaScript visible to all readers.\n**Impact:** Stored XSS (OWASP A03:2021). Malicious scripts execute in all viewers' browsers including executives and external auditors. During an ISO Stage 2 audit conducted on-screen, the auditor's browser session is at risk.\n**Claude Fix Prompt:**\n`npm install dompurify`. In `PolicyDetailView.jsx`: `import DOMPurify from 'dompurify';`. Change render to: `<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy.content, { USE_PROFILES: { html: true } }) }} />`."
+  }
+]

@@ -7,16 +7,26 @@
     "title": "listScopeItems executes a batched query rather than one populate query per row for a 100-item scope page",
     "description": "Live defect M-004 (open): audit-assurance.controller.js listScopeItems (reported near lines 622-655) issues a per-item .populate() lookup instead of a single batched populate/$lookup, producing roughly 100 queries for a 100-item page.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An audit has 100+ scope items, each with an assignee reference"],
+    "preconditions": [
+      "An audit has 100+ scope items, each with an assignee reference"
+    ],
     "steps": [
       "Enable MongoDB query logging (profiler level 1) or attach a query counter",
       "Call GET /api/audit-assurance/:auditId/scope-items?page=1&limit=100",
       "Count the number of distinct queries issued for the request"
     ],
     "expectedResult": "Current behavior: query count scales roughly 1:1 with returned row count (~100 queries for 100 rows). Flag for remediation: replace the per-row lookup with a single populate() call or aggregation $lookup so query count stays constant regardless of page size.",
-    "tags": ["n+1", "performance", "scope-items"],
+    "tags": [
+      "n+1",
+      "performance",
+      "scope-items"
+    ],
     "linkedDefect": "M-004",
     "owner": "SDET",
     "status": "active",
@@ -31,16 +41,26 @@
     "title": "Audit Trends (R21) and Continuous Improvement Dashboard (R22) aggregate endpoints have no pagination",
     "description": "Live defect M-011 (open): audit-trends.controller.js and continuous-improvement.controller.js aggregate queries return unbounded result sets with no page/limit enforcement.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has 2+ years of audit history generating a large trends dataset"],
+    "preconditions": [
+      "Org has 2+ years of audit history generating a large trends dataset"
+    ],
     "steps": [
       "Call the audit-trends-benchmarking report endpoint for an org with a large history",
       "Call the continuous-improvement-dashboard report endpoint for the same org",
       "Measure response payload size and server response time"
     ],
     "expectedResult": "Current behavior: both endpoints return the full unbounded dataset with no pagination, response size/time growing linearly with history depth. Flag for remediation: add page/limit or date-range bounding to both aggregate queries.",
-    "tags": ["scalability", "pagination", "reporting"],
+    "tags": [
+      "scalability",
+      "pagination",
+      "reporting"
+    ],
     "linkedDefect": "M-011",
     "owner": "SDET",
     "status": "active",
@@ -54,15 +74,25 @@
     "subFeature": "Findings List",
     "title": "Findings list endpoint stays within SLA and enforces its 100-item page cap for an org with 10,000+ findings",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has 10,000+ finding/CAR documents in audit_nonconformances"],
+    "preconditions": [
+      "Org has 10,000+ finding/CAR documents in audit_nonconformances"
+    ],
     "steps": [
       "Call GET /:auditId/findings?limit=1000 against an org with a large finding volume",
       "Measure response time and returned row count"
     ],
     "expectedResult": "The response is capped at 100 rows regardless of the requested limit (Math.min(100,...) at findings.controller.js:48) and completes within the module's defined P95 latency budget.",
-    "tags": ["performance", "pagination", "findings"],
+    "tags": [
+      "performance",
+      "pagination",
+      "findings"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -76,14 +106,24 @@
     "title": "Concurrent escalate() triggers on a large overdue CAR set do not produce duplicate escalation writes",
     "description": "escalate() (corrective-action.service.js:862-908) loops over overdue CARs performing individual updateOne calls with no transaction; concurrent scheduler/cron triggers could double-write the same escalation event, though the resulting escalationLevel value itself is idempotent (same value written twice).",
     "priority": "P3",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["100+ CARs are overdue past the 'manager' escalation threshold"],
+    "preconditions": [
+      "100+ CARs are overdue past the 'manager' escalation threshold"
+    ],
     "steps": [
       "Trigger POST /corrective-actions/escalate twice concurrently against the same org's overdue CAR set"
     ],
     "expectedResult": "escalationLevel converges to the same correct value for every CAR either way, but verify whether the activity log (logAuditActivity) records a duplicate escalation notification entry per CAR — if so, flag for remediation (wrap the batch in a transaction or de-duplicate by targetClosureDate/escalationLevel state).",
-    "tags": ["race-condition", "performance", "escalation"],
+    "tags": [
+      "race-condition",
+      "performance",
+      "escalation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

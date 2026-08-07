@@ -39,6 +39,13 @@ const MODULES = [
   { slug: 'performance', name: 'Performance', routes: [], qaAgent: 'Performance_QA_Agent', scope: 'platform', description: 'Core Web Vitals, API latency SLAs, N+1 queries, cache hit-rate, queue throughput.' },
   { slug: 'ui-ux', name: 'UI/UX Consistency', routes: [], qaAgent: 'UI_UX_QA_Agent', scope: 'platform', description: 'Design-system compliance, dark mode fidelity, accessibility baseline, responsive layout.' },
   { slug: 'api-contract-e2e', name: 'API Contract & Cross-Service E2E', routes: [], qaAgent: 'API_Contract_E2E_QA_Agent', scope: 'platform', description: 'The 5 critical cross-service E2E flows, API contract stability, error propagation.' },
+  // No dedicated QA agent exists yet for VTEC (checked against the full agent list in
+  // CLAUDE.md/system reminders — none covers it) — qaAgent is null rather than a guessed
+  // value, matching this repo's own "flag gaps rather than invent data" convention. Spans
+  // two new repos (vtec-connector: Go edge binary; vtec-management-service: TS/Fastify) plus
+  // vibrantix-backend's /api/vtec proxy and vibrantix-client-panel's /vtec module — tests
+  // here span all four rather than being scoped to one route the way most Modules entries are.
+  { slug: 'vtec', name: 'VTEC (Vibrantix Trust Edge Connector)', routes: ['/vtec'], qaAgent: null, scope: 'feature', description: 'On-premises edge connector fleet (Go binary + vtec-management-service) for OT/air-gapped evidence collection: mTLS bootstrap/rotation, credential relay via Vault, 9-stage edge pipeline (mask/compress/encrypt before anything leaves the network), offline buffering, Prometheus monitoring, and the client-panel fleet/workflow/credentials UI. See Architecture/VTEC/VTEC_IT_LAN_P1_ADAPTERS_IMPLEMENTATION_PLAN.md.' },
 ];
 
 const root = path.join(__dirname, '..', 'data');
@@ -61,8 +68,8 @@ for (const m of MODULES) {
 
 const manifest = {
   categories: CATEGORIES,
-  modules: MODULES.map(m => ({ slug: m.slug, name: m.name, scope: m.scope })),
+  entities: MODULES.map(m => ({ slug: m.slug, name: m.name, scope: m.scope })),
 };
-fs.writeFileSync(path.join(root, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+fs.writeFileSync(path.join(modulesDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 
-console.log(`Wrote _meta.json for ${MODULES.length} modules and data/manifest.json`);
+console.log(`Wrote _meta.json for ${MODULES.length} modules and data/modules/manifest.json`);

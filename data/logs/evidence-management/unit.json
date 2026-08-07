@@ -1,0 +1,30 @@
+[
+  {
+    "id": "EVIDLOG-UNIT-001",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "unit",
+    "subFeature": "WorkflowEntry Model",
+    "title": "WorkflowEntry schema rejects a document missing entityType, entityId, status, or changedBy",
+    "description": "workflow-entry.model.js declares entityType, entityId, status, and changedBy as required fields with { timestamps: false }, and only changedAt defaults to Date.now. This unit test verifies Mongoose validation actually enforces those requirements at the model layer, independent of any controller-level checks, so a future code path can never silently persist an incomplete audit entry (e.g. one missing the actor).",
+    "priority": "P2",
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "A test MongoDB instance (or mongodb-memory-server) with the WorkflowEntry model loaded"
+    ],
+    "steps": [
+      "Attempt WorkflowEntry.create({ entityId: <valid>, status: 'approved', changedBy: <valid user id> }) omitting entityType, and assert it throws a ValidationError.",
+      "Attempt WorkflowEntry.create({ entityType: 'evidence', status: 'approved', changedBy: <valid user id> }) omitting entityId, and assert it throws a ValidationError.",
+      "Attempt WorkflowEntry.create({ entityType: 'evidence', entityId: <valid>, changedBy: <valid user id> }) omitting status, and assert it throws a ValidationError.",
+      "Attempt WorkflowEntry.create({ entityType: 'evidence', entityId: <valid>, status: 'approved' }) omitting changedBy (the actor), and assert it throws a ValidationError.",
+      "Attempt a fully-populated WorkflowEntry.create(...) and assert it succeeds with changedAt auto-populated to the current time."
+    ],
+    "expectedResult": "Each of steps 1-4 throws a Mongoose ValidationError and no document is persisted; step 5 succeeds and the saved document has a changedAt timestamp close to the test's execution time. This guarantees no evidence/mapping audit entry can ever be written without an identified actor, target, and resulting status, regardless of which controller code path calls WorkflowEntry.create.",
+    "tags": ["logging", "audit-trail"],
+    "requirement": "ISO 27001 Annex A.5.33",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  }
+]

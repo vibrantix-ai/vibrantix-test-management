@@ -1,0 +1,87 @@
+[
+  {
+    "id": "EVIDLOG-SEC-001",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "security",
+    "subFeature": "Data Leakage",
+    "title": "console.log statements in EvidenceRequestsContent.jsx and AutoCollectorsContent.jsx leak org/project identifiers to the browser console and must not be mistaken for an audit trail",
+    "description": "EvidenceRequestsContent.jsx (11 console.log call sites) and AutoCollectorsContent.jsx (18 console.log call sites) log internal project IDs, organization IDs, filter state, and API response payloads directly to the browser DevTools console in production builds. This is a genuine A.8.16 information-disclosure issue, and separately it must be confirmed these statements are not being relied upon anywhere as a substitute for the module's real audit-trail mechanisms (WorkflowEntry/ActivityLog), since console output is client-side only, unauthenticated, and never reaches the server.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Access to a production or production-like build of vibrantix-client-panel",
+      "Browser DevTools console access"
+    ],
+    "steps": [
+      "Open the Evidence Requests page and the Auto-Collectors page with DevTools console open.",
+      "Perform normal actions (filter requests, select a project, test a connector) and observe console output.",
+      "Confirm the logged values include organizationId/projectId or other internal identifiers rather than only generic UI state.",
+      "Confirm separately that none of the module's real audit-affordances (evidence request creation/fulfillment business events, WorkflowEntry writes) depend on or are replaced by this console output — they should be found in server-side logger.info calls (evidence-request.controller.js's 'business.evidence_request.created'/'business.evidence_request.fulfilled' events) instead."
+    ],
+    "expectedResult": "Internal identifiers (organization/project IDs, API payloads) are visible in the production browser console via console.log in both files, confirming EM-005 is still present. The module's actual audit-relevant events (request created, request fulfilled) are separately confirmed to be emitted server-side via logger.info regardless of the console.log leakage, so removing the console.log statements is a pure security fix with no audit-trail regression risk.",
+    "tags": ["logging", "data-leakage"],
+    "requirement": "ISO 27001 Annex A.8.16",
+    "linkedDefect": "EM-005",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  },
+  {
+    "id": "EVIDLOG-SEC-002",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "security",
+    "subFeature": "Tamper-Evidence",
+    "title": "Hash-chain tamper-evidence on security/compliance log lines resets to GENESIS on process restart and is independent per replica, weakening its integrity guarantee",
+    "description": "vibrantix-backend/src/config/logger.js's hashChainFormat (around lines 91-99) computes integrityHash = sha256(previousHash + integrityTimestamp + JSON.stringify(info)) and chains it via a module-level _chainHash variable, applied only to Winston log lines with type:'security' or type:'compliance' (which covers hardDeleteEvidence's audit.evidence.deleted/hard_delete_blocked and workflowTransition.service.js's audit.workflow.transition events). The code's own comment acknowledges the chain is per-process/in-memory and resets to GENESIS on restart, and is independent per replica in a multi-instance deployment.",
+    "priority": "P2",
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Access to backend application logs across at least one process restart, or across two running replicas",
+      "Ability to trigger a security/compliance-typed evidence event (e.g. a blocked hard-delete attempt) before and after the restart, or on two different replicas"
+    ],
+    "steps": [
+      "Trigger a hard-delete-blocked event (DELETE on a non-archived evidence item) and record the emitted previousHash/integrityHash pair.",
+      "Restart the backend process (or repeat the same action against a second running replica/instance).",
+      "Trigger another security/compliance-typed evidence event and record its previousHash.",
+      "Compare the previousHash from step 3 against the integrityHash recorded in step 1."
+    ],
+    "expectedResult": "After a restart (or on a different replica), the new event's previousHash is 'GENESIS' rather than the prior process's last integrityHash — confirming the chain does not span restarts or replicas. This is a real limitation of the tamper-evidence mechanism worth documenting: an attacker (or an ops incident) that causes a restart between a tampering action and its detection breaks the provable chain of custody for that log stream; this must be treated as a known limitation to disclose, not a false pass.",
+    "tags": ["logging", "tamper-evidence"],
+    "requirement": "ISO 27001 Annex A.8.15",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  },
+  {
+    "id": "EVIDLOG-SEC-003",
+    "system": "logs",
+    "module": "evidence-management",
+    "category": "security",
+    "subFeature": "Multi-Tenant Isolation",
+    "title": "Mapping workflow-history has no defense-in-depth against cross-tenant access because WorkflowEntry itself stores no organizationId",
+    "description": "workflow-entry.model.js has no organizationId field at all; org isolation for GET /api/evidence/mappings/:id/workflow-history (evidence-mapping.controller.js's getMappingWorkflowHistory) depends entirely on the single assertOrgAccess(mapping, req) check against the parent EvidenceControlMapping document before the WorkflowEntry query runs. If that pre-check were ever skipped, misconfigured, or bypassed on a future endpoint, there is no secondary org filter on the WorkflowEntry read itself to catch the mistake.",
+    "priority": "P1",
+    "type": "both",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Two separate test organizations (Org A, Org B) each with at least one control mapping that has WorkflowEntry history",
+      "A valid authenticated user belonging only to Org B"
+    ],
+    "steps": [
+      "As an Org A user, create and approve a control mapping, noting its mapping id and confirming WorkflowEntry history exists via GET /api/evidence/mappings/:id/workflow-history.",
+      "As an Org B user (different organization, no membership in Org A), call GET /api/evidence/mappings/:orgAMappingId/workflow-history directly using Org A's mapping id.",
+      "Confirm the response is rejected (403/404 via assertOrgAccess) rather than returning Org A's workflow history.",
+      "Separately, inspect the workflow_entries collection directly (e.g. via a DB client) to confirm no organizationId field exists on the documents that could serve as a second line of defense if step 3's application-level check were ever removed."
+    ],
+    "expectedResult": "The Org B user's request in step 2 is denied by the existing assertOrgAccess check on the parent mapping (current behavior is correctly isolated). Step 4 confirms this isolation is single-layered — the WorkflowEntry documents themselves carry no organizationId to independently enforce the boundary, so this test must be re-run on every future endpoint that reads WorkflowEntry data to confirm the same org-check pattern was copied correctly, since the schema provides no automatic protection.",
+    "tags": ["logging", "multi-tenant", "audit-trail"],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-02"
+  }
+]

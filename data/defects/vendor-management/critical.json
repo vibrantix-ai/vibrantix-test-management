@@ -1,0 +1,31 @@
+[
+  {
+    "id": "VM-001",
+    "module": "vendor-management",
+    "title": "Offboarding module completely disabled — `OFFBOARDING_ENABLED = false` hard-coded; 7-phase workflow unreachable; no coming-soon indicator; A.5.19 / A.8.30 certification blocker",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Disabled Feature",
+    "description": "**Files:** `vibrantix-client-panel/src/app/(private)/vendors/offboarding/page.jsx`\n**Root Cause:** `OFFBOARDING_ENABLED = false` hardcoded. The 7-phase offboarding workflow is completely unreachable. No coming-soon indicator or placeholder is shown — the page is invisible.\n**Impact:** ISO 27001 Annex A 5.19 requires documented supplier termination procedures. A.8.30 requires access revocation on contract end. No offboarding evidence can be produced for any terminated vendor.\n**Claude Fix Prompt:**\nShort-term: `if (!OFFBOARDING_ENABLED) return (<div className=\"flex flex-col items-center justify-center h-64\"><Construction className=\"w-12 h-12 text-muted-foreground/40\" /><h3>Vendor Offboarding</h3><p className=\"text-muted-foreground\">Coming soon — this feature is currently in development.</p></div>);`. Long-term: set `OFFBOARDING_ENABLED = true` and verify all 7 phases have working backend endpoints.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 2,
+    "requirement": "ISO 27001 Annex A.5.19/A.8.30",
+    "sourceFile": "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "VM-002",
+    "module": "vendor-management",
+    "title": "Analytics RiskDistributionCard renders hardcoded fake data — `data?.critical || 2`, `|| 5`, `|| 8`, `|| 12`; fabricated risk distribution shown when API returns null; management review artefacts fictional",
+    "severity": "Critical",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Data Integrity",
+    "description": "**Files:** `vibrantix-client-panel/src/components/vendor-management/VendorAnalytics.jsx`\n**Root Cause:** `data?.critical || 2`, `data?.high || 5`, `data?.medium || 8`, `data?.low || 12` — hardcoded fallback values display fabricated risk distribution when the API returns null or is unavailable.\n**Impact:** Management review reports and board dashboards containing analytics screenshots show fabricated vendor risk metrics. Any certification audit presenting this data as evidence is presenting fictional numbers.\n**Claude Fix Prompt:**\nReplace all hardcoded fallbacks with `|| 0`: `critical: data?.critical || 0`, `high: data?.high || 0`, `medium: data?.medium || 0`, `low: data?.low || 0`. Add empty state: `if (!data) return (<div className=\"text-center text-muted-foreground py-8\"><BarChart3 className=\"w-8 h-8 mx-auto mb-2 opacity-40\" /><p>No risk data available</p></div>);`.",
+    "firstDetected": "2026-05-20",
+    "lastVerified": "2026-06-11",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+  }
+]

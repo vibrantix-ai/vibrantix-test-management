@@ -1,0 +1,14 @@
+{
+  "slug": "soc-2-type-ii",
+  "name": "SOC 2 Type II",
+  "version": "2017",
+  "frameworkType": "standard",
+  "family": "AICPA",
+  "description": "Trust Services Criteria — operating-effectiveness-over-a-period report.",
+  "testFocusAreas": [
+    "Trust Services Criteria requirement coverage over the audit period",
+    "Requirement-to-UCL control mapping accuracy",
+    "Evidence sampling/observation period correctness",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

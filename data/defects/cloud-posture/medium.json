@@ -1,0 +1,111 @@
+[
+  {
+    "id": "CP-007",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "Scan Comparison modal",
+    "category": "Field-name mismatch (frontend/backend contract)",
+    "title": "Frontend expects finding.previousStatus AND finding.currentStatus to render a 'PASS -> FAIL' arrow transition view, but the backend only ever sends previousStatus + status (never currentStatus) - the condition is always false.",
+    "description": "Every changed finding falls back to showing just a single current-status badge, losing the before/after context the comparison UI was specifically built to show.",
+    "affectedFiles": [
+      "vibrantix-backend/.../scan.controller.js:1030-1042 (shape() never sets currentStatus)",
+      "vibrantix-client-panel/components/cloud-posture/ScanComparisonModal.jsx:450-459"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-009",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "CloudProviderDetail.jsx (dead component - informational)",
+    "category": "Broken navigation (404)",
+    "title": "'View Instance Details' pushes to /cloud-posture/${provider}/${serviceSlug}/${instanceSlug} - no such route (a [instance] segment) exists anywhere in the app directory.",
+    "description": "If ever reached, this link produces a genuine Next.js 404. Lower real-world impact since CloudProviderDetail.jsx itself appears to be dead/unimported code per a separate finding, but flagged in case it's re-enabled without fixing this.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/CloudProviderDetail.jsx:1188-1199"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Partially - route absence confirmed; component's own liveness not re-checked"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-012",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "All resource.controller.js endpoints (getProjectResources / getCloudProviderResources / getServiceResources / getComplianceDashboard / getResourceDetails - feeds /cloud-posture and /cloud-posture/[provider])",
+    "category": "Data scoping - defensive-coding gap",
+    "title": "Every listed function builds its Mongo filter from the untrusted URL path param req.params.orgId rather than the authenticated req.orgId. requireProjectMembership() only validates project membership using req.orgId - it never asserts the URL's :orgId segment actually equals req.orgId.",
+    "description": "Not an active exploit today because every CloudResource/Finding document has a consistent organizationId (a mismatched URL orgId currently just returns empty results by data-invariant luck, not by design) - but unlike scan.controller.js's consistent explicit org-equality checks, this module has no equivalent assertion, so a future data-migration edge case could turn this into a real cross-tenant read.",
+    "affectedFiles": [
+      "vibrantix-backend/.../resource.controller.js (multiple functions)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified (pattern is directionally consistent with confirmed finding #1)"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-015",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "/cloud-posture main dashboard (category drill-down)",
+    "category": "Wrong data source - inconsistent metric definition",
+    "title": "The main dashboard and ProviderCard.jsx deliberately use a findings-based score (PASS/(PASS+FAIL)x100) because resource.controller.js's own code comments document that compliance.overallScore 'can be stale/inaccurate.' But getCategoryDetails' avgComplianceScore/serviceBreakdown average that same stale resource-level field instead - the exact source the rest of the module deliberately avoids.",
+    "description": "Opening a resource-category drawer can show a 'Compliance Score' that legitimately disagrees with the provider-level score shown one drawer away, because the two use different formulas over different (one known-stale) fields.",
+    "affectedFiles": [
+      "vibrantix-backend/.../dashboard.controller.js:64-65,106,151-163 vs. :292-299 (getCategoryDetails' avgComplianceScore/serviceBreakdown)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-018",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "/cloud-posture main dashboard",
+    "category": "Inconsistent null/empty-state guard within the same page",
+    "title": "getCategoryIcon/getCategoryColor call category.toLowerCase() directly with no null check, while the drawer opened from the very same card already guards the identical lookup.",
+    "description": "If any resourceCategories row ever arrives with a null/undefined category (e.g. a legacy resource document), the card's render throws, and with no local error boundary the entire /cloud-posture route falls back to its error.jsx, wiping out the whole dashboard for one bad category value - while the sibling drawer meant to show the same data wouldn't crash.",
+    "affectedFiles": [
+      "vibrantix-client-panel/components/cloud-posture/ResourceCategoryCard.jsx:33-34,50-51 (no null guard) vs. ResourceCategoryDetailsDrawer.jsx:66 (guards the identical lookup with `(category || '').toLowerCase()`)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Not independently re-verified"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-021",
+    "module": "cloud-posture",
+    "severity": "Medium",
+    "status": "open",
+    "component": "MongoDB database configuration (backend vs. vibrantix-prowler)",
+    "category": "Configuration inconsistency (flagged for infra verification, NOT a confirmed data-loss bug)",
+    "title": "The backend and the Prowler scanning service's checked-in .env files point at two genuinely DIFFERENT MongoDB databases on the same cluster (vib_test_db_revamp vs vib_test_db) - confirmed by direct connection to both.",
+    "description": "CORRECTION to the original agent claim: the agent additionally claimed Prowler's Python persistence code writes to UN-PREFIXED collection names (cloudresources/findings/cloudposturescans/scan_results) instead of the backend's pscanner_-prefixed ones, implying scan results would never appear in the UI. I connected directly to BOTH databases and DISPROVED this specific detail: neither database has any of those un-prefixed collection names, and BOTH databases independently have live, populously-populated pscanner_-prefixed collections (e.g. vib_test_db has 15,116 pscanner_findings, 4,875 pscanner_cloud_resources, 468 pscanner_scans - all real, current-looking data). The database-NAME mismatch between the two .env files is real and confirmed, but its practical impact could not be established without knowing which .env is actually active in each deployed environment - downgraded from 'Critical, data never appears' to 'flagged configuration risk needing infra-level clarification.'",
+    "affectedFiles": [
+      "vibrantix-backend/.env:4 (MONGODB_URI -> .../vib_test_db_revamp) vs. vibrantix-prowler/.env + .env.stage (MONGODB_URI -> .../vib_test_db, plus separate MONGODB_DATABASE=vib_test_db / MONGODB_COLLECTION=scan_results vars)"
+    ],
+    "verified": false,
+    "tags": [
+      "verified-note: Partially - DB name mismatch confirmed real; the more severe 'wrong collection names' claim was directly disproven via live DB inspection"
+    ],
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  }
+]

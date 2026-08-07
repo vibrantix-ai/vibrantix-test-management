@@ -1,0 +1,14 @@
+{
+  "slug": "iso-27001",
+  "name": "ISO/IEC 27001",
+  "version": "2022",
+  "frameworkType": "standard",
+  "family": "ISO",
+  "description": "Information security management system standard — Annex A controls and Clauses 4-10.",
+  "testFocusAreas": [
+    "Requirement CRUD & versioning (2013 vs 2022 Annex A control set)",
+    "Requirement-to-UCL control mapping accuracy",
+    "Cross-framework UCL coverage aggregation",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}

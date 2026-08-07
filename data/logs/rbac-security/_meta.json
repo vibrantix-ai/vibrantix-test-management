@@ -1,0 +1,16 @@
+{
+  "slug": "rbac-security",
+  "name": "RBAC & Access Control",
+  "sourceModule": "rbac-security",
+  "logTypes": [
+    "security",
+    "audit"
+  ],
+  "description": "Logs emitted by the RBAC & Access Control module (security, audit).",
+  "testFocusAreas": [
+    "Log entry generated on every relevant state change (create/update/delete/access)",
+    "Log entry field completeness (actor, timestamp, org/tenant scope, action, target)",
+    "Log immutability / tamper-evidence",
+    "Multi-tenant isolation of log entries"
+  ]
+}

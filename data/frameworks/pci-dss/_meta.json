@@ -1,0 +1,14 @@
+{
+  "slug": "pci-dss",
+  "name": "PCI DSS",
+  "version": "4.0",
+  "frameworkType": "standard",
+  "family": "PCI SSC",
+  "description": "Payment Card Industry Data Security Standard — 12 core requirements.",
+  "testFocusAreas": [
+    "Requirement CRUD & versioning (v4.0 vs legacy v3.2.1)",
+    "Requirement-to-UCL control mapping accuracy",
+    "SAQ scope/applicability correctness",
+    "Framework activation/deactivation impact on dependent modules"
+  ]
+}
