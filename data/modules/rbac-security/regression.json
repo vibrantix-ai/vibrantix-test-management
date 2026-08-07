@@ -7,16 +7,27 @@
     "title": "vendor-service BYPASS_PERMISSIONS must never regress to an unconditional true",
     "description": "Historical defect (RBAC-003 / BAC-003, tracked in QA_Tracker/RBAC/BROKEN_ACCESS_CONTROL_FINDINGS.md): keycloak.ts previously had `const BYPASS_PERMISSIONS = true;` hardcoded, disabling all vendor-service RBAC. The current code (keycloak.ts:140) gates it as `NODE_ENV !== 'production' && BYPASS_PERMISSIONS === 'true'` plus an explicit startup guard (line 223-224) that throws if this is ever true in production. This case guards against reverting either safeguard.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "RBAC-003",
-    "preconditions": ["Access to vendor-service source/config"],
+    "preconditions": [
+      "Access to vendor-service source/config"
+    ],
     "steps": [
       "Inspect src/plugins/keycloak.ts's BYPASS_PERMISSIONS definition",
       "Start the service with NODE_ENV=production, BYPASS_PERMISSIONS=true"
     ],
     "expectedResult": "The definition remains env-gated (never a bare `= true`), and startup throws 'BYPASS_PERMISSIONS must not be true in production' rather than serving traffic with RBAC disabled.",
-    "tags": ["rbac", "regression", "dev-bypass", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "regression",
+      "dev-bypass",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -30,6 +41,10 @@
     "title": "CUSTOMER_BASELINE_PERMISSIONS must remain empty for direct_customer and mssp_client organizations",
     "description": "Historical defect (RBAC-022): project.read, user.read, dashboard.read were unconditionally injected into every user's permission set regardless of role, effectively bypassing role restrictions for those three module reads. loadPermissions.js:44 now sets CUSTOMER_BASELINE_PERMISSIONS = [] by deliberate design (2026-07-19) — those routes now self-scope via membership/shared-project logic instead of a blanket permission grant. This case guards against silently reintroducing entries into that array.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "RBAC-022",
@@ -38,7 +53,11 @@
       "As a NORMAL_USER with zero project memberships, call GET /api/client/users/me and inspect the permissions array"
     ],
     "expectedResult": "CUSTOMER_BASELINE_PERMISSIONS is still []. The returned permissions array for this user contains none of project.read/user.read/dashboard.read as a blanket grant.",
-    "tags": ["rbac", "regression", "plac"],
+    "tags": [
+      "rbac",
+      "regression",
+      "plac"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,6 +71,10 @@
     "title": "auth.controller.js must keep routing through verifyKeycloakToken(), never jwt.decode(), for authorization decisions",
     "description": "Historical defects BAC-001 (admin/authorize using jwt.decode()) and BAC-002 (OAuth callback's decodePayload() using jwt.decode()). Current auth.controller.js's decodePayload() (line 96-99) calls verifyKeycloakToken(), which performs full RS256/JWKS signature verification. This case guards against either endpoint regressing to a raw, unverified decode.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "RBAC-001; RBAC-002",
@@ -60,7 +83,12 @@
       "Submit a JWT with a forged resource_access.admin-portal claim and an invalid/missing signature to POST /api/auth/admin/authorize"
     ],
     "expectedResult": "No authorization-relevant code path calls jwt.decode() directly — only verifyKeycloakToken()/jwt.verify() with algorithms:['RS256']. The forged-signature request is rejected, not granted admin access.",
-    "tags": ["rbac", "regression", "jwt", "owasp-a02"],
+    "tags": [
+      "rbac",
+      "regression",
+      "jwt",
+      "owasp-a02"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -74,6 +102,10 @@
     "title": "DEV_BYPASS must remain an allow-list (NODE_ENV==='development'), never a deny-list (NODE_ENV!=='production')",
     "description": "authenticate.js:24-28 documents the historical risk explicitly: a deny-list (`!== 'production'`) would leave DEV_BYPASS reachable in any unlabeled/staging environment. The current allow-list requires NODE_ENV to be exactly 'development' AND DEV_BYPASS==='true'. This case guards against the comparison being loosened back to a deny-list during a future refactor.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "RBAC-018",
@@ -82,7 +114,12 @@
       "Set NODE_ENV='staging', DEV_BYPASS='true'; send a request with no Authorization header"
     ],
     "expectedResult": "The definition still reads `... && process.env.NODE_ENV === 'development'` (not `!== 'production'`). With NODE_ENV='staging', the request is NOT auto-authenticated as the dev fixture user — it proceeds to require a real Bearer token and is rejected with 401.",
-    "tags": ["rbac", "regression", "dev-bypass", "owasp-a05"],
+    "tags": [
+      "rbac",
+      "regression",
+      "dev-bypass",
+      "owasp-a05"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -96,6 +133,10 @@
     "title": "trust-vault-service's internal-token comparison must remain constant-time",
     "description": "Historical defect class RBAC-016 (timing oracle on a DEV_BYPASS token comparison in vciso-service, via naive === string comparison). trust-vault-service/src/routes/s2s.routes.ts:63-73 now uses crypto.timingSafeEqual with an explicit equal-length guard. This case guards against the comparison regressing to a plain `===` or `provided === expectedToken` check anywhere in the S2S auth path.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "RBAC-016",
@@ -104,7 +145,12 @@
       "Statistically measure response latency for near-correct vs. wildly-incorrect token guesses across many requests"
     ],
     "expectedResult": "Only timingSafeEqual (with the length-guard pattern) is used for the comparison. Latency does not measurably correlate with how many leading characters of the guess were correct.",
-    "tags": ["rbac", "regression", "timing-attack", "microservice-security"],
+    "tags": [
+      "rbac",
+      "regression",
+      "timing-attack",
+      "microservice-security"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -118,6 +164,10 @@
     "title": "'project.admin' must remain excluded from ORG_ONLY_MODULE_PERMISSIONS and rejected by assertNoOrgWideProjectBypass",
     "description": "Fixed 2026-07-22 (SEC-3, per config/permissions.js's own comment): 'project.admin' — the org-wide project-membership bypass — was previously assignable through the Extra Permissions modal / a Custom Role grid. It is now deliberately excluded from the org-grantable catalog and independently rejected by catalogSeparation.js's assertNoOrgWideProjectBypass on every Role/User write. This case guards against either safeguard being removed.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "SEC-3",
@@ -126,7 +176,12 @@
       "Attempt to submit 'project.admin' via POST /api/roles or PUT /api/users/:id/extra-permissions"
     ],
     "expectedResult": "'project.admin' never appears in the enumerable grant catalog surfaced to the UI, and any direct API attempt to assign it to a Custom Role or a User's extraPermissions is rejected with 400.",
-    "tags": ["rbac", "regression", "plac", "privilege-escalation"],
+    "tags": [
+      "rbac",
+      "regression",
+      "plac",
+      "privilege-escalation"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

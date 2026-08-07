@@ -7,15 +7,23 @@
     "title": "buildOrgScope() returns req.orgId for a non-super-admin regardless of a supplied orgId query param",
     "description": "client-frameworks.controller.js buildOrgScope() only honours req.query.orgId when the caller has the organization.admin permission. Guards against a regular org user widening their own scope by appending ?orgId=<other-org> to a request.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["req.permissions does not contain 'organization.admin'"],
+    "preconditions": [
+      "req.permissions does not contain 'organization.admin'"
+    ],
     "steps": [
       "Call buildOrgScope(req) with req.orgId = 'orgA' and req.query.orgId = 'orgB'",
       "Inspect the returned scope value"
     ],
     "expectedResult": "Returns 'orgA' (req.orgId) — the orgB query param is ignored entirely for non-super-admins.",
-    "tags": ["multi-tenant", "idor"],
+    "tags": [
+      "multi-tenant",
+      "idor"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,14 +36,23 @@
     "subFeature": "Multi-Tenant Scoping",
     "title": "buildOrgScope() returns null (unrestricted) for a super-admin who omits orgId",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["req.permissions contains 'organization.admin'", "req.query.orgId is undefined"],
+    "preconditions": [
+      "req.permissions contains 'organization.admin'",
+      "req.query.orgId is undefined"
+    ],
     "steps": [
       "Call buildOrgScope(req) with organization.admin permission and no orgId query param"
     ],
     "expectedResult": "Returns null, meaning listByProject/availableFrameworks apply no organizationId filter and return data across all orgs for that project.",
-    "tags": ["rbac", "super-admin"],
+    "tags": [
+      "rbac",
+      "super-admin"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,13 +65,19 @@
     "subFeature": "Multi-Tenant Scoping",
     "title": "assertOrgAccess() throws 403 when entity.organizationId does not match req.orgId for a non-super-admin",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
       "Call assertOrgAccess({ organizationId: 'orgB' }, req) where req.orgId = 'orgA' and req.permissions lacks organization.admin"
     ],
     "expectedResult": "Throws AppError.forbidden('Access denied'). Used by archiveFromProject/archiveByFrameworkId/updateExcludedControls to stop an org A user from mutating an org B ClientFramework record even if they guess a valid _id.",
-    "tags": ["idor", "multi-tenant"],
+    "tags": [
+      "idor",
+      "multi-tenant"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,14 +91,23 @@
     "title": "getLicensedFrameworkIds() honours only active/cancel_at_period_end/grace statuses in project billing mode",
     "description": "frameworkLicensing.js: when org.billingMode === 'project', licensing is resolved from SubscriptionProject.frameworkSubscriptions filtered to status in ['active','cancel_at_period_end','grace']. Any other status (e.g. 'canceled', 'past_due') must not count as licensed.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["org.billingMode = 'project'", "SubscriptionProject has one entry each with status 'active', 'grace', and 'canceled'"],
+    "preconditions": [
+      "org.billingMode = 'project'",
+      "SubscriptionProject has one entry each with status 'active', 'grace', and 'canceled'"
+    ],
     "steps": [
       "Call getLicensedFrameworkIds(orgId, projectId)"
     ],
     "expectedResult": "Returned Set contains the frameworkIds for the 'active' and 'grace' entries only — the 'canceled' entry's frameworkId is excluded.",
-    "tags": ["licensing", "billing"],
+    "tags": [
+      "licensing",
+      "billing"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -89,6 +121,9 @@
     "title": "getLicensedFrameworkIds() falls back to legacy org.licensedFrameworks only when no embedded frameworkSubscriptions with frameworkId exist",
     "description": "New billing flows always persist frameworkId + commercialStatus on org.subscription.frameworkSubscriptions, making that array authoritative (including a legitimate all-cancelled empty Set). The legacy org.licensedFrameworks whitelist is consulted only when embeddedWithIds.length === 0, for orgs that predate the migration.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -98,7 +133,11 @@
       "Call getLicensedFrameworkIds for Case B"
     ],
     "expectedResult": "Case A returns an empty Set (legacy array is NOT consulted, since embeddedWithIds.length > 0). Case B returns the legacy licensedFrameworks IDs as a Set.",
-    "tags": ["licensing", "billing", "legacy"],
+    "tags": [
+      "licensing",
+      "billing",
+      "legacy"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -112,15 +151,26 @@
     "title": "updateExcludedControls filters out requirement IDs that don't belong to the target framework",
     "description": "client-frameworks.controller.js updateExcludedControls only accepts candidate IDs that resolve to a FrameworkRequirement with matching frameworkId, status:'active' and isLeaf:true. IDs from another framework, non-leaf clause IDs, or malformed ObjectId strings are all silently dropped rather than erroring.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Framework F1 has active leaf requirement R1", "Framework F2 (different framework) has active leaf requirement R2", "F1 also has a non-leaf clause requirement R3"],
+    "preconditions": [
+      "Framework F1 has active leaf requirement R1",
+      "Framework F2 (different framework) has active leaf requirement R2",
+      "F1 also has a non-leaf clause requirement R3"
+    ],
     "steps": [
       "Submit excludedRequirementIds: [R1, R2, R3, 'not-an-object-id']",
       "Inspect the saved cf.excludedRequirementIds"
     ],
     "expectedResult": "Only R1 is persisted. R2 (wrong framework), R3 (non-leaf) and the malformed string are all filtered out of the saved array.",
-    "tags": ["soa", "validation", "iso27001"],
+    "tags": [
+      "soa",
+      "validation",
+      "iso27001"
+    ],
     "requirement": "ISO 27001:2022 Clause 6.1.3 (Statement of Applicability)",
     "owner": "SDET",
     "status": "active",
@@ -135,15 +185,23 @@
     "title": "availableFrameworks sorts added-first, then licensed-first, then alphabetically by title",
     "description": "The comparator in availableFrameworks() applies three tiers in order: isAdded desc, isLicensed desc, then title/name localeCompare. Verifies all three tiers, not just the first.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Catalog contains: Framework Z (added), Framework A (not added, licensed), Framework M (not added, unlicensed)"],
+    "preconditions": [
+      "Catalog contains: Framework Z (added), Framework A (not added, licensed), Framework M (not added, unlicensed)"
+    ],
     "steps": [
       "Call availableFrameworks for the project",
       "Inspect the order of the returned frameworks array"
     ],
     "expectedResult": "Order is [Z, A, M] — added frameworks first regardless of alphabet, then unadded-but-licensed, then unlicensed, each tier alphabetical within itself.",
-    "tags": ["catalog", "sorting"],
+    "tags": [
+      "catalog",
+      "sorting"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -157,13 +215,19 @@
     "title": "coverageStatus() maps a coverage percentage to the correct status bucket at each threshold boundary",
     "description": "grc-framework/page.jsx coverageStatus(pct): >=80 compliant, >=50 in-progress, >0 at-risk, else not-started. Boundary values (exactly 80, exactly 50, exactly 0) are the most likely off-by-one spot.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "Call coverageStatus(80), coverageStatus(79.9), coverageStatus(50), coverageStatus(49.9), coverageStatus(0.1), coverageStatus(0)"
     ],
     "expectedResult": "Returns 'compliant', 'in-progress', 'in-progress', 'at-risk', 'at-risk', 'not-started' respectively — the boundaries are inclusive on the lower end (>=80, >=50) and exclusive at 0.",
-    "tags": ["coverage", "boundary"],
+    "tags": [
+      "coverage",
+      "boundary"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -177,14 +241,23 @@
     "title": "getFrameworkCoverage() averageScore rounds the mean of active requirements' coverageScore",
     "description": "client-compliance-aggregation.service.js getFrameworkCoverage sums coverageScore across all status:'active' ClientRequirement docs for the framework and divides by count, then Math.round()s. Only active requirements are included — archived/excluded ones must not dilute or inflate the average.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["3 active ClientRequirement docs with coverageScore 100, 100, 51", "1 non-active (archived) requirement with coverageScore 0"],
+    "preconditions": [
+      "3 active ClientRequirement docs with coverageScore 100, 100, 51",
+      "1 non-active (archived) requirement with coverageScore 0"
+    ],
     "steps": [
       "Call getFrameworkCoverage(orgId, projectId, frameworkId)"
     ],
     "expectedResult": "totalRequirements = 3, averageScore = Math.round((100+100+51)/3) = 84. The archived requirement's 0 is excluded from both the count and the sum.",
-    "tags": ["coverage", "aggregation"],
+    "tags": [
+      "coverage",
+      "aggregation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -7,6 +7,10 @@
     "title": "risk-management-service posture aggregation pipeline matches on both organizationId and projectId in every $match/$group stage",
     "description": "analytics.job.ts's calculatePostureForOrgProject(organizationId, projectId) explicitly converts both IDs to ObjectId and includes both in its $match stages (verified at lines ~145-158). This test verifies the end-to-end aggregation output for one {org, project} pair never includes counts contributed by a sibling project or another organization's risk records.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "preconditions": [
@@ -18,7 +22,11 @@
       "Inspect the resulting PostureSnapshot risk counts"
     ],
     "expectedResult": "Snapshot reflects exactly 5 risks (Project X's own count) — never 8 (X+Y combined) and never any contribution from Org B's Project Z.",
-    "tags": ["multi-tenant", "analytics", "project-isolation"],
+    "tags": [
+      "multi-tenant",
+      "analytics",
+      "project-isolation"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "SDET",
     "status": "active",
@@ -33,6 +41,10 @@
     "title": "Centralised /tasks aggregation applies organizationId across all 8 internal MongoDB sources plus the 3 microservice fan-out calls",
     "description": "vibrantix-backend/src/modules/tasks/tasks.service.js post-filters WorkflowEntry results by resolving org scope via the entity model (WorkflowEntry has no native organizationId field) and passes { userId, organizationId } as serviceParams to microservice fan-out calls (risk-management-service, vendor-service, trust-vault-service via internal-tasks.routes.ts). This verifies no source in the fan-out leaks another org's tasks into the aggregated response.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -43,7 +55,11 @@
       "Enumerate every returned task's underlying organizationId (via its source module) for all 9 entity types"
     ],
     "expectedResult": "Every task in the response belongs to org A, across every one of the 8 internal sources and all 3 microservice fan-out results (risk-management-service, vendor-service, trust-vault-service). Any Promise.allSettled partial failure surfaces as an explicit `_partial` warning, not as silently-included cross-org data.",
-    "tags": ["multi-tenant", "cross-service", "tasks"],
+    "tags": [
+      "multi-tenant",
+      "cross-service",
+      "tasks"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "QA",
     "status": "active",
@@ -58,6 +74,10 @@
     "title": "cap-evaluation.worker.js computes usage per organization without cross-org contribution when a $lookup or nested query is involved",
     "description": "cap-evaluation.worker.js consistently threads organizationId: org._id (or orgId) through its Project.findOne, User.find, and usage-count queries (verified at lines 66, 98, 121, 167). This test confirms the worker's computed usage figures for one org are unaffected by the total number of users/projects/vendors across all other tenants in the same run.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "preconditions": [
@@ -70,7 +90,11 @@
       "Inspect the computed usage.users / usage.projects figures written back to each org's document"
     ],
     "expectedResult": "Org A's usage figures show exactly 3 users / 2 projects; Org B's large counts never bleed into Org A's computed usage, and vice versa.",
-    "tags": ["multi-tenant", "background-job", "billing"],
+    "tags": [
+      "multi-tenant",
+      "background-job",
+      "billing"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "linkedDefect": "TI-015",
     "owner": "SDET",
@@ -86,16 +110,26 @@
     "title": "Newly created organization returns zero counts across every module's list/summary endpoint before any data is created",
     "description": "Verifies the organization + project creation flow (organization.model.js / project.model.js) never inherits or displays any pre-existing records. This is the platform-wide contract underlying dashboard, risk register, evidence, audit, and vendor empty states.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A brand-new organization has just completed signup, with zero projects, evidence, risks, policies, or vendors created"],
+    "preconditions": [
+      "A brand-new organization has just completed signup, with zero projects, evidence, risks, policies, or vendors created"
+    ],
     "steps": [
       "Create a new organization via signup/onboarding",
       "Call GET summary/list endpoints for: risks, evidence, policies, audits, vendors, cloud-posture findings, compliance frameworks (adopted only)",
       "Inspect each response"
     ],
     "expectedResult": "Every endpoint returns an empty array / zero count for the new org — no records, KPI values, or chart data points originating from any other organization or from platform seed/demo data are present.",
-    "tags": ["multi-tenant", "zero-data", "onboarding"],
+    "tags": [
+      "multi-tenant",
+      "zero-data",
+      "onboarding"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "QA",
     "status": "active",
@@ -110,15 +144,26 @@
     "title": "A second project created within an already-active organization starts with zero data, isolated from its sibling project",
     "description": "project.model.js scopes projects by organizationId only — project-level isolation (as distinct from org-level isolation) depends entirely on every controller applying an explicit projectId filter rather than falling back to an org-wide query when projectId is present but the record set is empty for that specific project.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A has Project X with 10 risks, 5 evidence items, 2 active audits", "Org A creates a new Project Y with zero data"],
+    "preconditions": [
+      "Org A has Project X with 10 risks, 5 evidence items, 2 active audits",
+      "Org A creates a new Project Y with zero data"
+    ],
     "steps": [
       "Switch active project context to Project Y in the client panel",
       "Load the dashboard, risk register, evidence management, and audit assurance pages"
     ],
     "expectedResult": "Every page shows zero data / empty state for Project Y — none of Project X's 10 risks, 5 evidence items, or 2 audits appear under Project Y's context.",
-    "tags": ["multi-tenant", "project-isolation", "zero-data"],
+    "tags": [
+      "multi-tenant",
+      "project-isolation",
+      "zero-data"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "linkedDefect": "TI-018",
     "owner": "QA",
@@ -134,16 +179,27 @@
     "title": "Notification dispatch pipeline delivers audit/risk/policy events only to sockets in the matching org-scoped room",
     "description": "vibrantix-backend/src/core/socket.js joins each authenticated socket to `org:${socket.orgId}:user:${socket.userId}` (NOTIF-005) in addition to the personal `user:${userId}` room. This verifies the dispatch → BullMQ → Socket.IO emit pipeline actually targets the org-scoped room for org-wide broadcast events (e.g. policy expiry alerts), not a global unscoped channel.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Users from org A and org B both have active Socket.IO connections", "An org-wide notification event is triggered for org A (e.g. a policy expiry alert)"],
+    "preconditions": [
+      "Users from org A and org B both have active Socket.IO connections",
+      "An org-wide notification event is triggered for org A (e.g. a policy expiry alert)"
+    ],
     "steps": [
       "Connect one socket authenticated as an org A user and one as an org B user",
       "Trigger a policy-expiry (or audit-completion) notification event scoped to org A",
       "Observe which socket(s) receive the emitted event"
     ],
     "expectedResult": "Only the org A socket receives the event; the org B socket receives nothing for this event.",
-    "tags": ["multi-tenant", "notifications", "socket-io"],
+    "tags": [
+      "multi-tenant",
+      "notifications",
+      "socket-io"
+    ],
     "requirement": "ISO 27001 Annex A.8.15, GDPR Art.5(1)(f)",
     "linkedDefect": "TI-008",
     "owner": "QA",
@@ -159,16 +215,27 @@
     "title": "PDF/Excel report generation renders the requesting org's own name and logo, never a cached prior org's branding",
     "description": "Verifies report template rendering is not served from an org-agnostic cache. Guards against TI-014 (report generator caches compiled template metadata, including org name/logo substitutions, keyed without organizationId).",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A (name 'Aventra Corp') generates a compliance report", "Org B (name 'Meridian GRC') generates the same report type immediately after"],
+    "preconditions": [
+      "Org A (name 'Aventra Corp') generates a compliance report",
+      "Org B (name 'Meridian GRC') generates the same report type immediately after"
+    ],
     "steps": [
       "As an org A user, generate a compliance/audit report PDF",
       "Immediately after, as an org B user, generate the same report type",
       "Inspect the header/footer branding on both PDFs"
     ],
     "expectedResult": "Org A's report header shows 'Aventra Corp'; org B's report header shows 'Meridian GRC' — never the other org's name, logo, or framework selection.",
-    "tags": ["multi-tenant", "reports", "gdpr"],
+    "tags": [
+      "multi-tenant",
+      "reports",
+      "gdpr"
+    ],
     "requirement": "GDPR Art.5(1)(f)",
     "linkedDefect": "TI-014",
     "owner": "QA",
@@ -184,16 +251,26 @@
     "title": "Two organizations connecting the same underlying cloud account each see only their own scan findings",
     "description": "Verifies cloud_resource / Prowler finding records carry organizationId at ingest time and are queried with an org filter, rather than being attributed only to whichever org most recently triggered a scan of a shared credential set (an MSP scenario).",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A and Org B both register the same test AWS account credentials (simulating a shared/MSP-managed account)"],
+    "preconditions": [
+      "Org A and Org B both register the same test AWS account credentials (simulating a shared/MSP-managed account)"
+    ],
     "steps": [
       "Trigger a Prowler scan from Org A's cloud-posture page",
       "Trigger a Prowler scan from Org B's cloud-posture page against the same account",
       "Compare the findings shown on each org's cloud-posture dashboard"
     ],
     "expectedResult": "Each org's cloud-posture view shows only findings ingested under that org's organizationId — Org B never sees Org A's finding list or resource inventory, even though the underlying cloud account is identical.",
-    "tags": ["multi-tenant", "cloud-posture", "prowler"],
+    "tags": [
+      "multi-tenant",
+      "cloud-posture",
+      "prowler"
+    ],
     "requirement": "ISO 27001 Annex A.5.19",
     "linkedDefect": "TI-017",
     "owner": "QA",
@@ -209,15 +286,26 @@
     "title": "ai_policy_generator_python RAG ingestion tags every embedded policy chunk with org_id, and retrieval filters on it",
     "description": "Verifies the Python policy-generator microservice's vector store ingestion and retrieval pipeline enforces org-level metadata partitioning end-to-end (ingest → similarity_search with a filter), not just at the assistant-service layer.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A has an AI-generated policy referencing a unique, distinctive internal control name", "Org B requests AI generation of an unrelated policy"],
+    "preconditions": [
+      "Org A has an AI-generated policy referencing a unique, distinctive internal control name",
+      "Org B requests AI generation of an unrelated policy"
+    ],
     "steps": [
       "As an org B user, request AI generation of a new policy on an unrelated topic",
       "Inspect the RAG context / retrieved chunks used to ground the generation"
     ],
     "expectedResult": "No chunks from org A's policy documents are retrieved or referenced in org B's generation context.",
-    "tags": ["ai", "rag", "multi-tenant"],
+    "tags": [
+      "ai",
+      "rag",
+      "multi-tenant"
+    ],
     "requirement": "GDPR Art.25, ISO 27001 Annex A.8.15",
     "linkedDefect": "TI-019",
     "owner": "QA",
@@ -233,15 +321,25 @@
     "title": "GET /frameworks/adopted returns only frameworks with a client_frameworks record for the caller's org, distinct from global template catalog",
     "description": "Verifies the framework picker's two data sources (global templates vs. org-adopted frameworks) are not co-mingled in a way that makes a new org appear to already have ISO 27001/SOC 2/HIPAA active. Grounds TI-013.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A brand-new org has adopted zero frameworks"],
+    "preconditions": [
+      "A brand-new org has adopted zero frameworks"
+    ],
     "steps": [
       "As the new org's admin, open the GRC Framework overview page",
       "Inspect which frameworks are shown as 'active/adopted' vs. 'available to add'"
     ],
     "expectedResult": "Zero frameworks appear as adopted; all catalog frameworks (ISO 27001, SOC 2, HIPAA, etc.) appear only under 'available to add', clearly marked isTemplate/isAdopted:false, with no Statement of Applicability content pre-populated.",
-    "tags": ["multi-tenant", "zero-data", "grc-framework"],
+    "tags": [
+      "multi-tenant",
+      "zero-data",
+      "grc-framework"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "linkedDefect": "TI-013",
     "owner": "QA",

@@ -7,16 +7,25 @@
     "title": "Toast notifications appear bottom-right across all modules",
     "description": "UI_UX_STANDARD.md §6.12 mandates position: 'bottom-right' for every toast, always. A spot-check of src/components/vendor-management/VendorProfileDrawer.jsx found toast() calls using position: 'top-right' on the file-open-failure, download-failure, and download-warning paths (around lines 1202, 1222, 1990), which contradicts the standard and will visually clash with every other module that follows the bottom-right rule.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with access to at least 2 modules (e.g., Vendor Management, Evidence Management)"],
+    "preconditions": [
+      "Logged in as a user with access to at least 2 modules (e.g., Vendor Management, Evidence Management)"
+    ],
     "steps": [
       "In Vendor Management, open a vendor profile and trigger a file-open or file-download failure (e.g., a broken/expired file link)",
       "Observe the screen position of the resulting toast",
       "Trigger a success/info toast in a second module (e.g., a CSV export) and observe its position"
     ],
     "expectedResult": "Every toast across every module renders in the bottom-right corner of the viewport. Currently Vendor Management's file open/download error and warning toasts render top-right (VendorProfileDrawer.jsx), which is a deviation to fix.",
-    "tags": ["toast", "consistency", "vendor-management"],
+    "tags": [
+      "toast",
+      "consistency",
+      "vendor-management"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.12",
     "owner": "QA",
     "status": "active",
@@ -31,15 +40,24 @@
     "title": "Stats cards use the canonical padding, icon size, and value font size defined in the design standard",
     "description": "The shared component src/components/common/StatsCard.jsx, used platform-wide (e.g. via ProgrammeStatsCards.jsx in Audit Assurance), renders with px=3/py=2 outer padding, a p=1 icon container with a boxSize=3 icon, and fontSize='md' for the stat value — all smaller than the canonical spec at §6.1 (px=4/py=3, p=1.5/boxSize=3.5, fontSize='2xl'). This makes KPI cards read visibly more compact than the spec intends wherever this shared component is used.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Navigate to /audit-assurance/programme (uses ProgrammeStatsCards/StatsCard)"],
+    "preconditions": [
+      "Navigate to /audit-assurance/programme (uses ProgrammeStatsCards/StatsCard)"
+    ],
     "steps": [
       "Open /audit-assurance/programme and inspect a stats card's outer padding, icon container size, and KPI value font size via devtools box model",
       "Compare the measured values against the canonical spec values in §6.1"
     ],
     "expectedResult": "Stats cards render with 16px/12px outer padding, a 6px icon container padding with a 14px icon, and a 24px (2xl) stat value. StatsCard.jsx currently renders smaller values on all three dimensions, which is a documented gap versus the spec.",
-    "tags": ["stats-card", "consistency", "design-tokens"],
+    "tags": [
+      "stats-card",
+      "consistency",
+      "design-tokens"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.1",
     "owner": "QA",
     "status": "active",
@@ -54,16 +72,27 @@
     "title": "Icon containers on the Risk Center overview adapt background and border color between light and dark mode",
     "description": "src/app/(private)/risk-center/page.jsx hardcodes several icon-container colors directly instead of wrapping them in useColorModeValue as required by §6.19/§10: bg='red.900'/borderColor='red.700' on the 'Top Active Risks' header icon (~line 490), bg='purple.900'/borderColor='purple.700' on the live-pulse indicator (~line 993), and bg='blue.900'/borderColor='blue.700' (~line 1311) and bg='orange.900'/borderColor='orange.700' (~line 1356) on two further icon containers. A *.900 background is a near-black dark-mode shade; rendered in light mode it produces a jarring near-black chip against the white card instead of the intended light tint.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Navigate to /risk-center", "Color mode set to Light"],
+    "preconditions": [
+      "Navigate to /risk-center",
+      "Color mode set to Light"
+    ],
     "steps": [
       "With color mode = Light, open /risk-center and inspect the icon badge beside the 'Top Active Risks' panel header",
       "Inspect the pulsing status indicator's icon container and the two icon containers further down the page",
       "Switch to Dark mode and re-inspect the same four containers"
     ],
     "expectedResult": "Icon container backgrounds should read colorName.50/colorName.200 in light mode and colorName.900/colorName.800 in dark mode via useColorModeValue. Currently these four containers render the dark-mode *.900/*.700 values in BOTH light and dark mode (hardcoded, not theme-aware), producing a near-black icon chip in light mode.",
-    "tags": ["dark-mode", "icon-container", "risk-center", "contrast"],
+    "tags": [
+      "dark-mode",
+      "icon-container",
+      "risk-center",
+      "contrast"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.19, §10",
     "owner": "QA",
     "status": "active",
@@ -78,16 +107,26 @@
     "title": "Evidence Management search bar uses the standard Chakra input pattern with theme-consistent focus styling",
     "description": "src/components/evidence-management/EvidenceFilters.jsx builds its search field from a raw Box as='input' rather than Chakra's InputGroup/Input/InputLeftElement pattern (§6.5). The search icon color is a hardcoded 'var(--chakra-colors-gray-400)' string instead of useColorModeValue, and the focus style hardcodes borderColor: 'blue.400' with a boxShadow referencing '--chakra-colors-blue-400', instead of the standard brand.500/brand.300 focus token used elsewhere (§5, §6.9).",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Navigate to /evidence-management"],
+    "preconditions": [
+      "Navigate to /evidence-management"
+    ],
     "steps": [
       "Focus the top search input on /evidence-management and inspect the focus ring color",
       "Compare it against a standard Chakra Input's focus ring elsewhere on the platform (e.g., a form field in Organization > Team invite)",
       "Toggle dark mode and refocus the search input"
     ],
     "expectedResult": "The focus ring color and search icon color should track the platform's brand.500/brand.300 token and switch between light/dark via useColorModeValue, matching every other input on the platform. Currently the evidence search input uses a hardcoded blue.400 focus color and a non-token search icon color, diverging from the rest of the platform's inputs.",
-    "tags": ["filter-bar", "forms", "focus-ring", "evidence-management"],
+    "tags": [
+      "filter-bar",
+      "forms",
+      "focus-ring",
+      "evidence-management"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.5, §6.9",
     "owner": "QA",
     "status": "active",
@@ -101,6 +140,9 @@
     "subFeature": "Buttons",
     "title": "Each page view exposes exactly one primary (solid brand or gradient) call-to-action button",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -108,7 +150,10 @@
       "Count the solid-brand-colored or gradient CTA buttons visible in the page header/action bar at once"
     ],
     "expectedResult": "No page shows more than one solid-brand or gradient primary CTA competing for attention in the same header/section; secondary actions use outline/ghost/glassmorphism variants per §6.7.",
-    "tags": ["buttons", "consistency"],
+    "tags": [
+      "buttons",
+      "consistency"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.7",
     "owner": "QA",
     "status": "active",
@@ -122,6 +167,9 @@
     "subFeature": "Badges / Status Chips",
     "title": "Status badges map to the canonical colorScheme regardless of module",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -130,7 +178,11 @@
       "Compare the colorScheme used for equivalent semantic states across the two modules"
     ],
     "expectedResult": "Positive/closed/approved states render green, pending/at-risk states render orange, critical/rejected render red, and not-started/archived render gray consistently across every module per the canonical mapping table in §6.8 — no module uses a different colorScheme for an equivalent semantic status.",
-    "tags": ["badge", "status-chip", "consistency"],
+    "tags": [
+      "badge",
+      "status-chip",
+      "consistency"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.8",
     "owner": "QA",
     "status": "active",
@@ -144,6 +196,9 @@
     "subFeature": "Loading & Empty States",
     "title": "A data panel never shows an empty-state message while sibling panels on the same page are still loading",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -151,7 +206,11 @@
       "Observe the sequence in which each panel transitions from skeleton to either populated content or an empty state"
     ],
     "expectedResult": "Every panel shows a skeleton/spinner while its own fetch is in flight; a panel only shows its empty-state message after its own fetch completes and returns zero rows — never before, and never while other panels on the page are still mid-fetch.",
-    "tags": ["empty-state", "loading-state", "ux"],
+    "tags": [
+      "empty-state",
+      "loading-state",
+      "ux"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.13, §6.14",
     "owner": "QA",
     "status": "active",

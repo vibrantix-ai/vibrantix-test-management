@@ -7,15 +7,24 @@
     "title": "Navigating to /compliance-vault renders as Evidence Management, not a dedicated vault hub",
     "description": "There is no src/app/(private)/compliance-vault/page.jsx in vibrantix-client-panel — Glob of the full (private) app router tree confirms no compliance-vault directory exists. routeHeaderMapping.js's '/compliance-vault' entry sets title 'Evidence Management', implying the intended behavior is for this path to display the Evidence Management hub content. This case documents current real behavior end-to-end.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as any authenticated user"],
+    "preconditions": [
+      "Logged in as any authenticated user"
+    ],
     "steps": [
       "Directly navigate the browser to /compliance-vault",
       "Observe the page that actually renders (Evidence Management page, a Next.js not-found fallback, or a redirect)"
     ],
     "expectedResult": "Document the exact observed behavior (likely a 404/not-found since no page.jsx exists for this exact path, unless a higher-level catch-all or redirect middleware intercepts it first). This must be reconciled against the routeHeaderMapping.js entry, which implies '/compliance-vault' was expected to resolve successfully.",
-    "tags": ["vault-hub", "routing", "known-gap"],
+    "tags": [
+      "vault-hub",
+      "routing",
+      "known-gap"
+    ],
     "linkedDefect": "CPVT-001",
     "owner": "QA",
     "status": "active",
@@ -30,17 +39,26 @@
     "title": "'View Details' on the Google Drive integration card navigates to a compliance-vault path with no matching page",
     "description": "GoogleDriveIntegrationCard.js:136-138 (rendered on the Integrations hub) calls router.push('/compliance-vault/integrations/google-drive') from its 'View Details' button. The working Google Drive detail page actually lives at /evidence-management/gdrive/page.jsx — a different path entirely. This end-to-end case confirms the real, currently-broken user journey.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/integrations/GoogleDriveIntegrationCard.js:137",
-    "preconditions": ["Google Drive integration is configured/enabled for the org (status.enabled or status.configured is true, so the 'View Details' button renders instead of the 'Integrate to view details' placeholder)"],
+    "preconditions": [
+      "Google Drive integration is configured/enabled for the org (status.enabled or status.configured is true, so the 'View Details' button renders instead of the 'Integrate to view details' placeholder)"
+    ],
     "steps": [
       "Navigate to /integrations",
       "Locate the Google Drive integration card",
       "Click 'View Details'"
     ],
     "expectedResult": "Browser navigates to /compliance-vault/integrations/google-drive, which has no corresponding page in the app router and renders a 404/not-found rather than the Google Drive detail view the user expects. Compare against the working destination /evidence-management/gdrive.",
-    "tags": ["google-drive", "navigation", "known-gap"],
+    "tags": [
+      "google-drive",
+      "navigation",
+      "known-gap"
+    ],
     "linkedDefect": "CPVT-002",
     "owner": "QA",
     "status": "active",
@@ -55,17 +73,27 @@
     "title": "'View Details' on the Jira integration card (with Prowler context) navigates to a compliance-vault path with no matching page",
     "description": "JiraIntegrationCard.js:115-130 builds a URL '/compliance-vault/integrations/jira' (optionally appending requirementId/frameworkId/checkName/auditId query params when invoked with prowlerContext, e.g. from a cloud-posture finding's linked Jira ticket) and pushes to it. No compliance-vault route exists to receive these params.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/integrations/JiraIntegrationCard.js:115",
-    "preconditions": ["Jira integration is configured for the org", "Card is rendered with a prowlerContext (e.g. from a cloud-posture finding) supplying requirementId/frameworkId/checkName"],
+    "preconditions": [
+      "Jira integration is configured for the org",
+      "Card is rendered with a prowlerContext (e.g. from a cloud-posture finding) supplying requirementId/frameworkId/checkName"
+    ],
     "steps": [
       "From a cloud-posture finding that has a linked Jira ticket, open the Jira integration card in that context",
       "Click 'View Details'",
       "Observe the resulting URL and page"
     ],
     "expectedResult": "Browser navigates to '/compliance-vault/integrations/jira?requirementId=...&frameworkId=...&checkName=...&auditId=...' which 404s — the requirementId/frameworkId/checkName/auditId context carried in the query string is lost since no page consumes it.",
-    "tags": ["jira", "navigation", "known-gap"],
+    "tags": [
+      "jira",
+      "navigation",
+      "known-gap"
+    ],
     "linkedDefect": "CPVT-003",
     "owner": "QA",
     "status": "active",
@@ -80,17 +108,26 @@
     "title": "'View in Evidence' from an audit requirement's Integrations tab sends the auditor to a broken compliance-vault link instead of Evidence Management",
     "description": "EvidenceTab.jsx (audit-assurance requirement detail, integrations sub-tab) constructs router.push(`/compliance-vault?${params.toString()}`) at line 170 to deep-link an auditor from a specific requirement back to the evidence backing it. Since /compliance-vault has no page, this breaks a real cross-module audit workflow: the auditor loses their place and must manually re-navigate to /evidence-management.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/src/components/audit-assurance/auditIdRoute/frameworkIdRoute/requirementIdRoute/EvidenceTab.jsx:170",
-    "preconditions": ["An audit requirement has linked evidence with integration-sourced data (auditId, requirementId present)"],
+    "preconditions": [
+      "An audit requirement has linked evidence with integration-sourced data (auditId, requirementId present)"
+    ],
     "steps": [
       "Open an audit requirement's detail page under /audit-assurance/[auditId]",
       "Go to the Integrations tab of the Evidence section",
       "Trigger the action that calls handleViewInEvidence (navigates via the constructed compliance-vault URL)"
     ],
     "expectedResult": "Browser navigates to a /compliance-vault URL that 404s, breaking the auditor's cross-module traceability path from audit requirement to underlying evidence. Expected/desired behavior would be navigating to /evidence-management with the same query params preserved.",
-    "tags": ["cross-module", "audit-assurance", "known-gap"],
+    "tags": [
+      "cross-module",
+      "audit-assurance",
+      "known-gap"
+    ],
     "linkedDefect": "CPVT-004",
     "requirement": "ISO 27001 Clause 7.5",
     "owner": "QA",
@@ -106,9 +143,15 @@
     "title": "An evidence item usable as vault content moves through its full workflow state machine end-to-end",
     "description": "Since /compliance-vault has no distinct backend, any 'vault workflow' functionality is really the evidence.model.js status enum (draft → submitted → assigned → under_review → needs_revision/closed) driven by POST /:evidenceId/workflow/transition (evidence.routes.js:59), gated by 'evidence.update'. This case exercises the real state machine end-to-end as it would be surfaced in a vault detail/workflow screen.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A newly-uploaded evidence item in status 'draft'", "A reviewer user distinct from the uploader"],
+    "preconditions": [
+      "A newly-uploaded evidence item in status 'draft'",
+      "A reviewer user distinct from the uploader"
+    ],
     "steps": [
       "Submit the evidence item for review (transition draft → submitted)",
       "As a reviewer, assign it to themselves (submitted → assigned)",
@@ -117,7 +160,10 @@
       "As the reviewer, approve (→ closed)"
     ],
     "expectedResult": "Each transition succeeds only for a user holding 'evidence.update', the workflow history endpoint (GET /:evidenceId/workflow/history) records every transition with actor and timestamp, and the final status is 'closed'.",
-    "tags": ["workflow", "state-machine"],
+    "tags": [
+      "workflow",
+      "state-machine"
+    ],
     "requirement": "ISO 27001 Clause 7.5",
     "owner": "QA",
     "status": "active",
@@ -132,16 +178,26 @@
     "title": "A 'certificate'-type evidence item with an approaching expirationDate produces no renewal alert (unlike Trust Vault's certifications)",
     "description": "trust-vault-service has a dedicated ExpiryAlertService.ts, expiryCheck.ts scheduled job, and a certification_expiry_alert.hbs email template driving real renewal alerts for certifications stored there. Evidence-management's 'certificate'-type documents (evidence.model.js metadata.expirationDate) have no equivalent job. Since compliance-vault's real backing store is evidence-management, this documents a genuine feature gap between what the module is expected to cover ('certification storage... expiry date tracking, renewal alerts') and what actually exists.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An evidence item of type='certificate' with metadata.expirationDate set to 5 days from now"],
+    "preconditions": [
+      "An evidence item of type='certificate' with metadata.expirationDate set to 5 days from now"
+    ],
     "steps": [
       "Upload the certificate-type evidence item with the near-future expirationDate",
       "Wait for (or manually trigger) any daily/scheduled job in vibrantix-backend that scans evidence for upcoming expirations",
       "Check the notification center / email inbox for a renewal alert"
     ],
     "expectedResult": "No renewal alert is generated — confirms evidence-management has no equivalent to trust-vault-service's ExpiryAlertService for its own 'certificate' type documents. Users relying on compliance-vault (i.e. evidence-management) for certification expiry tracking will silently miss renewals; real certification lifecycle management with alerts exists only in Trust Vault (/trust-vault), a separate module/service.",
-    "tags": ["certification", "expiry", "known-gap", "cross-module"],
+    "tags": [
+      "certification",
+      "expiry",
+      "known-gap",
+      "cross-module"
+    ],
     "linkedDefect": "CPVT-005",
     "requirement": "ISO 27001 Clause 7.5",
     "owner": "QA",

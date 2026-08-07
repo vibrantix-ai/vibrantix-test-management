@@ -6,15 +6,26 @@
     "subFeature": "Risk List",
     "title": "/risk-center/risks page loads and renders the risk list without error",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with risk.read", "An active project selected"],
+    "preconditions": [
+      "Logged in as a user with risk.read",
+      "An active project selected"
+    ],
     "steps": [
       "Navigate to /risk-center/risks",
       "Wait for the page to finish loading"
     ],
     "expectedResult": "Page renders the risk table/list with no unhandled error boundary, no perpetual spinner, and existing seeded risks (if any) are visible.",
-    "tags": ["smoke", "page-load"],
+    "tags": [
+      "smoke",
+      "page-load"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,16 +39,27 @@
     "title": "'Add Risk Assessment' button opens the create-risk form",
     "description": "risk-center/risks/page.jsx wraps the 'Add Risk Assessment' menu button in PermissionHide permission=\"risk.create\" and its handleCreateRisk() opens CreateRiskModal in 'create' mode. Covers the three sub-triggers (Manual / Cloud Resource / Security Finding Assessment) each opening the same modal.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with risk.create", "An active project selected"],
+    "preconditions": [
+      "Logged in as a user with risk.create",
+      "An active project selected"
+    ],
     "steps": [
       "Navigate to /risk-center/risks",
       "Click 'Add Risk Assessment'",
       "Click 'Manual Risk Assessment' from the dropdown"
     ],
     "expectedResult": "CreateRiskModal opens as a drawer/dialog in create mode with an empty risk form (name, description, category, riskType, likelihood/impact fields visible).",
-    "tags": ["smoke", "create-risk"],
+    "tags": [
+      "smoke",
+      "create-risk"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -50,16 +72,27 @@
     "subFeature": "Risk Detail",
     "title": "/risk-register/[id] detail page loads for an existing risk",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["At least one risk exists in the active project", "Logged in as a user with risk.read"],
+    "preconditions": [
+      "At least one risk exists in the active project",
+      "Logged in as a user with risk.read"
+    ],
     "steps": [
       "From /risk-center/risks, click into any risk row",
       "Confirm the URL is /risk-register/[id]",
       "Wait for the page to finish loading"
     ],
     "expectedResult": "Risk detail page renders with the risk's name, inherent/residual score, and phase visible — no unhandled error boundary or blank page.",
-    "tags": ["smoke", "page-load"],
+    "tags": [
+      "smoke",
+      "page-load"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -72,15 +105,27 @@
     "subFeature": "Risk Center Dashboard",
     "title": "/risk-center dashboard page loads without error",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with risk.read", "An active project selected"],
+    "preconditions": [
+      "Logged in as a user with risk.read",
+      "An active project selected"
+    ],
     "steps": [
       "Navigate to /risk-center",
       "Wait for the page to finish loading"
     ],
     "expectedResult": "Dashboard renders its widgets (heat map, top risks, governance summary) with no unhandled error boundary or perpetual spinner.",
-    "tags": ["smoke", "page-load", "risk-center"],
+    "tags": [
+      "smoke",
+      "page-load",
+      "risk-center"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -93,15 +138,26 @@
     "subFeature": "Module Risk Triage",
     "title": "/risk-center/risk-triage page loads without error",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with risk.read"],
+    "preconditions": [
+      "Logged in as a user with risk.read"
+    ],
     "steps": [
       "Navigate to /risk-center/risk-triage",
       "Wait for the page to finish loading"
     ],
     "expectedResult": "The module risk triage queue page renders (empty state or a list of pending candidates) with no unhandled error boundary.",
-    "tags": ["smoke", "page-load", "module-risk-triage"],
+    "tags": [
+      "smoke",
+      "page-load",
+      "module-risk-triage"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

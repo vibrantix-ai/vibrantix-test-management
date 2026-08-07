@@ -7,17 +7,28 @@
     "title": "Multi-file upload queues one BullMQ job per file and flips overall status to completed only when every file finishes",
     "description": "Grounded in evidence-upload.controller.js queueUploadJobs() and evidence-upload.worker.js updateOverallStatus(): each file gets its own 'process-upload' job (3 attempts, exponential backoff from 5s), and the worker recomputes evidence.uploadStatus.status after every job settles, only flipping to 'completed' once processed === total files.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/integration/evidence-upload-pipeline.test.ts",
-    "preconditions": ["BullMQ 'file-upload' queue and worker running against a test Redis instance", "S3 (or local stub) reachable"],
+    "preconditions": [
+      "BullMQ 'file-upload' queue and worker running against a test Redis instance",
+      "S3 (or local stub) reachable"
+    ],
     "steps": [
       "POST /evidence/upload with 3 files attached to one evidence item",
       "Poll GET /evidence/:evidenceId/upload-status until all files report a terminal state",
       "Inspect each file's files[].s3.key, files[].checksum.value, and the overall uploadStatus.status"
     ],
     "expectedResult": "Three separate BullMQ jobs are created. Each file transitions pending → uploading → completed with an SHA-256 checksum and S3 key populated. uploadStatus.status only becomes 'completed' after the 3rd file finishes, not after the 1st or 2nd.",
-    "tags": ["s3-upload", "bullmq", "integration"],
+    "tags": [
+      "s3-upload",
+      "bullmq",
+      "integration"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "SDET",
     "status": "active",
@@ -32,15 +43,26 @@
     "title": "Editing evidence title/description bumps the version but does not carry forward control mappings by default",
     "description": "createVersionedUpdate() in evidence-version.service.js only clones active EvidenceControlMappings to the new version when opts.carryForwardMappings === true. evidence.controller.js updateEvidence passes `req.body.carryForwardMappings === true`, so an ordinary PUT with no explicit flag defaults to false and the mapped controls stay pinned to the old version.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Evidence item at v1 has 2 active control mappings", "No carryForwardMappings field sent in the update body"],
+    "preconditions": [
+      "Evidence item at v1 has 2 active control mappings",
+      "No carryForwardMappings field sent in the update body"
+    ],
     "steps": [
       "PUT /evidence/:evidenceId with a changed title (a version-trigger field) and no carryForwardMappings key",
       "GET /evidence/mappings?evidenceId=<id> filtered to the new version"
     ],
     "expectedResult": "Evidence is now at v2. The 2 control mappings created against v1 are NOT present when querying mappings for v2 — control coverage for this evidence appears to drop until mappings are manually recreated or the caller explicitly passes carryForwardMappings:true.",
-    "tags": ["versioning", "control-mapping", "integration"],
+    "tags": [
+      "versioning",
+      "control-mapping",
+      "integration"
+    ],
     "requirement": "ISO 27001 Clause 7.5.3",
     "owner": "SDET",
     "status": "active",
@@ -55,15 +77,25 @@
     "title": "Restoring a historical version defaults to carrying forward the current version's active control mappings",
     "description": "EvidenceVersionService.restoreVersion() sets carryForwardMappings = (opts.carryForwardMappings !== false) — the opposite default from a normal edit (EVID-INT-002). This asymmetry is intentional per the code comment (dropping mappings on restore previously zeroed out coverage with no warning) but the two endpoints behaving oppositely by default is a real trap for anyone assuming consistent behavior.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Evidence item has 2 versions; v2 (current) has 1 active control mapping"],
+    "preconditions": [
+      "Evidence item has 2 versions; v2 (current) has 1 active control mapping"
+    ],
     "steps": [
       "POST /evidence/:evidenceId/versions/1/restore with an empty body (no carryForwardMappings key)",
       "GET /evidence/mappings?evidenceId=<id> filtered to the newly created version (v3)"
     ],
     "expectedResult": "v3 is created from v1's content. The mapping that was active on v2 is cloned onto v3 automatically, with no explicit flag required — confirming restore's carry-forward default is true, opposite of updateEvidence's default.",
-    "tags": ["versioning", "control-mapping", "integration"],
+    "tags": [
+      "versioning",
+      "control-mapping",
+      "integration"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -77,15 +109,25 @@
     "title": "Archiving evidence cascades to deactivate its linked vulnerability/patch-management/SBOM report records",
     "description": "deactivateLinkedReports() in evidence.controller.js runs on archiveEvidence, transitionWorkflow(→'archived'), and hardDeleteEvidence. It sets isActive:false on PatchManagementReport/PatchItem/VulnReport/VulnFinding/SbomReport/SbomComponent documents linked by evidenceId, so those modules' active lists and aggregate stats stop counting the archived source evidence.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["A vulnerability_report evidence item exists with a parsed VulnReport (isActive: true) and at least one VulnFinding"],
+    "preconditions": [
+      "A vulnerability_report evidence item exists with a parsed VulnReport (isActive: true) and at least one VulnFinding"
+    ],
     "steps": [
       "DELETE /evidence/:evidenceId (archive) on the vulnerability_report evidence item",
       "Query the vulnerability-report module's active list/aggregate endpoint for the same project"
     ],
     "expectedResult": "The archived evidence's VulnReport and all its VulnFinding documents are updated to isActive:false and no longer appear in the vulnerability-report module's active counts, without requiring a separate manual action in that module.",
-    "tags": ["retention", "cross-module", "integration"],
+    "tags": [
+      "retention",
+      "cross-module",
+      "integration"
+    ],
     "requirement": "ISO 27001 Annex A.5.33",
     "owner": "SDET",
     "status": "active",
@@ -100,15 +142,26 @@
     "title": "Exceeding the org's storage quota flags the evidence as overLimit but does not block the upload",
     "description": "createEvidence() calls quota.consume(orgId, 'storageBytes', totalBytes). On QUOTA_EXCEEDED it sets storageOverLimit = true and continues — the evidence document still gets created with overLimit:true and the files are still queued for S3 upload. This is a soft cap by design, not a hard block.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["isPricingV1Enabled is true for the test org", "The org's storage quota is already at or near its limit"],
+    "preconditions": [
+      "isPricingV1Enabled is true for the test org",
+      "The org's storage quota is already at or near its limit"
+    ],
     "steps": [
       "POST /evidence/upload with a file whose size pushes the org over its storageBytes quota",
       "Inspect the created evidence document"
     ],
     "expectedResult": "The request returns 201, not 402/403. The created evidence has overLimit:true and its files still proceed through the normal BullMQ → S3 pipeline — the org is not prevented from uploading further evidence purely by quota.",
-    "tags": ["storage-quota", "billing", "integration"],
+    "tags": [
+      "storage-quota",
+      "billing",
+      "integration"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -122,15 +175,25 @@
     "title": "AI-assisted upload creates the evidence draft even when the AI extraction call fails",
     "description": "uploadAI() runs queueUploadJobs() (S3) and callAIService() (notebookAI-service) concurrently via Promise.allSettled — neither result blocks the other, and AI failure is captured into aiAssistedUpload.aiSuggestions.error rather than thrown.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["NOTEBOOK_AI_SERVICE_URL points to a service that will return a 500/timeout for this test"],
+    "preconditions": [
+      "NOTEBOOK_AI_SERVICE_URL points to a service that will return a 500/timeout for this test"
+    ],
     "steps": [
       "POST /evidence/upload/ai with a valid file while the AI extraction service is unreachable",
       "GET the created evidence document"
     ],
     "expectedResult": "Response is 201 with the evidence in 'draft' status. aiAssistedUpload.processingStatus is 'failed', aiAssistedUpload.aiSuggestions.error is true with a message, and the file's S3 upload still proceeds independently through the normal BullMQ pipeline.",
-    "tags": ["ai-upload", "resilience", "integration"],
+    "tags": [
+      "ai-upload",
+      "resilience",
+      "integration"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -144,14 +207,25 @@
     "title": "Fulfilling an evidence request accepts a draft evidence item with zero attached files",
     "description": "linkEvidence() in evidence-request.controller.js resolves evidenceId to a Mongo _id and immediately sets status:'fulfilled' — it never checks the linked Evidence document's status (draft/rejected/expired all pass) or whether evidence.files has any entries. A request can be marked fulfilled by evidence that is not actually reviewable.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["An open EvidenceRequest exists", "An Evidence item exists in 'draft' status with an empty files[] array"],
+    "preconditions": [
+      "An open EvidenceRequest exists",
+      "An Evidence item exists in 'draft' status with an empty files[] array"
+    ],
     "steps": [
       "POST /evidence-requests/:requestId/link with evidenceId pointing at the draft, file-less evidence item"
     ],
     "expectedResult": "Current behavior: the request transitions to 'fulfilled' with fulfilledAt set and linkedEvidenceId populated — no validation error is raised despite the linked evidence having no files and never having been submitted for review.",
-    "tags": ["evidence-requests", "workflow", "integration"],
+    "tags": [
+      "evidence-requests",
+      "workflow",
+      "integration"
+    ],
     "requirement": "ISO 27001:2022 Clause 9.2",
     "owner": "SDET",
     "status": "active",
@@ -166,14 +240,25 @@
     "title": "resolveProjectScope narrows the evidence list to the caller's assigned projects when no projectId is supplied",
     "description": "PLAC-006: listEvidence() calls Object.assign(filter, await resolveProjectScope(req, projectId)). Omitting projectId must restrict results to projects the caller is a member of, not fall back to every project in the org.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Org has Project A and Project B, each with evidence", "Test user is a member of Project A only"],
+    "preconditions": [
+      "Org has Project A and Project B, each with evidence",
+      "Test user is a member of Project A only"
+    ],
     "steps": [
       "As the test user, call GET /evidence with no projectId query param"
     ],
     "expectedResult": "Only Project A's evidence is returned. Project B's evidence (same org, different project, no membership) is excluded — the response is not org-wide.",
-    "tags": ["multi-tenant", "rbac", "integration"],
+    "tags": [
+      "multi-tenant",
+      "rbac",
+      "integration"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

@@ -7,6 +7,9 @@
     "title": "parseScreenshotBase64 strips data-URL prefix before decoding",
     "description": "bug-report.controller.js's parseScreenshotBase64 splits on the first comma when the string contains one (data:image/png;base64,....) and decodes only the payload after it. Verifies both data-URL and raw-base64 inputs decode to a non-empty Buffer.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -15,7 +18,10 @@
       "Call parseScreenshotBase64(null) and parseScreenshotBase64('')"
     ],
     "expectedResult": "First two calls return a Buffer with length > 0 containing the decoded PNG bytes; null/empty input returns null without throwing.",
-    "tags": ["screenshot", "unit"],
+    "tags": [
+      "screenshot",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -29,6 +35,9 @@
     "title": "Ticket number is generated as TKT + 6 uppercase hex characters",
     "description": "createBugReport builds ticketNumber via `TKT${crypto.randomBytes(3).toString('hex').toUpperCase()}` before any Jira call, so a report is never persisted without a human-readable ticket reference even if Jira is unreachable.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -36,7 +45,10 @@
       "Assert each matches /^TKT[0-9A-F]{6}$/"
     ],
     "expectedResult": "All generated values match the TKT+6-hex-uppercase pattern; the BugReport.ticketNumber schema field is declared unique so collisions would fail at the DB layer, not silently overwrite.",
-    "tags": ["ticket-number", "unit"],
+    "tags": [
+      "ticket-number",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -50,6 +62,9 @@
     "title": "normalizeStatus maps known Jira status names to the 3-value app status",
     "description": "jira.service.js's DEFAULT_STATUS_MAP collapses many Jira workflow names into Open/In Progress/Closed: to do|backlog|open -> Open; in progress|in review -> In Progress; done|resolved|closed -> Closed.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -59,7 +74,11 @@
       "Call normalizeStatus('BACKLOG', 'Open') to check case-insensitivity"
     ],
     "expectedResult": "Returns 'Open', 'In Progress', 'Closed', 'Open' respectively — matching is case-insensitive and trims whitespace.",
-    "tags": ["jira-sync", "status-normalization", "unit"],
+    "tags": [
+      "jira-sync",
+      "status-normalization",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -73,6 +92,9 @@
     "title": "normalizeStatus falls back to the current status for an unmapped raw Jira status, and to 'In Progress' if no current status exists",
     "description": "When rawJiraStatus is falsy, or the lowercased value has no entry in the merged status map, normalizeStatus(rawJiraStatus, currentStatus) returns currentStatus, defaulting further to 'In Progress' only when currentStatus itself is falsy. A custom Jira status (e.g. 'Blocked') that isn't in JIRA_STATUS_MAP silently keeps the app's last known status rather than erroring.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -81,7 +103,11 @@
       "Call normalizeStatus('Blocked', undefined)"
     ],
     "expectedResult": "Returns 'Open', 'Closed', and 'In Progress' respectively — an unrecognized Jira status never crashes normalization or silently jumps to an arbitrary value.",
-    "tags": ["jira-sync", "status-normalization", "unit"],
+    "tags": [
+      "jira-sync",
+      "status-normalization",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -95,16 +121,24 @@
     "title": "JIRA_STATUS_MAP env override merges with (not replaces) DEFAULT_STATUS_MAP",
     "description": "parseStatusMap() JSON.parses process.env.JIRA_STATUS_MAP, lowercases its keys, and spreads it over DEFAULT_STATUS_MAP. An invalid/missing env value falls back to defaults with a warning log rather than throwing.",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["JIRA_STATUS_MAP=\"{\\\"Awaiting QA\\\": \\\"In Progress\\\"}\" is set"],
+    "preconditions": [
+      "JIRA_STATUS_MAP=\"{\\\"Awaiting QA\\\": \\\"In Progress\\\"}\" is set"
+    ],
     "steps": [
       "Call parseStatusMap() with the custom env var set",
       "Assert both the custom key and all default keys are present",
       "Set JIRA_STATUS_MAP to malformed JSON and call parseStatusMap() again"
     ],
     "expectedResult": "Merged map contains 'awaiting qa' -> 'In Progress' plus every DEFAULT_STATUS_MAP entry; malformed JSON logs a warning and returns DEFAULT_STATUS_MAP unchanged.",
-    "tags": ["jira-sync", "configuration"],
+    "tags": [
+      "jira-sync",
+      "configuration"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -118,9 +152,14 @@
     "title": "reopenIssue picks the best available transition using a 4-tier fallback",
     "description": "reopenIssue() searches Jira's available transitions in priority order: (1) name containing 'reopen'/'re-open', (2) exact 'to do'/'open'/'backlog', (3) any transition not named done/closed/resolved, (4) the first transition in the list as a last resort. This guarantees reopen always attempts *some* transition instead of failing outright, but tier 4 can pick an unrelated transition on unusual workflows.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Mocked GET /issue/:key/transitions response with a controllable transitions array"],
+    "preconditions": [
+      "Mocked GET /issue/:key/transitions response with a controllable transitions array"
+    ],
     "steps": [
       "Provide transitions [{name:'Done'},{name:'Reopen'}] and call reopenIssue",
       "Provide transitions [{name:'Done'},{name:'To Do'}] (no explicit Reopen) and call reopenIssue",
@@ -128,7 +167,10 @@
       "Provide transitions [{name:'Done'}] only (single closed-like transition) and call reopenIssue"
     ],
     "expectedResult": "Case 1 selects 'Reopen'; case 2 selects 'To Do'; case 3 selects 'Escalated' (tier-3 fallback, not done/closed/resolved); case 4 selects 'Done' itself as the last-resort tier-4 fallback — flagging that this edge case can transition an issue to a state that isn't actually 'reopened'.",
-    "tags": ["jira-sync", "transitions"],
+    "tags": [
+      "jira-sync",
+      "transitions"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -142,14 +184,22 @@
     "title": "closeIssue returns an explicit failure when no close-like transition exists, without a last-resort fallback",
     "description": "Unlike reopenIssue, closeIssue() only matches transitions named/containing close, done, or resolve, and returns { success:false, error:'close_transition_not_found' } if none match — there is no tier-4 'pick anything' fallback, so a misconfigured Jira workflow cannot be force-closed onto an arbitrary state.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Mocked transitions array containing only [{name:'Escalate'},{name:'Assign QA'}]"],
+    "preconditions": [
+      "Mocked transitions array containing only [{name:'Escalate'},{name:'Assign QA'}]"
+    ],
     "steps": [
       "Call closeIssue(issueKey) with transitions that contain no close/done/resolve-named transition"
     ],
     "expectedResult": "Returns { success: false, error: 'close_transition_not_found' } and does not call the transitions POST endpoint.",
-    "tags": ["jira-sync", "transitions"],
+    "tags": [
+      "jira-sync",
+      "transitions"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -163,6 +213,9 @@
     "title": "getIssueComments attributes client-authored comments via the '[Client Panel - Name]:' prefix, else labels 'Vibrantix Team'",
     "description": "addComment() posts Jira comments with body text prefixed '[Client Panel - {authorName}]: {text}'. getIssueComments() reverses this: a regex ^\\[Client Panel - ([^\\]]+)\\]:\\s*([\\s\\S]*) strips the prefix and sets author to the captured name; any comment lacking that prefix (i.e. authored directly in Jira by support staff) is attributed to 'Vibrantix Team'.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -171,7 +224,10 @@
       "Call getIssueComments(issueKey) and inspect both returned entries"
     ],
     "expectedResult": "First comment returns { author: 'Jane Doe', body: 'Still seeing this error' }; second returns { author: 'Vibrantix Team', body: 'Can you attach a HAR file?' }.",
-    "tags": ["comments", "jira-sync"],
+    "tags": [
+      "comments",
+      "jira-sync"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

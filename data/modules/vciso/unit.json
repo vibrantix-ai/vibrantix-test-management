@@ -6,6 +6,9 @@
     "subFeature": "Risk Intelligence",
     "title": "pertMean computes the weighted PERT mean (min + 4*likely + max) / 6",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/utils/fair-calculator.ts",
@@ -13,7 +16,10 @@
       "Call pertMean({ min: 10000, likely: 50000, max: 200000 })"
     ],
     "expectedResult": "Returns (10000 + 4*50000 + 200000) / 6 = 68333.33 (within floating-point tolerance).",
-    "tags": ["fair-model", "unit-math"],
+    "tags": [
+      "fair-model",
+      "unit-math"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,6 +32,9 @@
     "subFeature": "Risk Intelligence",
     "title": "pertStdDev computes (max - min) / 6",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/utils/fair-calculator.ts",
@@ -33,7 +42,10 @@
       "Call pertStdDev({ min: 10000, likely: 50000, max: 200000 })"
     ],
     "expectedResult": "Returns (200000 - 10000) / 6 = 31666.67 (within floating-point tolerance).",
-    "tags": ["fair-model", "unit-math"],
+    "tags": [
+      "fair-model",
+      "unit-math"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,6 +59,9 @@
     "title": "samplePERT returns exactly range.min when max equals min, with no NaN or divide-by-zero",
     "description": "samplePERT has an explicit short-circuit `if (range.max === range.min) return range.min;` before any normalization math that would otherwise divide by (max-min)=0.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/utils/fair-calculator.ts",
@@ -54,7 +69,10 @@
       "Call samplePERT({ min: 5000, likely: 5000, max: 5000 })"
     ],
     "expectedResult": "Returns exactly 5000 — no NaN, no thrown error, no dependency on the rng function being called.",
-    "tags": ["fair-model", "edge-case"],
+    "tags": [
+      "fair-model",
+      "edge-case"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,6 +86,9 @@
     "title": "createSeededRandom produces an identical sequence for the same seed",
     "description": "The mulberry32 PRNG backing createSeededRandom must be fully deterministic so an auditor can reproduce a previously stored Monte Carlo simulation result exactly.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/utils/fair-calculator.ts",
@@ -76,7 +97,11 @@
       "Call createSeededRandom(42) again (a fresh instance) and draw 5 values"
     ],
     "expectedResult": "Both 5-value sequences are exactly identical, element for element.",
-    "tags": ["fair-model", "determinism", "audit-reproducibility"],
+    "tags": [
+      "fair-model",
+      "determinism",
+      "audit-reproducibility"
+    ],
     "requirement": "ISO 27001 Clause 9.3",
     "owner": "SDET",
     "status": "active",
@@ -91,6 +116,9 @@
     "title": "buildRiskDistribution prioritizes the flat riskDistribution tier over the nested vendorStats.byRiskTier tier",
     "description": "applyFlatDistribution returns true (short-circuiting the fallback chain) on the first non-zero match; when the dashboard's flat riskDistribution and analytics' nested vendorStats.byRiskTier are both present with different values, the flat one must win.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/routes/third-party-risk.routes.ts",
@@ -98,7 +126,11 @@
       "Call buildRiskDistribution(dash, analytics) where dash.riskDistribution = { critical: 2, high: 3, medium: 1, low: 0 } and analytics.data.vendorStats.byRiskTier = { critical: 9, high: 9, medium: 9, low: 9 }"
     ],
     "expectedResult": "Returned distribution is { critical: 2, high: 3, medium: 1, low: 0 } — the flat tier's values, not the nested tier's.",
-    "tags": ["vendor-service", "data-normalization", "unit-logic"],
+    "tags": [
+      "vendor-service",
+      "data-normalization",
+      "unit-logic"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -112,6 +144,9 @@
     "title": "Security Score composite renormalizes weights when a sub-score is unavailable rather than zero-filling it",
     "description": "ExecutiveDashboardService builds validScores only from non-null sub-scores (technical 0.35 / process 0.25 / governance 0.20 / people 0.20) and divides by totalWeight of just those present — verifies a missing people score reweights the remaining 3 scores over their own 0.80 total instead of silently averaging in a 0.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vciso-service/src/services/ExecutiveDashboardService.ts",
@@ -119,7 +154,11 @@
       "Compute the composite with technicalScore=80, processScore=60, governanceScore=100, peopleScore=null"
     ],
     "expectedResult": "Composite = round((80*0.35 + 60*0.25 + 100*0.20) / 0.80) = round(78.75) = 79 — not round((80*0.35 + 60*0.25 + 100*0.20 + 0*0.20)) = 63, which would incorrectly treat the missing score as a 0.",
-    "tags": ["security-score", "weighted-average", "unit-logic"],
+    "tags": [
+      "security-score",
+      "weighted-average",
+      "unit-logic"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

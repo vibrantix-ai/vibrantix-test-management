@@ -7,13 +7,19 @@
     "title": "scopeCacheKey returns 'unrestricted' for an admin caller with no project filter",
     "description": "scopeCacheKey (dashboard-metrics/index.js) is the Redis cache key discriminator for GET /api/dashboard/metrics. An admin caller who supplies no ?projectIds= resolves to projectScope={} (org-wide), which must map to the literal string 'unrestricted'.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "Call scopeCacheKey({}) directly with an empty projectScope object"
     ],
     "expectedResult": "Returns the string 'unrestricted'.",
-    "tags": ["cache", "unit"],
+    "tags": [
+      "cache",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,6 +33,9 @@
     "title": "scopeCacheKey produces the same key for the same project-ID set regardless of input order",
     "description": "For a non-admin, projectScope.projectId is {$in:[ObjectId,...]}. scopeCacheKey must sort+join the stringified IDs so ['B','A'] and ['A','B'] hash to the same cache entry, and two different ID sets must never collapse to the same key (guards the previously-fixed '[object Object]' collision across non-admins).",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -35,7 +44,11 @@
       "Call scopeCacheKey({ projectId: { $in: [oidC] } }) with a disjoint project set"
     ],
     "expectedResult": "The first two calls return an identical string; the third call returns a different string from the first two.",
-    "tags": ["cache", "multi-tenant", "unit"],
+    "tags": [
+      "cache",
+      "multi-tenant",
+      "unit"
+    ],
     "linkedDefect": "PLAC-015",
     "owner": "SDET",
     "status": "active",
@@ -50,6 +63,9 @@
     "title": "fetchFrameworkReadiness buckets a framework by its own coveredThreshold/partialThreshold, defaulting to 70/30",
     "description": "Framework Board's readyCount/inProgressCount/earlyCount/notStartedCount come from comparing each framework's averaged coverage score against its own ClientFramework.coveredThreshold/partialThreshold, not a fixed >=90/>=50 split. A ClientFramework document with no threshold fields set must default to coveredThreshold=70, partialThreshold=30.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -57,7 +73,10 @@
       "Run fetchFrameworkReadiness's bucketing logic against it"
     ],
     "expectedResult": "The framework is counted in readyCount (72 >= default coveredThreshold 70), not inProgressCount.",
-    "tags": ["framework-board", "unit"],
+    "tags": [
+      "framework-board",
+      "unit"
+    ],
     "requirement": "Design doc D4",
     "owner": "SDET",
     "status": "active",
@@ -72,6 +91,9 @@
     "title": "averageCompliance is weighted by each project's totalRequirements, not a plain per-project average",
     "description": "fetchComplianceMetrics sums overallScore*totalRequirements across all client_compliance_summary docs and divides by total totalRequirements, so a 5-requirement project can't swing the org-wide score as much as a 500-requirement project. Falls back to a plain average only when total totalRequirements across all summaries is 0.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -79,7 +101,10 @@
       "Compute averageCompliance"
     ],
     "expectedResult": "Result is close to 20 (weighted), not 60 (plain average of 100 and 20).",
-    "tags": ["compliance-board", "unit"],
+    "tags": [
+      "compliance-board",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -93,6 +118,9 @@
     "title": "MiniSparkline renders a flat dashed placeholder instead of fabricating a trend from under 2 points",
     "description": "AuditOverviewContent.jsx's MiniSparkline treats data.length < 2 as 'not enough real history' and substitutes a flat 6-point placeholder array in grey (#A0AEC0) with a dashed stroke, rather than drawing a slope from a single real value.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -100,7 +128,11 @@
       "Inspect the rendered SVG path's stroke color and strokeDasharray"
     ],
     "expectedResult": "Both cases render the grey (#A0AEC0), dashed ('3,3'), flat placeholder line — never a colored, solid line implying a real trend.",
-    "tags": ["sparkline", "honest-empty-state", "unit"],
+    "tags": [
+      "sparkline",
+      "honest-empty-state",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -114,6 +146,9 @@
     "title": "AnimatedCounter preserves a non-numeric suffix while animating the numeric part from 0",
     "description": "AnimatedCounter (AuditOverviewContent.jsx) splits a rawValue like '72%' into numeric prefix 72 and suffix '%' via regex, animates 0->72, and re-appends the suffix on every frame so the displayed string never drops the '%'.",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -121,7 +156,10 @@
       "Sample the displayed text mid-animation and after it settles"
     ],
     "expectedResult": "Every sampled frame ends in '%'; the final settled value reads exactly '72%'.",
-    "tags": ["kpi-card", "unit"],
+    "tags": [
+      "kpi-card",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -135,6 +173,9 @@
     "title": "dateRangeFromPreset computes dateFrom/dateTo for 7d/30d/90d and returns {} for 'all' and 'custom'",
     "description": "DashboardFilterBar.jsx's dateRangeFromPreset maps a preset string to a concrete {dateFrom, dateTo} ISO-date pair by subtracting days from today; 'all' and 'custom' intentionally return an empty object so the caller keeps whatever explicit dates are already set.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -143,7 +184,10 @@
       "Call dateRangeFromPreset('custom')"
     ],
     "expectedResult": "'30d' returns {dateFrom: today-30d, dateTo: today} in YYYY-MM-DD; 'all' and 'custom' both return {}.",
-    "tags": ["filter-bar", "unit"],
+    "tags": [
+      "filter-bar",
+      "unit"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

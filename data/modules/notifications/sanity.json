@@ -6,16 +6,24 @@
     "subFeature": "Read State Consistency",
     "title": "After marking a single notification read, it no longer counts toward unreadCount on the next fetch",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has at least 2 unread notifications"],
+    "preconditions": [
+      "User has at least 2 unread notifications"
+    ],
     "steps": [
       "Note the current data.unreadCount from GET /notifications/client",
       "PUT /notifications/{id}/read for one of the unread items",
       "GET /notifications/client again"
     ],
     "expectedResult": "The second call's unreadCount is exactly one less than the first, and the notification's isRead is true with readAt populated.",
-    "tags": ["sanity", "read-state"],
+    "tags": [
+      "sanity",
+      "read-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,15 +36,23 @@
     "subFeature": "Mark All Read",
     "title": "After mark-all-read, the unread-count endpoint returns 0",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has multiple unread notifications"],
+    "preconditions": [
+      "User has multiple unread notifications"
+    ],
     "steps": [
       "PUT /notifications/mark-all-read",
       "GET /notifications/unread-count"
     ],
     "expectedResult": "data.count is 0 immediately after mark-all-read, with no residual unread items left over from a race between the two calls.",
-    "tags": ["sanity", "unread-count"],
+    "tags": [
+      "sanity",
+      "unread-count"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,15 +65,23 @@
     "subFeature": "Delete Consistency",
     "title": "A deleted notification no longer appears in a subsequent client list fetch",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has at least 1 notification to delete"],
+    "preconditions": [
+      "User has at least 1 notification to delete"
+    ],
     "steps": [
       "DELETE /notifications/{id}",
       "GET /notifications/client?surface=drawer"
     ],
     "expectedResult": "The deleted notification's id is absent from data.notifications, and pagination.total decreases by 1.",
-    "tags": ["sanity", "delete"],
+    "tags": [
+      "sanity",
+      "delete"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,15 +95,23 @@
     "title": "A notification dispatched with sourceModule='vendor' resolves to moduleLabel 'Vendor' on the client",
     "description": "Sanity check for normalizeNotification()/resolveSourceModule() in notificationNormalizer.js after any change to the dispatch payload shape.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Ability to dispatch a test notification with sourceModule='vendor' (e.g. via /notifications/send or internal endpoint)"],
+    "preconditions": [
+      "Ability to dispatch a test notification with sourceModule='vendor' (e.g. via /notifications/send or internal endpoint)"
+    ],
     "steps": [
       "Dispatch a notification with sourceModule='vendor' to the current user",
       "Open NotificationMenu / NotificationDrawer and inspect the rendered entry"
     ],
     "expectedResult": "The client-side normalized notification has moduleLabel = 'Vendor' (from MODULE_DISPLAY_LABELS), confirming sourceModule takes priority over metadata.module/navigateTo-derived fallback.",
-    "tags": ["sanity", "normalization"],
+    "tags": [
+      "sanity",
+      "normalization"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,15 +124,24 @@
     "subFeature": "Popup vs Drawer Surface",
     "title": "A low-priority 'general' notification is excluded from surface=popup but present in surface=drawer",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A fresh unread notification with notificationType='general' and priority='low' (or default 'medium') is dispatched to the user"],
+    "preconditions": [
+      "A fresh unread notification with notificationType='general' and priority='low' (or default 'medium') is dispatched to the user"
+    ],
     "steps": [
       "GET /notifications/client?surface=popup",
       "GET /notifications/client?surface=drawer"
     ],
     "expectedResult": "The popup response's notifications array does not include the general/low-priority item; the drawer response does include it — confirming the popup filter (priority high/critical OR actionable notificationType) is applied only to the popup surface.",
-    "tags": ["sanity", "popup", "drawer"],
+    "tags": [
+      "sanity",
+      "popup",
+      "drawer"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

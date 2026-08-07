@@ -6,13 +6,19 @@
     "subFeature": "Executive Dashboard",
     "title": "Security Score endpoint returns an integer within 0-100",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
       "Call GET /organizations/:orgId/executive-dashboard/security-score"
     ],
     "expectedResult": "data.overall is a number between 0 and 100 inclusive (never negative, never NaN, never > 100).",
-    "tags": ["sanity", "security-score"],
+    "tags": [
+      "sanity",
+      "security-score"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -25,6 +31,9 @@
     "subFeature": "Strategic Planning",
     "title": "Creating an initiative with a minimal valid payload succeeds and appears in the initiative list",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -32,7 +41,10 @@
       "Call GET /initiatives and locate the new initiative"
     ],
     "expectedResult": "201 response with the created initiative; it appears in the subsequent list call with status defaulted to 'not_started' and progress defaulted to 0.",
-    "tags": ["sanity", "strategic-planning"],
+    "tags": [
+      "sanity",
+      "strategic-planning"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -45,13 +57,19 @@
     "subFeature": "Compliance Oversight",
     "title": "Frameworks endpoint returns the documented {name, compliance} shape for every active framework",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
       "Call GET /compliance-oversight/frameworks for an org with at least 2 activated frameworks"
     ],
     "expectedResult": "Response data is an array where every element has exactly a string 'name' and a rounded integer 'compliance' field.",
-    "tags": ["sanity", "compliance-oversight"],
+    "tags": [
+      "sanity",
+      "compliance-oversight"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -64,13 +82,19 @@
     "subFeature": "Third-Party Risk",
     "title": "Third-Party Risk summary response includes all documented summary fields",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
       "Call GET /third-party-risk/summary for an org with at least one vendor"
     ],
     "expectedResult": "data.summary includes totalVendors, activeVendors, averageRiskScore, riskTrend, criticalVendors, highRiskVendors, pendingReviews, overdueReviews, complianceRate, assessedVendors, pendingAssessment, withSOC2, activeContracts — all present and correctly typed.",
-    "tags": ["sanity", "third-party-risk"],
+    "tags": [
+      "sanity",
+      "third-party-risk"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -83,6 +107,9 @@
     "subFeature": "AI Strategy Advisor",
     "title": "Advisor conversation create-then-list roundtrip shows the new conversation",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -90,7 +117,10 @@
       "Call GET /advisor/conversations for the same user"
     ],
     "expectedResult": "The list response includes the just-created conversation with a matching conversationId, title, and conversationType.",
-    "tags": ["sanity", "ai-advisor"],
+    "tags": [
+      "sanity",
+      "ai-advisor"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

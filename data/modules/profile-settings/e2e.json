@@ -6,16 +6,24 @@
     "subFeature": "Profile Form",
     "title": "Editing first/last name on /profile and saving persists after a full page reload",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user on /profile"],
+    "preconditions": [
+      "Logged in as a seeded user on /profile"
+    ],
     "steps": [
       "Change First Name to 'Priya' and Last Name to 'Nair'",
       "Click 'Save Changes' and wait for the success toast",
       "Reload the browser at /profile"
     ],
     "expectedResult": "After reload, the Profile Information card, page heading, and avatar initials all show 'Priya Nair' — the round trip through PUT /users/me and a fresh GET /users/me confirms real persistence, not just optimistic local state.",
-    "tags": ["profile-form", "persistence"],
+    "tags": [
+      "profile-form",
+      "persistence"
+    ],
     "requirement": "PUT /users/me field persistence",
     "owner": "QA",
     "status": "active",
@@ -30,16 +38,24 @@
     "title": "Entering a suspicious placeholder first name blocks Save with an inline error and no network call",
     "description": "handleSaveProfile()'s SUSPICIOUS_WORDS check runs before the try/await block — if firstName or lastName trims/lowercases to a banned word, setNameErrors() populates FormErrorMessage and the function returns early without ever calling userService.updateProfile().",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user on /profile"],
+    "preconditions": [
+      "Logged in as a seeded user on /profile"
+    ],
     "steps": [
       "Clear First Name and type 'test'",
       "Click 'Save Changes'",
       "Observe the field and network traffic"
     ],
     "expectedResult": "An inline error 'Please enter a real first name.' appears under First Name, a warning toast is shown, and no PUT /users/me request is issued (verify via network capture).",
-    "tags": ["validation", "name-validation"],
+    "tags": [
+      "validation",
+      "name-validation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,16 +69,25 @@
     "title": "Phone, timezone, and notification toggle changes revert to defaults after a page reload — they are not actually persisted",
     "description": "Regression/gap guard mirroring PROF-INT-002 at the UI level: since PUT /users/me never persists phone/metadata (no such schema fields exist on ClientUser), any value the user enters in Phone, Time Zone, or the four Notification switches is lost the moment the page is reloaded or refetched, even though the Save action reports success.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user on /profile with default notification toggles (email:on, push:on, security:on, updates:off)"],
+    "preconditions": [
+      "Logged in as a seeded user on /profile with default notification toggles (email:on, push:on, security:on, updates:off)"
+    ],
     "steps": [
       "Set Phone to '+1-555-0100', Time Zone to 'Pacific Time', and turn Push Notifications and Security Alerts off, System Updates on",
       "Click 'Save Changes' and observe the success toast",
       "Reload the browser at /profile"
     ],
     "expectedResult": "The success toast appears on save (misleadingly implying full persistence), but after reload Phone is blank again, Time Zone has reset to 'Eastern Time', and all four notification toggles are back to their hardcoded defaults (email/push/security on, updates off) — confirming these fields are not actually saved server-side.",
-    "tags": ["notification-preferences", "gap", "data-loss"],
+    "tags": [
+      "notification-preferences",
+      "gap",
+      "data-loss"
+    ],
     "linkedDefect": "PROF-INT-002",
     "owner": "QA",
     "status": "active",
@@ -77,15 +102,23 @@
     "title": "Redux store reflects the new name immediately after save, without requiring a page reload",
     "description": "handleSaveProfile() dispatches updateUser(res.data) from authSlice on a successful PUT /users/me, which merges the new fields into state.user and re-persists the auth cookie.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user on /profile"],
+    "preconditions": [
+      "Logged in as a seeded user on /profile"
+    ],
     "steps": [
       "Change Last Name to 'Fernandes' and click 'Save Changes'",
       "Without reloading, observe the page heading/avatar name and check any other open component reading selectUser (e.g. Navbar user menu)"
     ],
     "expectedResult": "The heading and any other Redux-connected display of the user's name update to 'Fernandes' immediately after the save resolves — no manual refresh is needed.",
-    "tags": ["redux", "state-management"],
+    "tags": [
+      "redux",
+      "state-management"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -99,15 +132,23 @@
     "title": "'Last Active' timestamp advances to the current time every time /profile is opened",
     "description": "UI-level confirmation of PROF-INT-004: the profile page's fetchProfile() effect calls authService.getMe() -> GET /users/me on every mount, and that endpoint stamps lastLoginAt = now unconditionally.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user"],
+    "preconditions": [
+      "Logged in as a seeded user"
+    ],
     "steps": [
       "Open /profile and note the 'Last Active' value under Account Activity",
       "Navigate away, wait one minute, navigate back to /profile"
     ],
     "expectedResult": "The 'Last Active' value on the second visit is roughly one minute later than the first — it tracks 'last time this page (or any GET /users/me caller) was opened', not a discrete login event.",
-    "tags": ["account-activity", "lastLoginAt"],
+    "tags": [
+      "account-activity",
+      "lastLoginAt"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -121,9 +162,14 @@
     "title": "Changing password via the Security section signs the user out and requires sign-in with the new password",
     "description": "handleChangePassword() on success shows a success toast, closes the modal, and calls signOut({ callbackUrl: '/auth/login' }) after a 2.2s delay, since a Keycloak password change invalidates the current session's tokens.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user who knows their current password"],
+    "preconditions": [
+      "Logged in as a seeded user who knows their current password"
+    ],
     "steps": [
       "Open Security > Change Password",
       "Enter the correct current password and a new password meeting the 12-character policy, matching in Confirm",
@@ -131,7 +177,10 @@
       "Attempt to log in again using the new password"
     ],
     "expectedResult": "The user is signed out and redirected to /auth/login after ~2 seconds; logging back in with the new password succeeds, and the old password no longer works.",
-    "tags": ["password-change", "session"],
+    "tags": [
+      "password-change",
+      "session"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -145,16 +194,24 @@
     "title": "Email input on /profile accepts typed changes but silently discards them on Save — no disabled state or explanatory copy",
     "description": "The Email FormControl in profile/page.jsx renders a fully interactive Input bound to formData.email with an onChange handler — it is not disabled, readOnly, or accompanied by helper text. Yet handleSaveProfile()'s payload never includes email, and updateMe ignores it server-side even if it were sent (see PROF-INT-003). The UI gives no visual signal that this field is non-functional.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user on /profile"],
+    "preconditions": [
+      "Logged in as a seeded user on /profile"
+    ],
     "steps": [
       "Click into the Email field and change its value to a different address",
       "Click 'Save Changes'",
       "Reload /profile"
     ],
     "expectedResult": "The typed email value is accepted by the input with no error, but after reload the field shows the original account email — the edit was silently dropped. Flagged as a UX gap: the field should be disabled/readOnly with copy explaining email changes require a different flow, matching its actual (immutable) behavior.",
-    "tags": ["email-immutability", "ux-gap"],
+    "tags": [
+      "email-immutability",
+      "ux-gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

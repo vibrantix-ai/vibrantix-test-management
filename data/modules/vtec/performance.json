@@ -7,13 +7,26 @@
     "title": "The final connector Docker image stays under the 100MB budget",
     "description": "Wiki §15's budget; CI's image-size-budget job builds the image and fails with an explicit error if it reaches 100MB.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/.github/workflows/ci.yml (image-size-budget job)",
-    "preconditions": ["A clean build of the real Dockerfile"],
-    "steps": ["docker build the image", "docker image inspect --format '{{.Size}}'"],
+    "preconditions": [
+      "A clean build of the real Dockerfile"
+    ],
+    "steps": [
+      "docker build the image",
+      "docker image inspect --format '{{.Size}}'"
+    ],
     "expectedResult": "Size is comfortably under 100MB (measured 35.2MB at Task 8.3 completion); CI fails the build if this regresses to/past 100MB.",
-    "tags": ["performance", "docker", "ci"],
+    "tags": [
+      "performance",
+      "docker",
+      "ci"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -27,13 +40,24 @@
     "title": "vtec_pipeline_stage_duration_seconds records a real observation for all 9 stages, including Upload",
     "description": "Stage 9 (Upload) lives outside pipeline.Pipeline's synchronous chain but observes into the same shared histogram under its own label.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/core/health/health_test.go::TestReporter_StageDuration_ObservesIntoTheSharedHistogram",
-    "preconditions": ["A live connector completing at least one full collection+upload cycle"],
-    "steps": ["Scrape vtec_pipeline_stage_duration_seconds_count for each of the 9 stage labels"],
+    "preconditions": [
+      "A live connector completing at least one full collection+upload cycle"
+    ],
+    "steps": [
+      "Scrape vtec_pipeline_stage_duration_seconds_count for each of the 9 stage labels"
+    ],
     "expectedResult": "All 9 stages (normalize, filter, dedupe, mask, enrich, compress, encrypt, queue, upload) show a non-zero observation count.",
-    "tags": ["performance", "monitoring"],
+    "tags": [
+      "performance",
+      "monitoring"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -47,13 +71,25 @@
     "title": "The disk-capacity backlog alert fires before the 5GB cap is reached, not only after",
     "description": "VTECQueueBacklog's disk-based variant thresholds at 4GiB (80% of the 5GiB default cap) specifically to warn before the buffer actually fills and JetStream's DiscardNew policy starts silently dropping new evidence.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/configs/prometheus-alerts_test.yml",
-    "preconditions": ["A promtool test simulating vtec_queue_disk_bytes_used at 4.5GiB for 15+ minutes"],
-    "steps": ["Run promtool test rules against the disk-capacity scenario"],
+    "preconditions": [
+      "A promtool test simulating vtec_queue_disk_bytes_used at 4.5GiB for 15+ minutes"
+    ],
+    "steps": [
+      "Run promtool test rules against the disk-capacity scenario"
+    ],
     "expectedResult": "The alert fires at the 4GiB threshold, well before the hard 5GB cap where evidence would start being discarded.",
-    "tags": ["performance", "alerting", "capacity"],
+    "tags": [
+      "performance",
+      "alerting",
+      "capacity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -67,13 +103,24 @@
     "title": "Heartbeat/metrics sampling adds no observable CPU overhead spike on the very first sample",
     "description": "Regression-adjacent performance check: ProcessMetricsSource's baseline-at-construction fix prevents a nonsense thousands-of-percent CPU spike on the first heartbeat.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/websocket/metrics_test.go",
-    "preconditions": ["A freshly started connector"],
-    "steps": ["Capture the very first heartbeat's cpu_percent value"],
+    "preconditions": [
+      "A freshly started connector"
+    ],
+    "steps": [
+      "Capture the very first heartbeat's cpu_percent value"
+    ],
     "expectedResult": "The value is a small, plausible percentage — not an outlier spike distorting the first dashboard reading.",
-    "tags": ["performance", "monitoring"],
+    "tags": [
+      "performance",
+      "monitoring"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -86,12 +133,24 @@
     "subFeature": "Fleet Dashboard",
     "title": "The fleet dashboard's auto-refresh does not produce a visible layout thrash or duplicate network storm",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["The fleet dashboard open with several connectors, left running for multiple refresh cycles"],
-    "steps": ["Observe the Network tab across several 8-second poll intervals", "Observe the table for visible re-render flicker"],
+    "preconditions": [
+      "The fleet dashboard open with several connectors, left running for multiple refresh cycles"
+    ],
+    "steps": [
+      "Observe the Network tab across several 8-second poll intervals",
+      "Observe the table for visible re-render flicker"
+    ],
     "expectedResult": "Exactly one GET /connectors and one GET /fleet/health call per interval; no overlapping/duplicate in-flight requests; no visible flicker of unrelated rows.",
-    "tags": ["performance", "ui", "polling"],
+    "tags": [
+      "performance",
+      "ui",
+      "polling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -104,13 +163,24 @@
     "subFeature": "Compression",
     "title": "Evidence compression ratio reflects genuine zstd compression of real content, not a fixed value",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/pipeline/compress/compress_test.go",
-    "preconditions": ["Real, repetitive fixture evidence content collected by the SQL adapter"],
-    "steps": ["Collect and compress the same real content across several cycles", "Compare CompressionRatio values against the plaintext size"],
+    "preconditions": [
+      "Real, repetitive fixture evidence content collected by the SQL adapter"
+    ],
+    "steps": [
+      "Collect and compress the same real content across several cycles",
+      "Compare CompressionRatio values against the plaintext size"
+    ],
     "expectedResult": "The ratio scales sensibly with actual content characteristics — confirming a real zstd pass, not a hardcoded constant.",
-    "tags": ["performance", "compression"],
+    "tags": [
+      "performance",
+      "compression"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",

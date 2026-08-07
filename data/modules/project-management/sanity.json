@@ -6,6 +6,9 @@
     "subFeature": "Project Listing",
     "title": "A newly created project appears at the top of the project list (sorted by createdAt descending)",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,9 @@
       "Re-open/refresh the project list"
     ],
     "expectedResult": "The just-created project is now the first row — listByOrg/list both sort by { createdAt: -1 }.",
-    "tags": ["sanity"],
+    "tags": [
+      "sanity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,6 +32,9 @@
     "subFeature": "Project Dashboard",
     "title": "Total Projects stat increments by exactly 1 immediately after creating a project",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -35,7 +43,10 @@
       "Read the 'Total Projects' stats card value again (handleCreateProject triggers a dashboard refetch)"
     ],
     "expectedResult": "The stat is exactly 1 higher than before, with no double-count and no stale/unchanged value.",
-    "tags": ["sanity", "dashboard"],
+    "tags": [
+      "sanity",
+      "dashboard"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,6 +59,9 @@
     "subFeature": "Project Editing",
     "title": "Changing a project's status from Planning to Active updates the badge color consistently across list and detail views",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -55,7 +69,10 @@
       "Save and view both the project list row and the project detail page"
     ],
     "expectedResult": "Both views show a green 'Active' badge — getStatusColor is applied consistently and no view shows a stale 'Planning'/blue badge.",
-    "tags": ["sanity", "ui-consistency"],
+    "tags": [
+      "sanity",
+      "ui-consistency"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -69,16 +86,24 @@
     "title": "The search box filters projects by name, project code, or description substring, case-insensitively",
     "description": "The backend $or regex filter (list/listByOrg, project.controller.js) escapes the search term via escapeRegExp and matches name, projectCode, and description with the 'i' flag.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A project named 'ISO Readiness Sprint' with projectCode 'BKDMVR' exists"],
+    "preconditions": [
+      "A project named 'ISO Readiness Sprint' with projectCode 'BKDMVR' exists"
+    ],
     "steps": [
       "Type 'iso readiness' (lowercase) into the search box",
       "Clear it and type 'BKDMVR' (the project code)",
       "Clear it and type a substring known to only appear in the description"
     ],
     "expectedResult": "All three searches return the same project in the results — matching is case-insensitive and spans name, projectCode, and description.",
-    "tags": ["sanity", "search"],
+    "tags": [
+      "sanity",
+      "search"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -91,15 +116,23 @@
     "subFeature": "Search & Filter",
     "title": "Status and Priority filter tags combine with AND logic to narrow the visible list",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Projects exist covering multiple Status x Priority combinations, including at least one 'Active'+'High' and one 'Active'+'Low'"],
+    "preconditions": [
+      "Projects exist covering multiple Status x Priority combinations, including at least one 'Active'+'High' and one 'Active'+'Low'"
+    ],
     "steps": [
       "Open the filter panel and select Status='Active'",
       "Additionally select Priority='High'"
     ],
     "expectedResult": "Only projects that are BOTH Active AND High priority remain visible (filteredProjects applies both filters.status.includes and filters.priority.includes as separate AND'd conditions) — an Active+Low project is correctly excluded.",
-    "tags": ["sanity", "filters"],
+    "tags": [
+      "sanity",
+      "filters"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

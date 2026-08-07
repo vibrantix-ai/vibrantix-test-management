@@ -6,14 +6,24 @@
     "subFeature": "Vendor Registry",
     "title": "Vendor registry (/vendors/list) loads without error for a fresh organization",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as org admin of a newly created (zero-vendor) org"],
+    "preconditions": [
+      "Logged in as org admin of a newly created (zero-vendor) org"
+    ],
     "steps": [
       "Navigate to /vendors/list"
     ],
     "expectedResult": "Page loads with a correct empty state (no vendors) and no console errors, stats cards render as zero rather than crashing or showing stale mock data.",
-    "tags": ["smoke", "vendor-registry"],
+    "tags": [
+      "smoke",
+      "vendor-registry"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,6 +36,11 @@
     "subFeature": "Vendor Registry",
     "title": "Creating a vendor via the VendorFormWizard succeeds and appears in the registry",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -34,7 +49,10 @@
       "Submit"
     ],
     "expectedResult": "A 201 response is returned, the wizard closes, and the new vendor appears in the registry table with status 'active' without a manual page refresh.",
-    "tags": ["smoke", "vendor-registry"],
+    "tags": [
+      "smoke",
+      "vendor-registry"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,6 +66,11 @@
     "title": "Trust score widget renders the default bootstrap value (50 / medium) for a newly created vendor",
     "description": "TrustScoreService.getByVendor bootstraps a default trust score doc (overallScore:50, riskLevel: medium, trend: stable) the first time a vendor is queried with no existing record.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -55,7 +78,10 @@
       "Locate the Trust Score card"
     ],
     "expectedResult": "The card renders overall score 50 and risk level 'Medium' without an error state, confirming the default bootstrap path works end-to-end through the UI.",
-    "tags": ["smoke", "trust-score"],
+    "tags": [
+      "smoke",
+      "trust-score"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,14 +94,24 @@
     "subFeature": "Vendor Portal Security",
     "title": "A freshly generated vendor portal magic link resolves and renders the assessment page",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["An assessment has just had sendLink called, producing a valid, unexpired token"],
+    "preconditions": [
+      "An assessment has just had sendLink called, producing a valid, unexpired token"
+    ],
     "steps": [
       "Open the generated magic link in a fresh (unauthenticated) browser session"
     ],
     "expectedResult": "The vendor portal loads the assessment title and, if no passcode is required, the question list — no Keycloak login prompt appears since the token itself is the auth mechanism.",
-    "tags": ["smoke", "vendor-portal"],
+    "tags": [
+      "smoke",
+      "vendor-portal"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -88,6 +124,11 @@
     "subFeature": "Evidence Lifecycle",
     "title": "Manual evidence upload (Mode 1) succeeds for a whitelisted PDF under the size limit",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -95,7 +136,11 @@
       "Submit with required metadata (title, category, evidenceType)"
     ],
     "expectedResult": "Upload returns 201, the evidence document appears with status 'draft', version 1, and one file in files[] with a computed SHA-256 checksum — no error toast is shown.",
-    "tags": ["smoke", "evidence-lifecycle", "s3-upload"],
+    "tags": [
+      "smoke",
+      "evidence-lifecycle",
+      "s3-upload"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -108,6 +153,11 @@
     "subFeature": "Questionnaire Governance",
     "title": "Questionnaire template builder loads and lists at least the system default templates",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -115,7 +165,10 @@
       "Open the template builder for a new template"
     ],
     "expectedResult": "The templates list and builder UI load without error; creating a minimal draft template (1 domain, 1 question) and saving succeeds.",
-    "tags": ["smoke", "questionnaire-governance"],
+    "tags": [
+      "smoke",
+      "questionnaire-governance"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

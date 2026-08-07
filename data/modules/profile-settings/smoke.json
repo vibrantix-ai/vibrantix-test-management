@@ -5,6 +5,11 @@
     "category": "smoke",
     "title": "/profile loads for an authenticated user without console errors",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -12,7 +17,9 @@
       "Navigate to /profile"
     ],
     "expectedResult": "The page renders Profile Information, Notifications, Security, Account Activity, and My Projects sections with the user's real name and role badge, no unhandled console errors, and no stuck loading spinner.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -24,6 +31,11 @@
     "category": "smoke",
     "title": "Save Changes updates a valid name and shows a success toast",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -31,7 +43,10 @@
       "Click 'Save Changes'"
     ],
     "expectedResult": "A green success toast 'Profile updated' appears, and the heading reflects the new name.",
-    "tags": ["smoke", "profile-form"],
+    "tags": [
+      "smoke",
+      "profile-form"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -43,13 +58,21 @@
     "category": "smoke",
     "title": "Change Password modal opens from the Security section",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "On /profile, click 'Change Password' under Security"
     ],
     "expectedResult": "A modal opens with Current Password, New Password, and Confirm New Password fields, each with a show/hide toggle, and Cancel/Update Password actions.",
-    "tags": ["smoke", "password-change"],
+    "tags": [
+      "smoke",
+      "password-change"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -61,6 +84,11 @@
     "category": "smoke",
     "title": "Notification toggle switches render and respond to a click",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -68,7 +96,10 @@
       "Click the 'Push Notifications' switch"
     ],
     "expectedResult": "All four switches (Email, Push, Security, System Updates) render in their default states, and clicking Push visibly toggles it on/off immediately.",
-    "tags": ["smoke", "notification-preferences"],
+    "tags": [
+      "smoke",
+      "notification-preferences"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

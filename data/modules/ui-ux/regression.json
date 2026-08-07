@@ -7,6 +7,9 @@
     "title": "StatsCard hover glow uses a valid CSS color value, not a raw Chakra token string",
     "description": "src/components/common/StatsCard.jsx's icon-container _groupHover sets boxShadow to the literal string '0 8px 20px ' + colorName + '.700' (e.g. '0 8px 20px blue.700'). 'blue.700' is a Chakra theme token name, not a CSS color — browsers discard the entire boxShadow declaration as invalid, so the intended hover glow never renders. This case guards against this exact bug re-appearing after a fix (e.g. resolving the token to its rgba() value via the theme, matching the accent-glow rgba pattern documented in §4).",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,11 @@
       "Inspect the computed box-shadow value during hover"
     ],
     "expectedResult": "The computed box-shadow is a valid CSS shadow (e.g. an rgba() glow matching the card's accent color) and a visible glow renders around the icon container on hover. It must not be, or resolve to, the invalid literal string '0 8px 20px <colorName>.700'.",
-    "tags": ["stats-card", "css-bug", "hover"],
+    "tags": [
+      "stats-card",
+      "css-bug",
+      "hover"
+    ],
     "requirement": "UI_UX_STANDARD.md §4, §6.1",
     "owner": "SDET",
     "status": "active",
@@ -29,6 +36,9 @@
     "title": "Risk Center overview icon containers stay theme-aware after any future edit to page.jsx",
     "description": "Regression guard for src/app/(private)/risk-center/page.jsx, which hardcodes bg='red.900'/borderColor='red.700' (Top Active Risks icon, ~line 490), bg='purple.900'/borderColor='purple.700' (live-pulse indicator, ~line 993), bg='blue.900'/borderColor='blue.700' (~line 1311), and bg='orange.900'/borderColor='orange.700' (~line 1356), all with no useColorModeValue wrapper. Once fixed, this case must catch any regression back to hardcoded dark-only values.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -36,7 +46,11 @@
       "Visually inspect the four icon containers listed in the description (Top Active Risks header icon, the pulsing live indicator, and the two icon containers further down the page)"
     ],
     "expectedResult": "All four icon containers render a light, theme-appropriate tint (colorName.50 background / colorName.200 border) in light mode and only switch to the darker colorName.900/800 shades in dark mode. None should appear as a near-black chip while in light mode.",
-    "tags": ["dark-mode", "risk-center", "icon-container"],
+    "tags": [
+      "dark-mode",
+      "risk-center",
+      "icon-container"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.19, §10",
     "owner": "QA",
     "status": "active",
@@ -51,6 +65,9 @@
     "title": "Vendor Management toasts remain anchored bottom-right after future edits to VendorProfileDrawer.jsx",
     "description": "Regression guard for src/components/vendor-management/VendorProfileDrawer.jsx, which currently issues toast() calls with position:'top-right' on the file-open-failure, download-failure, and download-warning paths (~lines 1202, 1222, 1990) — contradicting the platform-wide bottom-right rule at §6.12.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -58,7 +75,11 @@
       "Observe the resulting toast's screen position"
     ],
     "expectedResult": "The error/warning toast anchors bottom-right, matching every other toast on the platform. It must not appear top-right.",
-    "tags": ["toast", "vendor-management", "consistency"],
+    "tags": [
+      "toast",
+      "vendor-management",
+      "consistency"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.12",
     "owner": "QA",
     "status": "active",
@@ -73,6 +94,9 @@
     "title": "StatsCard padding, icon size, and KPI value font size do not silently drift further from the agreed baseline",
     "description": "Regression guard tracking the sizing gap between src/components/common/StatsCard.jsx (px=3/py=2 outer padding, p=1/boxSize=3 icon container, fontSize='md' stat value) and the canonical §6.1 spec (px=4/py=3, p=1.5/boxSize=3.5, fontSize='2xl'). Whether the team standardizes on the compact variant or reconciles StatsCard.jsx to the letter of the spec, this case exists to catch any further, unintentional drift in either direction.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -80,7 +104,11 @@
       "Compare against the previously recorded baseline values (px=3/py=2, p=1/boxSize=3, fontSize='md')"
     ],
     "expectedResult": "The measured values match the currently agreed baseline exactly (or, once reconciled with the spec, match §6.1's px=4/py=3/boxSize=3.5/fontSize=2xl values) — any further deviation from whichever baseline is agreed indicates an unreviewed styling change.",
-    "tags": ["stats-card", "regression", "design-tokens"],
+    "tags": [
+      "stats-card",
+      "regression",
+      "design-tokens"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.1",
     "owner": "QA",
     "status": "active",
@@ -95,6 +123,9 @@
     "title": "Evidence Management search input remains a themed Chakra Input, not a reintroduced raw HTML input",
     "description": "Regression guard for src/components/evidence-management/EvidenceFilters.jsx's search field, hand-built from Box as='input' with a hardcoded blue.400 focus color and a non-token search icon color instead of Chakra's InputGroup/Input/InputLeftElement pattern (§6.5). Guards against the same anti-pattern being reintroduced elsewhere or left unfixed here.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -102,7 +133,11 @@
       "Compare its focus ring color against the brand.500/brand.300 token used by standard Chakra Input fields elsewhere on the platform"
     ],
     "expectedResult": "The search input is (or has been migrated to) a standard Chakra Input/InputGroup component whose focus ring and icon color derive from useColorModeValue-wrapped brand/gray tokens, matching every other input field on the platform.",
-    "tags": ["filter-bar", "forms", "evidence-management"],
+    "tags": [
+      "filter-bar",
+      "forms",
+      "evidence-management"
+    ],
     "requirement": "UI_UX_STANDARD.md §6.5, §6.9",
     "owner": "QA",
     "status": "active",

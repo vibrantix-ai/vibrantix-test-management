@@ -7,13 +7,19 @@
     "title": "Trust Network config bootstraps a safe default (sharing not force-enabled) on first access for a new org",
     "description": "TrustNetworkService.getConfig calls repo.upsertConfig(organizationId, {}, ...) when no existing config is found — verify the resulting default does not accidentally expose data (e.g. sharingEnabled should not silently default to true with autoApproveVibrantixClients true).",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "As a brand-new org with no prior Trust Network activity, call GET /trust-network/config"
     ],
     "expectedResult": "A config document is created and returned with conservative defaults — no partner is pre-trusted and no pending requests exist for an org that has taken no action.",
-    "tags": ["sanity", "trust-network"],
+    "tags": [
+      "sanity",
+      "trust-network"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,14 +33,23 @@
     "title": "sendLink transitions not_started to assigned exactly once; resending an already-assigned assessment does not error or re-transition",
     "description": "AssessmentService.sendLink only calls this.transition(..., 'assigned') when currentDoc.status === 'not_started'; for a later resend (status already 'assigned' or beyond) it skips the transition call entirely, avoiding a workflow error from re-attempting an already-applied edge.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An assessment already sent once (status = 'assigned')"],
+    "preconditions": [
+      "An assessment already sent once (status = 'assigned')"
+    ],
     "steps": [
       "Call sendLink a second time (resend) on the same assessment"
     ],
     "expectedResult": "A new token/passcode/magic link is generated and the call returns 200 with no transitionWarning — the assessment status remains 'assigned' and no workflow error is thrown.",
-    "tags": ["sanity", "assessment-governance", "workflow"],
+    "tags": [
+      "sanity",
+      "assessment-governance",
+      "workflow"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,14 +63,22 @@
     "title": "Assessment soft-delete is blocked once an access token has been generated, requiring cancellation first",
     "description": "AssessmentService.softDelete throws AppError.conflict when doc.accessToken is set, even if status is in the deletable set (not_started/cancelled), because a vendor may already hold a live URL.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An assessment where sendLink was called then later cancelled (status='cancelled', accessToken still set)"],
+    "preconditions": [
+      "An assessment where sendLink was called then later cancelled (status='cancelled', accessToken still set)"
+    ],
     "steps": [
       "Call DELETE /assessments/:id on the cancelled assessment"
     ],
     "expectedResult": "Request is rejected with 409 'Cannot delete this assessment because a vendor access link has already been sent...' — the document is not removed.",
-    "tags": ["sanity", "assessment-governance"],
+    "tags": [
+      "sanity",
+      "assessment-governance"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,14 +91,22 @@
     "subFeature": "Template Versioning",
     "title": "An active questionnaire template cannot be edited in place; only editActive() (fork) or update() on a draft is permitted",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A questionnaire template with status = 'active'"],
+    "preconditions": [
+      "A questionnaire template with status = 'active'"
+    ],
     "steps": [
       "Call PUT (update) directly on the active template's id with a field change"
     ],
     "expectedResult": "Request is rejected with 409 'Active templates are immutable. Use editActive() to create a new version instead.' — no in-place mutation of the active document occurs.",
-    "tags": ["sanity", "template-versioning"],
+    "tags": [
+      "sanity",
+      "template-versioning"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -89,15 +120,24 @@
     "title": "Evidence list statusCounts aggregation is computed over the same base filter as the paginated result set",
     "description": "EvidenceService.list runs a $group aggregation over a manually reconstructed baseFilter (organizationId, isLatest, isDeleted, plus any status/category/vendorId/projectId query params) — a drift between this filter and findWithQuery's own filter would make the stat-card counts disagree with the visible table rows.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A vendor with evidence items across at least 3 different statuses"],
+    "preconditions": [
+      "A vendor with evidence items across at least 3 different statuses"
+    ],
     "steps": [
       "Call GET /evidence?vendorId=X&category=Technical Document",
       "Sum statusCounts values and compare to the `total` field of the paginated result for the same filter"
     ],
     "expectedResult": "sum(statusCounts) equals the paginated result's total count exactly — the stat cards never show a number inconsistent with what filtering + pagination would return for the same query.",
-    "tags": ["sanity", "analytics", "data-integrity"],
+    "tags": [
+      "sanity",
+      "analytics",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -111,15 +151,25 @@
     "title": "Offboarding page's UI falls back to hard-coded mock rows when the API returns an empty list",
     "description": "VendorOffboardingPage's `offboardingTasks` computed value falls back to a hard-coded array of 4 fictional offboarding records ('Legacy Systems Inc.', 'OldTech Solutions', etc.) whenever offboardingProcesses.length === 0 — i.e. whenever the API genuinely has zero real offboarding records for the org, not just during a loading state. This is a data-integrity concern independent of the feature-flag redirect (VEND-E2E-006): if the flag were ever re-enabled, a fresh org would see fabricated vendor names as if they were real.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["OFFBOARDING_ENABLED temporarily flipped to true in a test build, org has zero real offboarding processes"],
+    "preconditions": [
+      "OFFBOARDING_ENABLED temporarily flipped to true in a test build, org has zero real offboarding processes"
+    ],
     "steps": [
       "With the feature flag enabled, load /vendors/offboarding for an org with no offboarding processes ever initiated",
       "Inspect the table contents"
     ],
     "expectedResult": "Flag as a data-integrity finding: the table currently shows 4 fictional vendors ('Legacy Systems Inc.', 'OldTech Solutions', 'DataOld Corp', 'SecurityOld Systems') with fabricated progress/dates instead of a genuine empty state — this must be replaced with a proper empty state before the flag can be safely re-enabled.",
-    "tags": ["sanity", "vendor-offboarding", "data-integrity"],
+    "tags": [
+      "sanity",
+      "vendor-offboarding",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

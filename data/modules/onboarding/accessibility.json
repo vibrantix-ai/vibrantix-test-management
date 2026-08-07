@@ -7,6 +7,9 @@
     "title": "Stepper conveys step state only via color and icon, with no aria-current or text alternative",
     "description": "Stepper.jsx (components/onboarding/Stepper.jsx) distinguishes done/current/pending purely through bg color (doneBg/activeBg/pendingBg) and a CheckIcon vs. plain number — there is no aria-current=\"step\" on the current step's container and no visually-hidden text announcing 'completed' or 'current' for screen reader users.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,11 @@
       "Reach the Stepper header on any step"
     ],
     "expectedResult": "Current behavior: the screen reader announces only the step number/label text, with no indication of which step is 'current' or 'completed' — this should be flagged for remediation (add aria-current=\"step\" and visually-hidden status text).",
-    "tags": ["a11y", "screen-reader", "wcag-1.3.1"],
+    "tags": [
+      "a11y",
+      "screen-reader",
+      "wcag-1.3.1"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +35,9 @@
     "title": "Tour tooltip Skip/close controls are keyboard-reachable and carry accessible names",
     "description": "TourTooltip.jsx gives the header close IconButton aria-label=\"Skip tour\" and the footer Skip Button has visible text ('Skip'/'Done') — this is a positive control to guard against regressions removing these labels during a redesign.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -35,7 +45,11 @@
       "Confirm the header 'X' IconButton and footer 'Skip'/'Back'/'Next' buttons all receive visible focus and can be activated with Enter/Space"
     ],
     "expectedResult": "All 4 controls are reachable in a logical Tab order, each has a non-empty accessible name (via aria-label or visible text), and Enter/Space activates them.",
-    "tags": ["a11y", "keyboard-nav", "platform-tour"],
+    "tags": [
+      "a11y",
+      "keyboard-nav",
+      "platform-tour"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +63,9 @@
     "title": "Platform tour blocks body scroll while active but does not trap keyboard focus inside the tooltip",
     "description": "PlatformTour.jsx sets document.body.style.overflow='hidden' while active (lines 18-25) to prevent background scrolling, but there is no focus-trap implementation around the portal-rendered TourOverlay/TourTooltip — keyboard Tab can move focus into covered page content that is visually obscured by the spotlight overlay.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -56,7 +73,11 @@
       "Repeatedly press Tab and observe where visible focus goes"
     ],
     "expectedResult": "Current behavior: focus can leave the tooltip and land on elements underneath the darkened overlay, which are not intended to be interactive during the tour — this should be flagged for remediation (wrap the tour in a focus trap).",
-    "tags": ["a11y", "focus-trap", "platform-tour"],
+    "tags": [
+      "a11y",
+      "focus-trap",
+      "platform-tour"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -70,13 +91,20 @@
     "title": "Wizard form validation errors are not programmatically associated with their inputs",
     "description": "step-1/page.jsx and step-4/page.jsx render validation errors as a plain <Text color=\"red.400\"> sibling of the form, with no aria-live region and no aria-invalid/aria-describedby link from the FormControl/Input to the error text — a screen reader user submitting an incomplete form may not be notified that an error occurred.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Using a screen reader, submit /onboarding/step-1 with the Company size field left blank"
     ],
     "expectedResult": "Current behavior: the 'Please fill in both fields.' message is not automatically announced, and the Company size Select is not marked aria-invalid or linked via aria-describedby to the error — this should be flagged for remediation.",
-    "tags": ["a11y", "form-validation", "wcag-3.3.1"],
+    "tags": [
+      "a11y",
+      "form-validation",
+      "wcag-3.3.1"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

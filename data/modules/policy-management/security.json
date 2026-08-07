@@ -7,14 +7,24 @@
     "title": "Adding a review comment is allowed for policy.approve holders who lack policy.update (PM-L02 fix regression guard)",
     "description": "policy.routes.js POST /:policyId/comments deliberately uses requireAnyPermission(['policy.update','policy.approve']) instead of requirePermission('policy.update') alone, per code comment PM-L02 — a reviewer's real permission set is typically policy.approve WITHOUT policy.update. Verifies this intentional broadening still holds and hasn't regressed to policy.update-only.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["User has policy.approve but NOT policy.update", "An active policy exists"],
+    "preconditions": [
+      "User has policy.approve but NOT policy.update",
+      "An active policy exists"
+    ],
     "steps": [
       "As the policy.approve-only user, POST /policies/:policyId/comments with a comment body"
     ],
     "expectedResult": "Comment is created successfully (201/200), not rejected with 403 — this reviewer role must be able to annotate policies mid-review without edit rights.",
-    "tags": ["rbac", "regression-guard"],
+    "tags": [
+      "rbac",
+      "regression-guard"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -29,14 +39,24 @@
     "title": "A policy's own creator can approve/transition their own draft with no self-review prevention check found in policy.service.js transition()",
     "description": "policy.service.js's transition(policyId, targetState, userId, opts) has no visible check comparing userId against the policy's createdBy/author before allowing a state transition guarded only by requirePermission('policy.approve') at the route level. Unlike the evidence-management module's mapping self-review guard, no equivalent author != approver check was found here — flag as a gap pending confirmation.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User A holds policy.approve and created (createdBy) a draft policy P"],
+    "preconditions": [
+      "User A holds policy.approve and created (createdBy) a draft policy P"
+    ],
     "steps": [
       "As User A, POST /policies/P/transition targeting the next workflow state (e.g. draft -> review, or review -> approved if User A also has the right role)"
     ],
     "expectedResult": "Document actual behavior: if the transition succeeds without a distinct second reviewer, this confirms the self-review gap — the policy's own author can approve their own document, unlike segregation-of-duties patterns enforced elsewhere in the platform (e.g. evidence-mapping). Should be flagged for remediation if confirmed.",
-    "tags": ["segregation-of-duties", "workflow", "self-review"],
+    "tags": [
+      "segregation-of-duties",
+      "workflow",
+      "self-review"
+    ],
     "requirement": "ISO 27001 Clause 5.2",
     "owner": "Security",
     "status": "active",
@@ -51,14 +71,24 @@
     "title": "Hard delete is rejected for a policy not in draft or archived status",
     "description": "policy.controller.js hardDelete enforces: \"Only 'draft' or 'archived' policies may be hard-deleted — archive it first via the workflow transition.\"",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["User holds policy.admin", "A policy exists in 'active' status"],
+    "preconditions": [
+      "User holds policy.admin",
+      "A policy exists in 'active' status"
+    ],
     "steps": [
       "DELETE /policies/:policyId/permanent on a policy currently in 'active' status"
     ],
     "expectedResult": "Request is rejected (400/409) with a message requiring the policy to be draft or archived first — an active/approved policy can never be permanently destroyed directly.",
-    "tags": ["hard-delete", "safeguard"],
+    "tags": [
+      "hard-delete",
+      "safeguard"
+    ],
     "requirement": "ISO 27001 Clause 7.5",
     "owner": "Security",
     "status": "active",
@@ -72,15 +102,25 @@
     "subFeature": "AI-Generated Content",
     "title": "AI-generated policy content is rendered without executing embedded script via dangerouslySetInnerHTML",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A policy's AI-generated or AI Reader content field contains an injected <script> or onerror= payload (simulated via direct DB edit or AI generation prompt injection)"],
+    "preconditions": [
+      "A policy's AI-generated or AI Reader content field contains an injected <script> or onerror= payload (simulated via direct DB edit or AI generation prompt injection)"
+    ],
     "steps": [
       "Open the policy detail/reader view that renders the content via dangerouslySetInnerHTML",
       "Observe whether the payload executes"
     ],
     "expectedResult": "Content is sanitized before render (e.g. DOMPurify or equivalent) — no script executes and no XSS occurs, despite the use of dangerouslySetInnerHTML in the renderer.",
-    "tags": ["xss", "owasp-a03", "ai-generated"],
+    "tags": [
+      "xss",
+      "owasp-a03",
+      "ai-generated"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -93,14 +133,25 @@
     "subFeature": "Multi-Tenant Isolation",
     "title": "GET /policies/:policyId rejects a policyId belonging to another organization",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B) each with a policy", "Valid JWT for a user in org A"],
+    "preconditions": [
+      "Two orgs (A, B) each with a policy",
+      "Valid JWT for a user in org A"
+    ],
     "steps": [
       "As an org A user, call GET /policies/:policyId using org B's policy ID"
     ],
     "expectedResult": "Request is rejected with 403/404 — no policy content, control mappings, or version history from org B is returned.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -114,14 +165,23 @@
     "subFeature": "Public Template Endpoint",
     "title": "Public/unauthenticated template listing endpoint enforces a rate limit",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A public (unauthenticated) template endpoint is exposed, if one exists outside router.use(authenticate) in policy.routes.js"],
+    "preconditions": [
+      "A public (unauthenticated) template endpoint is exposed, if one exists outside router.use(authenticate) in policy.routes.js"
+    ],
     "steps": [
       "Send 100+ rapid sequential requests to the public template endpoint from a single IP"
     ],
     "expectedResult": "Requests beyond the configured rate limit are throttled (429), preventing scraping/DoS of the public template catalog.",
-    "tags": ["rate-limiting", "public-endpoint"],
+    "tags": [
+      "rate-limiting",
+      "public-endpoint"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

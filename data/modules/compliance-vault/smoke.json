@@ -7,6 +7,11 @@
     "title": "Navigating to /compliance-vault does not crash the app with an unhandled client-side exception",
     "description": "Smoke-level check that whatever /compliance-vault currently resolves to (404 page, Evidence Management, or otherwise per CPVT-E2E-001) renders without a white-screen React error boundary trip.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +19,10 @@
       "Observe the browser console and page render"
     ],
     "expectedResult": "Page renders some content (even if it is a not-found state) without an unhandled JS exception or blank white screen.",
-    "tags": ["smoke", "routing"],
+    "tags": [
+      "smoke",
+      "routing"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,14 +36,24 @@
     "title": "GET /api/evidence returns 200 for an authenticated user with evidence.read",
     "description": "Baseline smoke check on the single real data source any compliance-vault UI would consume (evidence.routes.js:63).",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Authenticated user with evidence.read"],
+    "preconditions": [
+      "Authenticated user with evidence.read"
+    ],
     "steps": [
       "Call GET /api/evidence"
     ],
     "expectedResult": "200 OK with an array response (possibly empty for a fresh org) — the endpoint is reachable and does not error.",
-    "tags": ["smoke", "data-source"],
+    "tags": [
+      "smoke",
+      "data-source"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +67,11 @@
     "title": "Google Drive integration card renders on /integrations without throwing, regardless of connection status",
     "description": "GoogleDriveIntegrationCard.js fetches /integrations/google-drive/enabled on mount; smoke-checks the card doesn't error before a user ever reaches the (broken) vault deep link.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -56,7 +79,10 @@
       "Observe the Google Drive card renders with a status badge and either a 'View Details' button or an 'Integrate to view details' message"
     ],
     "expectedResult": "Card renders in both the connected and not-connected states with no console error.",
-    "tags": ["smoke", "google-drive"],
+    "tags": [
+      "smoke",
+      "google-drive"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -69,14 +95,24 @@
     "subFeature": "Workflow Endpoint",
     "title": "Evidence workflow transition endpoint is reachable and returns a structured error for an invalid transition rather than a 500",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An evidence item in status 'closed'"],
+    "preconditions": [
+      "An evidence item in status 'closed'"
+    ],
     "steps": [
       "As an authorized user, call POST /:evidenceId/workflow/transition attempting to move a 'closed' item back to 'draft' (an invalid/illegal transition)"
     ],
     "expectedResult": "A structured 400/409 error is returned describing the invalid transition — not an unhandled 500 server error.",
-    "tags": ["smoke", "workflow"],
+    "tags": [
+      "smoke",
+      "workflow"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -90,6 +126,11 @@
     "title": "Sidebar entry pointing at compliance-vault's related surfaces (Evidence Management / Trust Vault) is present and clickable",
     "description": "Sidebar.js menu items list separate entries for 'Compliance Vault' (path /compliance-vault) and 'Risk Center' etc. per CLAUDE.md's documented menuItems structure. Smoke check that the nav entry exists and is clickable without console error, independent of whether the destination page fully renders.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -98,7 +139,10 @@
       "Click it"
     ],
     "expectedResult": "The sidebar entry is visible with the expected icon (HardDrive, green.400) and label, and clicking it does not throw a JS error (the resulting page content is separately covered by CPVT-E2E-001).",
-    "tags": ["smoke", "navigation"],
+    "tags": [
+      "smoke",
+      "navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

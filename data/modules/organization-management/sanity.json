@@ -6,13 +6,19 @@
     "subFeature": "Organization Overview",
     "title": "Saving Overview edits switches the card back to read-only view with the new values, no reload required",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /organization, click 'Edit Details', change Industry, click 'Save Changes'"
     ],
     "expectedResult": "Form collapses back to the read-only Organization Details view (isEditing=false) immediately, showing the newly entered Industry value pulled from the update response — no manual refresh needed.",
-    "tags": ["sanity", "organization-overview"],
+    "tags": [
+      "sanity",
+      "organization-overview"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,13 +32,20 @@
     "title": "Changing a user's role via AssignRoleModal updates the role shown on their row without a manual page refresh",
     "description": "TeamTab's handleStatusChange bumps userListKey (remounting UserList) and drawerRefreshKey after AssignRoleModal's onSuccess fires — quick check that this actually re-renders the row rather than showing stale role data until a hard refresh.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Open a user's row, use 'Change Role' to assign a different role, confirm the change"
     ],
     "expectedResult": "The user's row in the team list immediately reflects the new role name/badge; the side drawer (if still open) also shows the updated role.",
-    "tags": ["sanity", "team-management", "roles"],
+    "tags": [
+      "sanity",
+      "team-management",
+      "roles"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -46,14 +59,23 @@
     "title": "Resend Invite is rejected within the 60-second cooldown, quick UI-facing check",
     "description": "Fast confirmation of the user-facing effect of RESEND_INVITE_COOLDOWN_MS (user.controller.js resendInvite), complementing the backend unit test ORGM-UNIT-004 — this just checks the toast/error surfaces correctly in the UI within the window.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A user with status 'Invited', invited less than 60 seconds ago"],
+    "preconditions": [
+      "A user with status 'Invited', invited less than 60 seconds ago"
+    ],
     "steps": [
       "From that user's row/drawer, click 'Resend Invite' immediately after the original invite"
     ],
     "expectedResult": "An error toast appears indicating an invite was just sent and to wait a minute — no second Keycloak invite email is triggered.",
-    "tags": ["sanity", "invite", "cooldown"],
+    "tags": [
+      "sanity",
+      "invite",
+      "cooldown"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -67,13 +89,20 @@
     "title": "A custom role can be created with zero permissions selected",
     "description": "role.controller.js create() has no minimum-permission validation — permissions defaults to [] if neither permissions nor grid is supplied. Quick edge-case check that this doesn't throw, since an empty-permission role is a legitimate (if unusual) 'placeholder' role some admins create before configuring it.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /organization/roles, click 'Create Custom Role', enter a name only, leave every permission grid cell at 'none', save"
     ],
     "expectedResult": "Role is created successfully and appears as a Custom Roles card showing '0 permissions' — no validation error blocks the save.",
-    "tags": ["sanity", "roles", "edge-case"],
+    "tags": [
+      "sanity",
+      "roles",
+      "edge-case"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -87,13 +116,20 @@
     "title": "Deleting a custom role removes its card from the grid immediately (optimistic local update)",
     "description": "RolesTab.handleDeleteConfirm does setRoles(prev => prev.filter(r => r._id !== deleteTarget._id)) locally after a successful DELETE, rather than re-fetching — quick check that this optimistic update matches server state (no ghost card, no card lingering after a slow network response).",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /organization/roles, click 'Delete' on a custom role card, confirm in the dialog"
     ],
     "expectedResult": "The role's card disappears from the Custom Roles grid immediately after confirming, with a 'Role deleted' success toast; reloading the page confirms it does not reappear.",
-    "tags": ["sanity", "roles", "delete"],
+    "tags": [
+      "sanity",
+      "roles",
+      "delete"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

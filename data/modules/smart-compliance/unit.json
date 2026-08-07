@@ -7,6 +7,9 @@
     "title": "validateAnswers() rejects a select-type answer with more than one value",
     "description": "smart-compliance.service.js validateAnswers() enforces that a question with responseType 'select' has exactly one answer value; only 'multiselect' may have more.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,10 @@
       "Call validateAnswers() with an answer array containing 2 of the option values for that question"
     ],
     "expectedResult": "Returned errors array contains one entry for that answer with message '\"<question text>\" requires exactly one answer'.",
-    "tags": ["validation", "questionnaire"],
+    "tags": [
+      "validation",
+      "questionnaire"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,6 +33,9 @@
     "subFeature": "Answer Validation",
     "title": "validateAnswers() flags a duplicate questionId across the submitted answers array",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -34,7 +43,10 @@
       "Call validateAnswers() with the corresponding loaded question list"
     ],
     "expectedResult": "Returned errors array includes an entry for 'answers[3].questionId' with message 'Duplicate questionId'.",
-    "tags": ["validation", "questionnaire"],
+    "tags": [
+      "validation",
+      "questionnaire"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,6 +59,9 @@
     "subFeature": "Answer Validation",
     "title": "validateAnswers() rejects an answer value that is not one of the question's option values",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -54,7 +69,10 @@
       "Call validateAnswers() with answer array ['maybe'] for that question"
     ],
     "expectedResult": "Returned errors array contains 'Invalid option(s): maybe' for that answer, since 'maybe' is not in the question.options value set.",
-    "tags": ["validation", "questionnaire"],
+    "tags": [
+      "validation",
+      "questionnaire"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,6 +86,9 @@
     "title": "clamp() coerces out-of-range or non-numeric LLM confidence/valueScore into the 0-100 band",
     "description": "smart-compliance.service.js clamp(val,min,max) is applied to every confidence and valueScore field returned by the LLM before persistence, since the model is not guaranteed to respect the requested numeric range.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -76,7 +97,10 @@
       "Call clamp('n/a', 0, 100) and confirm it returns 50 (the floor of the min/max midpoint)"
     ],
     "expectedResult": "All three calls return values within [0,100]; the non-numeric input falls back to the midpoint (50) rather than NaN.",
-    "tags": ["llm", "normalization"],
+    "tags": [
+      "llm",
+      "normalization"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -90,14 +114,22 @@
     "title": "applyDepthLevel('names_only') strips scoring/reasoning fields and nulls overallAnalysis",
     "description": "Plan-tiered depthLevel config controls how much of the LLM recommendation is exposed. 'names_only' is the most restrictive tier.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A recommendation object with 2 supportedFrameworks, each carrying valueScore, implementationEffort, priority, reasoning, plus a non-null overallAnalysis"],
+    "preconditions": [
+      "A recommendation object with 2 supportedFrameworks, each carrying valueScore, implementationEffort, priority, reasoning, plus a non-null overallAnalysis"
+    ],
     "steps": [
       "Call applyDepthLevel(recommendation, 'names_only')"
     ],
     "expectedResult": "Every entry in recommendation.supportedFrameworks no longer has valueScore/implementationEffort/priority/reasoning keys, and recommendation.overallAnalysis is null. frameworkName/frameworkId/confidence remain untouched.",
-    "tags": ["billing-tier", "llm"],
+    "tags": [
+      "billing-tier",
+      "llm"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -111,6 +143,9 @@
     "title": "buildUserMessage() truncates question text longer than 70 characters with an ellipsis",
     "description": "Token-efficiency measure in the prompt builder — verifies the truncation boundary is applied per-question, not to the whole message.",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -118,7 +153,10 @@
       "Call buildUserMessage(snapshot, frameworks, ctrlMap) and inspect the RESPONSES section"
     ],
     "expectedResult": "The rendered line shows only the first 70 characters of the question followed by a single '…' character before the '→' separator.",
-    "tags": ["llm", "prompt"],
+    "tags": [
+      "llm",
+      "prompt"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -131,6 +169,9 @@
     "subFeature": "LLM Response Normalization",
     "title": "effort() and priority() normalizers fall back to 'medium' for any value outside their enum",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -138,7 +179,10 @@
       "Call priority('urgent') and priority(null)"
     ],
     "expectedResult": "All four calls return 'medium' — an LLM hallucinating a value outside ['easy','medium','hard'] or ['low','medium','high'] never propagates an invalid enum value into SCResponse.",
-    "tags": ["llm", "normalization"],
+    "tags": [
+      "llm",
+      "normalization"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -152,14 +196,22 @@
     "title": "addRecommendedFramework() reactivates an archived ClientFramework entry instead of creating a duplicate",
     "description": "Guards against duplicate active framework rows when a user removes then re-adds the same framework via a Smart Compliance recommendation.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A ClientFramework document exists for (orgId, projectId, frameworkId) with status='archived' and a non-null revokedAt"],
+    "preconditions": [
+      "A ClientFramework document exists for (orgId, projectId, frameworkId) with status='archived' and a non-null revokedAt"
+    ],
     "steps": [
       "Call addRecommendedFramework(orgId, projectId, frameworkId, userId)"
     ],
     "expectedResult": "No new ClientFramework document is created. The existing document's status is set to 'active', revokedAt is cleared to null, and addedBy/addedAt are updated to the current user/timestamp.",
-    "tags": ["framework-adoption", "data-integrity"],
+    "tags": [
+      "framework-adoption",
+      "data-integrity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -7,16 +7,27 @@
     "title": "Local status must not silently diverge from Jira when the Jira close/reopen transition fails",
     "description": "Regression guard for a real pattern in closeBugReport()/reopenBugReport(): the local `report.status` is set unconditionally ('Closed'/'Open') AFTER the Jira transition attempt, but the transition itself is wrapped in try/catch with only a logger.warn on failure — jiraStatus only falls back to the literal string 'Closed'/'Open' if result.success is falsy, it does NOT prevent report.status from being saved as Closed/Open. If closeIssue() returns {success:false, error:'close_transition_not_found'} (see SUPP-UNIT-007), the app will still show the ticket as 'Closed' locally while the real Jira issue remains in its previous workflow state — a state divergence that must not silently regress further (e.g. into also suppressing the warn log, which is the only current signal of the mismatch).",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A Jira project whose workflow has no transition matching close/done/resolve from the issue's current state", "A linked, synced bug report in that project"],
+    "preconditions": [
+      "A Jira project whose workflow has no transition matching close/done/resolve from the issue's current state",
+      "A linked, synced bug report in that project"
+    ],
     "steps": [
       "POST /bug-reports/:id/close against the ticket",
       "Inspect the HTTP response and the persisted BugReport document",
       "Separately check the real Jira issue's status"
     ],
     "expectedResult": "Current behavior: the API still returns 200 with report.status:'Closed' and jiraStatusRaw:'Closed' even though the underlying Jira issue transition failed (logged only as a warning) — this is a known divergence risk that should be flagged for remediation (e.g. only set local status to Closed when the Jira transition genuinely succeeds, or surface a partial-failure indicator to the user) rather than allowed to regress silently.",
-    "tags": ["jira-sync", "reopen-close-workflow", "data-integrity"],
+    "tags": [
+      "jira-sync",
+      "reopen-close-workflow",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -30,16 +41,26 @@
     "title": "reopenIssue's tier-4 fallback (first available transition) must not regress into transitioning an issue to an unrelated/closed-adjacent state",
     "description": "Regression guard for the last-resort branch in reopenIssue(): when no transition matches 'reopen', 'to do'/'open'/'backlog', or any not-done/closed/resolved name, it falls back to `transitions[0]` — whatever Jira returns first, with no semantic filtering at all. On a workflow whose only transitions from the current state are e.g. [{name:'Escalate to Vendor'}, {name:'Merge Duplicate'}], reopenIssue would fire 'Escalate to Vendor' and report success, while report.status is still forced to 'Open' locally regardless of what the transition actually represents.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A Jira workflow state whose only outbound transitions are unrelated to reopening (e.g. 'Escalate to Vendor', 'Merge Duplicate')"],
+    "preconditions": [
+      "A Jira workflow state whose only outbound transitions are unrelated to reopening (e.g. 'Escalate to Vendor', 'Merge Duplicate')"
+    ],
     "steps": [
       "POST /bug-reports/:id/reopen against a closed, synced ticket in this workflow state",
       "Inspect which Jira transition was actually invoked",
       "Inspect the resulting local report.status and jiraStatusRaw"
     ],
     "expectedResult": "Current behavior: the tier-4 fallback fires the first listed transition (e.g. 'Escalate to Vendor') regardless of semantic fit, jiraStatus is set to that transition's name, yet report.status is still hard-set to 'Open' — a mismatch between what actually happened in Jira and what the client panel displays. This must not regress into losing the transitionName in jiraStatusRaw (the one place the discrepancy is currently visible to a support engineer).",
-    "tags": ["jira-sync", "transitions", "data-integrity"],
+    "tags": [
+      "jira-sync",
+      "transitions",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

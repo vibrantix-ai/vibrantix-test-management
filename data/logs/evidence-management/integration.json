@@ -8,6 +8,10 @@
     "title": "Evidence approve/reject transition writes a complete WorkflowEntry (actor, timestamp, status, comment)",
     "description": "Verifies the core log-correctness guarantee for the review workflow: every approve/reject decision made via EvidenceMyReviewsTab.jsx must produce a queryable WorkflowEntry document (written through vibrantix-backend/src/modules/workflow/workflowTransition.service.js, called from evidence.controller.js's transitionWorkflow handler) with the reviewer identity, a real timestamp, the resulting status, and the reviewer's comment — not just an in-memory success response.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -21,7 +25,11 @@
       "Inspect the newest WorkflowEntry document produced by each action."
     ],
     "expectedResult": "For each decision, a new WorkflowEntry document exists with changedBy equal to the reviewer's user id, changedAt set to a real server-generated timestamp at the time of the decision, status set to the resulting lifecycle state (e.g. approved/rejected), metadata.previousStatus set to the prior state, and note populated with the reviewer's comment text. No field is null/empty for a decision that was accepted by the API.",
-    "tags": ["logging", "audit-trail", "workflow"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "workflow"
+    ],
     "requirement": "ISO 19011:2018 §6.4.9",
     "owner": "QA",
     "status": "draft",
@@ -36,6 +44,10 @@
     "title": "Hard-delete of evidence is recorded only as a Winston application log, not as a queryable WorkflowEntry tied to the deleted item",
     "description": "evidence.controller.js's hardDeleteEvidence handler (DELETE /api/evidence/:evidenceId/hard) blocks deletion unless the item is already 'archived', and on success emits two logger.info calls (event: 'audit.evidence.deleted' and event: 'compliance.gdpr.erasure.executed') plus a logger.warn (event: 'audit.evidence.hard_delete_blocked') when blocked. None of these are written as a WorkflowEntry document, so once Evidence.deleteMany() removes the record, there is no structured, queryable audit trail entry the evidence UI (or any future admin viewer) can surface for 'who permanently deleted this and when' the way it can for every other lifecycle transition.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -49,7 +61,12 @@
       "Attempt to locate the deletion event through any evidence-facing history UI or API (there is none, since the Evidence document itself no longer exists to anchor a lookup)."
     ],
     "expectedResult": "The deletion is visible only in Winston application logs (console/file transport) — no WorkflowEntry document is created for the hard-delete action. Flag this as a completeness gap: the single most destructive, irreversible action in the module produces a weaker and less discoverable audit record than a routine status change like submit-for-review.",
-    "tags": ["logging", "audit-trail", "retention", "tamper-evidence"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "retention",
+      "tamper-evidence"
+    ],
     "requirement": "ISO 27001 Annex A.5.33",
     "linkedDefect": "EM-001",
     "owner": "QA",
@@ -65,6 +82,10 @@
     "title": "Removing a control mapping (archiveMapping) writes zero audit trail entries and accepts no reason field",
     "description": "evidence-mapping.controller.js's archiveMapping handler (DELETE /api/evidence/mappings/:id, routed at evidence-mapping.routes.js line 133) only sets mapping.status = 'archived' and calls mapping.save() — there is no WorkflowEntry.create call in the function, and the route defines no 'reason' request-body field to capture even if a caller wanted to supply one.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -78,7 +99,11 @@
       "Attempt to resend the removal request with an extra 'reason' field in the request body and confirm it has no effect on persistence."
     ],
     "expectedResult": "The mapping's status flips to 'archived', but no new WorkflowEntry document is created — the workflow-history response returned in step 3 is identical to step 1 (still ending at the last approve/assign transition). Any 'reason' text supplied in step 4 is silently discarded, never persisted anywhere. Removing a control mapping is therefore indistinguishable, from an audit-trail standpoint, from the mapping never having been touched.",
-    "tags": ["logging", "audit-trail", "control-mapping"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "control-mapping"
+    ],
     "requirement": "ISO 27001 Annex A.5.33",
     "linkedDefect": "EM-016",
     "owner": "QA",
@@ -94,6 +119,10 @@
     "title": "Generic ActivityLog middleware records a shallow request-level row even for actions that have no domain-specific WorkflowEntry",
     "description": "vibrantix-backend/src/middleware/activityLogger.js is mounted globally in src/index.js before the evidence routes are mounted, and writes an ActivityLog document (vibrantix-backend/src/modules/activity/activity-log.model.js) for every request where req.userId is set, regardless of whether the underlying handler also writes a WorkflowEntry. This test verifies that backstop actually fires for the two confirmed WorkflowEntry gaps (control-mapping removal, hard-delete), and documents how shallow its fields are compared to a real audit trail.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -107,7 +136,11 @@
       "Compare the information available in this row against what a reviewer would need to reconstruct 'why' the action happened."
     ],
     "expectedResult": "Exactly one ActivityLog row is written per request, with organizationId (from req.orgId), userId, method, path, statusCode, and a heuristically-derived action/module/resourceType (e.g. action='delete', module='evidence' or resourceType='evidence_mapping'). Confirm the row exists as a genuine backstop for both WorkflowEntry gaps, but also confirm it carries no reason/justification text and no before/after status values, and that action/resourceType are regex-derived from the URL rather than domain-verified — so it cannot substitute for a structured WorkflowEntry when an auditor needs to know why a mapping was removed or evidence was deleted, only that some deletion occurred.",
-    "tags": ["logging", "audit-trail", "multi-tenant"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "multi-tenant"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "draft",

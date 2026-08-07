@@ -7,16 +7,27 @@
     "title": "Notification is still delivered live when BullMQ/Redis is unavailable (direct-emit fallback)",
     "description": "Regression guard for NOTIF-002: before this fix, a Redis outage meant queue.add() threw and no delivery path existed, so notifications were silently DB-only until the next manual poll. dispatch() must keep calling getIo() directly when job is null.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "NOTIF-002",
-    "preconditions": ["Redis/BullMQ intentionally unavailable", "Target user has an active Socket.IO connection"],
+    "preconditions": [
+      "Redis/BullMQ intentionally unavailable",
+      "Target user has an active Socket.IO connection"
+    ],
     "steps": [
       "Stop Redis or set REDIS_ENABLED=false",
       "Dispatch a notification to the connected user"
     ],
     "expectedResult": "The connected client still receives the 'notification' socket event in real time via the fallback direct-emit path — this must not regress to DB-only silent delivery.",
-    "tags": ["regression", "resilience", "bullmq"],
+    "tags": [
+      "regression",
+      "resilience",
+      "bullmq"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -30,16 +41,26 @@
     "title": "Socket reconnects automatically after NextAuth rotates the access token",
     "description": "Regression guard for NOTIF-004: a prior version left the socket authenticated with a stale token forever once NextAuth issued a new one, and connect_error handling used to forcibly disconnect on any JWT error, defeating the recovery path. The fix pushes the fresh token into socketRef.current.auth and calls .connect() if disconnected, and connect_error no longer force-disconnects.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "NOTIF-004",
-    "preconditions": ["A session long-lived enough for NextAuth to rotate session.accessToken (or simulate by forcing a token refresh)"],
+    "preconditions": [
+      "A session long-lived enough for NextAuth to rotate session.accessToken (or simulate by forcing a token refresh)"
+    ],
     "steps": [
       "Stay logged in until (or force) the NextAuth session token rotates",
       "Observe the existing socket connection's auth token and connection state before/after rotation"
     ],
     "expectedResult": "The socket's auth.token is updated to the new value; if it had disconnected, it reconnects automatically without requiring the user to reload the page.",
-    "tags": ["regression", "socket.io", "token-rotation"],
+    "tags": [
+      "regression",
+      "socket.io",
+      "token-rotation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,16 +74,26 @@
     "title": "Notifications and scan-relevant emits target the org-scoped room, not just the bare user room",
     "description": "Regression guard for NOTIF-005: prior to this fix, delivery only used room user:{userId}, which meant a user who belongs to multiple organizations could receive notifications intended for a different org context than the one they're currently viewing. Both the worker and the direct-emit fallback must emit to org:{organizationId}:user:{targetUserId}.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "NOTIF-005",
-    "preconditions": ["A user belongs to two organizations, Org A and Org B, and is connected with an Org A session"],
+    "preconditions": [
+      "A user belongs to two organizations, Org A and Org B, and is connected with an Org A session"
+    ],
     "steps": [
       "Dispatch a notification targeting this user under organizationId = Org B (simulating a stale/multi-org membership)",
       "Observe whether the Org-A-connected socket receives it"
     ],
     "expectedResult": "The socket, joined only to org:{OrgA}:user:{userId} (plus the bare user:{userId} room), does not receive the Org-B-scoped emit intended for a different org room — confirming org-room isolation holds for both the async worker path and the direct-emit fallback.",
-    "tags": ["regression", "multi-tenant", "socket.io"],
+    "tags": [
+      "regression",
+      "multi-tenant",
+      "socket.io"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -76,16 +107,25 @@
     "title": "markAllRead exists and correctly normalizes isRead to read for the local unread filter",
     "description": "Regression guard for NOTIF-006: markAllRead was previously missing entirely from NotificationContext, and separately the local unreadCount filter (!n.read) silently stayed wrong for API-fetched notifications because only `isRead` was ever set, never `read`. Both markAsRead and markAllRead must set { isRead: true, read: true } locally.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "NOTIF-006",
-    "preconditions": ["User has several unread notifications loaded in NotificationContext"],
+    "preconditions": [
+      "User has several unread notifications loaded in NotificationContext"
+    ],
     "steps": [
       "Call markAllRead from the UI",
       "Inspect the notifications array in React state (e.g. via devtools) immediately after"
     ],
     "expectedResult": "Every notification object has both isRead:true and read:true, and unreadCount (computed as notifications.filter(n => !n.read).length) drops to 0 without requiring a re-fetch.",
-    "tags": ["regression", "mark-all-read", "state-sync"],
+    "tags": [
+      "regression",
+      "mark-all-read",
+      "state-sync"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -99,16 +139,25 @@
     "title": "Cancelling scan SCAN-12 never incorrectly matches/cancels the progress entry for SCAN-1",
     "description": "Regression guard for NOTIF-008: the scan-cancelled handler's key-matching logic must only accept a stored progress key that STARTS WITH the incoming baseScanId (prefix match in one direction). A naive substring/reverse-prefix check previously risked SCAN-1 matching SCAN-12's cancellation.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "linkedDefect": "NOTIF-008",
-    "preconditions": ["activeScanProgress state contains both SCAN-1 and SCAN-12 as running scans"],
+    "preconditions": [
+      "activeScanProgress state contains both SCAN-1 and SCAN-12 as running scans"
+    ],
     "steps": [
       "Emit a scan-cancelled event with { scanId: 'SCAN-12' }",
       "Inspect activeScanProgress for both SCAN-1 and SCAN-12 afterward"
     ],
     "expectedResult": "Only the SCAN-12 entry (or its provider-suffixed variant, e.g. SCAN-12-aws) transitions to status='cancelled'; SCAN-1 remains in its prior running state, untouched.",
-    "tags": ["regression", "scan-progress", "matching-logic"],
+    "tags": [
+      "regression",
+      "scan-progress",
+      "matching-logic"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -122,17 +171,26 @@
     "title": "The 60-second cross-tab read-state poll interval remains active in NotificationContext",
     "description": "Regression guard for NOTIF-010: NotificationContext registers setInterval(fetchNotifications, 60_000) specifically to catch read-state changes made in other browser tabs, given there is no push-based cross-tab sync. Removing or breaking this interval (e.g. during a refactor to React Query) would leave stale unread counts indefinitely in background tabs.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "NOTIF-010",
-    "preconditions": ["Two tabs open with the same user session"],
+    "preconditions": [
+      "Two tabs open with the same user session"
+    ],
     "steps": [
       "Mark a notification read in Tab 1",
       "Wait at least 60-65 seconds without interacting with Tab 2",
       "Check Tab 2's bell badge / NotificationMenu state"
     ],
     "expectedResult": "Tab 2 reflects the read state (bell badge decremented) after the poll interval elapses, confirming the interval is still wired up and firing on schedule.",
-    "tags": ["regression", "multi-tab", "polling"],
+    "tags": [
+      "regression",
+      "multi-tab",
+      "polling"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -146,15 +204,23 @@
     "title": "NotificationMenu click-through uses notification.navigateTo, not a nonexistent 'link' field",
     "description": "Regression guard for NOTIF-011: an earlier version of NotificationMenu.js referenced notification.link, which the backend never populates (the field is navigateTo), silently making click-to-navigate a no-op for every notification.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "NOTIF-011",
-    "preconditions": ["A notification with a populated navigateTo value, e.g. '/audit-assurance/123/configured'"],
+    "preconditions": [
+      "A notification with a populated navigateTo value, e.g. '/audit-assurance/123/configured'"
+    ],
     "steps": [
       "Click that notification in NotificationMenu"
     ],
     "expectedResult": "The browser navigates to the navigateTo URL — this must not regress to reading a 'link' field that is always undefined.",
-    "tags": ["regression", "navigation"],
+    "tags": [
+      "regression",
+      "navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -168,16 +234,26 @@
     "title": "NotificationMenu's getNotificationColor switch cases do not match any value in the real NOTIFICATION_TYPES enum",
     "description": "OPEN GAP (not yet fixed): NotificationMenu.js's getNotificationColor() switches on 'evidence_rejected', 'deadline_approaching', 'review_reminder', and 'evidence_approved' to pick red/orange/green — but notification.model.js's actual NOTIFICATION_TYPES enum is task_assigned, task_reassigned, task_due_soon, task_overdue, review_requested, review_approved, review_rejected, audit_invitation, scan_completed, escalation_required, general, sync_failed. None of the switch cases can ever match a real notificationType, so every notification renders with the default blue.500 regardless of urgency (e.g. an 'escalation_required' or 'task_overdue' item looks identical to a routine 'general' one). This case documents the current defect so a future refactor of either the enum or the color map doesn't silently 'fix' one side while leaving the mismatch on the other.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Notifications exist with notificationType values 'task_overdue' and 'escalation_required'"],
+    "preconditions": [
+      "Notifications exist with notificationType values 'task_overdue' and 'escalation_required'"
+    ],
     "steps": [
       "Dispatch a notification with notificationType='task_overdue'",
       "Dispatch a notification with notificationType='escalation_required'",
       "Open NotificationMenu and inspect the rendered title color for each"
     ],
     "expectedResult": "Current (defective) behavior: both render in the default blue.500 color, not visually distinguished from a routine 'general' notification, despite being high-urgency types. Flagged for remediation — the switch statement's case values should be reconciled with NOTIFICATION_TYPES.",
-    "tags": ["regression", "ui", "notification-color", "gap"],
+    "tags": [
+      "regression",
+      "ui",
+      "notification-color",
+      "gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

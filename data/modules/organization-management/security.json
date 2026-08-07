@@ -7,6 +7,10 @@
     "title": "PUT /api/organizations/me does not strip subscription/usage/keycloakOrgId from the request body — a caller with only organization.update can self-modify billing state",
     "description": "organization.controller.js updateMyOrg (the self-service PUT /me route, gated only by 'organization.update', not 'organization.admin') builds `update = { ...req.body, updatedBy }` and only deletes update.isActive and update.createdBy before the $set. Its sibling updateById (superadmin-only PUT /:id) additionally deletes update.subscription, update.usage, and update.keycloakOrgId — updateMyOrg does not. Since Organization.subscription/usage/keycloakOrgId have no separate write-protection at the schema level (Mongoose $set on a top-level Mixed-free path just writes it), a caller with organization.update but not organization.admin can PUT arbitrary subscription/usage fields onto their own org document directly, bypassing Stripe entirely.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -18,7 +22,12 @@
       "Call GET /api/organizations/me and inspect subscription and usage"
     ],
     "expectedResult": "Current behavior: the request succeeds (200) and subscription.status/tierCode/frameworkLimit and usage.users are overwritten exactly as sent — no Stripe webhook, no payment, no organization.admin check. This is a billing-bypass / privilege-escalation gap that should be flagged for remediation (strip subscription/usage/keycloakOrgId in updateMyOrg exactly as updateById already does).",
-    "tags": ["mass-assignment", "billing-bypass", "privilege-escalation", "owasp-a01"],
+    "tags": [
+      "mass-assignment",
+      "billing-bypass",
+      "privilege-escalation",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -33,6 +42,10 @@
     "title": "PUT /api/organizations/me does not strip licensedFrameworks — a caller with only organization.update can self-grant framework licenses",
     "description": "Same root cause as ORGM-SEC-001 (updateMyOrg's incomplete strip-list versus updateById), but a distinct exploit surface: licensedFrameworks is the field updateLicensedFrameworks (superadmin-only, requirePermission('organization.admin')) exists specifically to gate, with cascade logic to revoke/reactivate ClientFrameworks. Writing it directly through PUT /me bypasses that entire superadmin-only control and its cascade side effects.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -44,7 +57,12 @@
       "Call GET /api/organizations/:id/licensed-frameworks (or GET /me) and inspect licensedFrameworks"
     ],
     "expectedResult": "Current behavior: licensedFrameworks is overwritten to the attacker-supplied list with no ID validation (unlike the dedicated endpoint, which validates each ID against ComplianceFramework) and no organization.admin check — a self-service field write silently grants access to frameworks the org never licensed. Should be flagged for remediation.",
-    "tags": ["mass-assignment", "privilege-escalation", "licensing-bypass", "owasp-a01"],
+    "tags": [
+      "mass-assignment",
+      "privilege-escalation",
+      "licensing-bypass",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -59,14 +77,25 @@
     "title": "GET /api/users/:id rejects a request for a user ID belonging to a different organization",
     "description": "Route-level IDOR regression guard for assertOrgAccess (user.controller.js) — an org admin (organization.admin=false) attempting to read a user in another tenant's org must be rejected and the attempt logged as authz.cross_org.attempt, not merely return an empty/filtered response.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B) each with at least one active user", "Valid JWT for an org A admin (not a platform superadmin)"],
+    "preconditions": [
+      "Two orgs (A, B) each with at least one active user",
+      "Valid JWT for an org A admin (not a platform superadmin)"
+    ],
     "steps": [
       "As an org A admin, call GET /api/users/:id using a userId that belongs to org B"
     ],
     "expectedResult": "403 Forbidden 'Access denied' — no PII (email, name, roles) belonging to the org B user is returned in the response body. A structured 'authz.cross_org.attempt' log entry is emitted with requestingOrgId and targetOrgId.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -81,6 +110,10 @@
     "title": "POST /api/users rejects extraPermissions the caller does not themselves hold, end-to-end through the real route and JWT",
     "description": "Route-level regression guard for assertGrantablePermissions (unit-tested in isolation as ORGM-UNIT-006). Confirms the full path — real JWT, real requirePermission('user.create') middleware, real req.permissions Set built from Redis/DB — actually rejects the escalation attempt rather than only the function-level mock.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -90,7 +123,11 @@
       "As User A, call POST /api/users with a valid new-user payload plus extraPermissions: ['organization.admin']"
     ],
     "expectedResult": "403 'You cannot grant permissions you don't have: organization.admin' — no User document is created (not even with the disallowed permission stripped; the whole request is rejected). A structured 'authz.privilege_escalation.attempt' log entry is emitted with User A's id and orgId.",
-    "tags": ["rbac", "privilege-escalation", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "privilege-escalation",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -105,15 +142,26 @@
     "title": "System roles cannot be modified or deleted via the Roles API regardless of caller permissions",
     "description": "role.controller.js update()/remove() both check role.isSystem and throw a 400 before any org-ownership or field-level checks run, and role.model.js's pre('save') hook is a second line of defense (ORGM-UNIT-003) if a controller-level check is ever bypassed. This case verifies the API-level guard for both the 'Org Admin' (SUPERADMIN) system role and a caller who holds role.update/role.delete but is not the platform superadmin.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Caller holds role.update and role.delete", "Target roleId is the system 'Org Admin' role (isSystem=true, systemRoleKey='SUPERADMIN')"],
+    "preconditions": [
+      "Caller holds role.update and role.delete",
+      "Target roleId is the system 'Org Admin' role (isSystem=true, systemRoleKey='SUPERADMIN')"
+    ],
     "steps": [
       "Call PUT /api/roles/:id (system role id) with body { description: 'tampered' }",
       "Call DELETE /api/roles/:id for the same system role id"
     ],
     "expectedResult": "Both calls return 400 ('System roles cannot be modified.' / 'System roles cannot be deleted.') — the Role document is byte-for-byte unchanged in the database after either call.",
-    "tags": ["system-role", "immutability", "rbac"],
+    "tags": [
+      "system-role",
+      "immutability",
+      "rbac"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "Security",
     "status": "active",
@@ -128,6 +176,10 @@
     "title": "PUT /api/users/:id/roles rejects a roleId belonging to a different organization's custom role, at the real route",
     "description": "Route-level regression guard for validateRoleIds (unit-tested in isolation as ORGM-UNIT-007). Confirms the cross-org custom-role reference is rejected before any User.roleIds write, using the real assignRoles controller path (requires user.admin) rather than calling the helper function directly.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -138,7 +190,11 @@
       "As the org A admin, call PUT /api/users/:targetUserId/roles with body { roleIds: ['<orgB-contractor-role-id>'] }"
     ],
     "expectedResult": "400 Bad Request — 'Role \"Contractor\" does not belong to this organization.' The target user's roleIds field is unchanged; no cross-org role reference is ever persisted.",
-    "tags": ["rbac", "multi-tenant", "idor"],
+    "tags": [
+      "rbac",
+      "multi-tenant",
+      "idor"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

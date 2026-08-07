@@ -5,11 +5,21 @@
     "category": "smoke",
     "title": "Evidence Management page loads without console errors for a seeded org",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "steps": ["Log in as a seeded test org admin", "Navigate to /evidence-management"],
+    "steps": [
+      "Log in as a seeded test org admin",
+      "Navigate to /evidence-management"
+    ],
     "expectedResult": "Page renders the evidence list, no unhandled console errors, no infinite loading skeleton.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -21,11 +31,20 @@
     "category": "smoke",
     "title": "Upload button opens the upload dialog",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "steps": ["Click 'Upload Evidence' on /evidence-management"],
+    "steps": [
+      "Click 'Upload Evidence' on /evidence-management"
+    ],
     "expectedResult": "Upload dialog opens with a file picker and control-mapping selector visible.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -7,13 +7,19 @@
     "title": "Resource Board KPI is a percentage between 0 and 100",
     "description": "The Resource Board's headline value is passRate = round(compliantResources/totalResources*100), an outcome metric (design doc D1 fix), not a raw resource count — it must never render as a raw count or exceed 100%.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Open /dashboard and read the Resource Board's headline KPI value"
     ],
     "expectedResult": "Value is formatted as 'N%' with 0 <= N <= 100.",
-    "tags": ["sanity", "resource-board"],
+    "tags": [
+      "sanity",
+      "resource-board"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,13 +33,19 @@
     "title": "Every one of the 6 board cards opens its real board content, never the generic 'coming soon' fallback",
     "description": "AuditOverviewContent's workspace panel maps selectedBoard to one of ComplianceBoardContent/ExecutiveResourceBoardContent/VendorBoardContent/ExecutiveRiskBoardContent/AuditBoardContent/FrameworkBoardContent; anything unmatched falls through to a plain '... content coming soon' text node.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Click each of the 6 board cards in turn, returning to Overview between each"
     ],
     "expectedResult": "Each click renders its dedicated board content component; the 'coming soon' fallback text never appears for any of the 6 named boards.",
-    "tags": ["sanity", "navigation"],
+    "tags": [
+      "sanity",
+      "navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,6 +59,9 @@
     "title": "The dashboard auto-refreshes on a stable 5-minute interval without stacking duplicate timers",
     "description": "AuditOverviewContent sets a single setInterval(fetchMetrics, 5*60*1000) in a useEffect keyed on [fetchMetrics] and clears it on cleanup — re-renders must not leave multiple overlapping intervals firing concurrently requests.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -54,7 +69,10 @@
       "Wait through at least 2 refresh cycles (~10+ minutes) while interacting with unrelated filters"
     ],
     "expectedResult": "Exactly one /api/dashboard/metrics call fires per 5-minute window from the auto-refresh timer (independent of any manual filter-triggered calls) — never 2+ simultaneous auto-refresh calls.",
-    "tags": ["sanity", "real-time-refresh"],
+    "tags": [
+      "sanity",
+      "real-time-refresh"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,6 +86,9 @@
     "title": "Vendor Board's untracked metrics show a 'Pending' badge, never a fabricated 0",
     "description": "'Critical dependencies' and 'Avg trust score' in the Vendor Board's bottom metrics are marked pending:true with a pendingReason because their backing vendor fields (businessInfo.criticalVendor, riskProfile.singlePointOfFailure, securityInfo/performanceMetrics) don't exist on any real vendor document yet.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -75,7 +96,11 @@
       "Hover over each row"
     ],
     "expectedResult": "Both rows show '—' with a dashed 'Pending' badge; hovering reveals a tooltip explaining the missing backing field — neither row shows a numeric 0 or 100.",
-    "tags": ["sanity", "vendor-board", "honest-empty-state"],
+    "tags": [
+      "sanity",
+      "vendor-board",
+      "honest-empty-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -89,15 +114,24 @@
     "title": "CarAgingChart shows an explicit zero-state message instead of an empty chart",
     "description": "CarAgingChart (Audit Board) buckets overdue CARs into 0-30d/31-60d/61-90d/90+d and shows a red '<n> overdue' badge; when all buckets are 0 it must show 'No overdue corrective actions' rather than a blank/empty bar chart.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org/project with zero overdue CARs"],
+    "preconditions": [
+      "Org/project with zero overdue CARs"
+    ],
     "steps": [
       "Open the Audit Board for a project with no overdue corrective actions",
       "Locate the CAR Aging card"
     ],
     "expectedResult": "The card shows the text 'No overdue corrective actions', not an empty bar chart with a '0 overdue' badge and no explanation.",
-    "tags": ["sanity", "audit-board", "empty-state"],
+    "tags": [
+      "sanity",
+      "audit-board",
+      "empty-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -111,16 +145,25 @@
     "title": "The Retry button after a failed metrics load reissues the call with the currently active filters",
     "description": "The error Alert's Retry button calls fetchMetrics(effectiveFilters) — the filters state at the moment of failure — not a hardcoded default filter set.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A non-'all projects' filter and a date range are already applied", "Backend temporarily returns an error for /api/dashboard/metrics"],
+    "preconditions": [
+      "A non-'all projects' filter and a date range are already applied",
+      "Backend temporarily returns an error for /api/dashboard/metrics"
+    ],
     "steps": [
       "Apply a date-range filter and a single-project selection",
       "Force the next /api/dashboard/metrics call to fail (e.g. simulate a 500)",
       "Click Retry on the resulting error Alert"
     ],
     "expectedResult": "The retried request still carries the same date range and project selection, not the default 'all projects, all time' filter set.",
-    "tags": ["sanity", "error-handling"],
+    "tags": [
+      "sanity",
+      "error-handling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -7,16 +7,25 @@
     "title": "Connecting an OAuth integration completes the full redirect round-trip, auto-triggers a full sync, and lands the user on the sync-jobs page",
     "description": "oauthCallbackRoutes handler (connector.routes.ts:43-134) exchanges the code, sets the integration to 'active', best-effort triggers syncService.triggerSync(integrationId, 'full', ...) so the destination page already shows a running job, then redirects to /evidence-management/sync-jobs?oauth=success&type=<connector>.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with integration.read and INTEGRATION_HUB MANAGE_CONNECTORS permission", "An OAuth connector (e.g. GitHub) is configured but not yet connected"],
+    "preconditions": [
+      "Logged in as a user with integration.read and INTEGRATION_HUB MANAGE_CONNECTORS permission",
+      "An OAuth connector (e.g. GitHub) is configured but not yet connected"
+    ],
     "steps": [
       "Navigate to /integrations and click 'Connect' on the GitHub card",
       "Authorize the app on GitHub's consent screen",
       "Observe the redirect back into the app"
     ],
     "expectedResult": "The browser lands on /evidence-management/sync-jobs?oauth=success&type=github with a 'full' sync job already visible in 'pending' or 'running' state; the GitHub card on /integrations now shows connected/active status.",
-    "tags": ["oauth", "integration-hub"],
+    "tags": [
+      "oauth",
+      "integration-hub"
+    ],
     "requirement": "ISO 27001 Annex A.5.20",
     "owner": "QA",
     "status": "active",
@@ -31,15 +40,24 @@
     "title": "Evidence synced from an active integration shows correct source attribution on the evidence detail page",
     "description": "IntegrationEvidenceDetailPage.jsx renders a 'Source' field as `${data.integrationType} (automated)` plus data.externalSource.syncStatus, data.externalSource.lastSyncAt, and data.externalSource.syncMetadata.recordCount. This verifies the connector-service's normalized evidence actually carries through to those exact fields end-to-end.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A completed full sync for a 6-stage-pipeline connector (e.g. Okta, AWS, GitHub — not Google Drive, which is manual-pick only)"],
+    "preconditions": [
+      "A completed full sync for a 6-stage-pipeline connector (e.g. Okta, AWS, GitHub — not Google Drive, which is manual-pick only)"
+    ],
     "steps": [
       "After a sync completes, open /evidence-management/integration-evidence and select a synced item",
       "Read the 'Source', 'Sync Status', 'Last Sync', and 'Record Count' fields on the detail page"
     ],
     "expectedResult": "Source shows the correct connector type suffixed '(automated)'; Sync Status and Last Sync reflect the just-completed job; Record Count matches the number of records actually collected in that sync, not a placeholder value.",
-    "tags": ["integration-hub", "evidence-linking", "traceability"],
+    "tags": [
+      "integration-hub",
+      "evidence-linking",
+      "traceability"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "active",
@@ -54,9 +72,14 @@
     "title": "Google Drive connector uploads a user-picked file as evidence via the dedicated drive-upload queue, without any automatic folder sync",
     "description": "GoogleDriveConnector.ts is explicitly documented as 'Sync: Manual-pick only ... Does NOT use the 6-stage sync pipeline. Uses dedicated drive-upload BullMQ queue.' This case verifies the real behavior — a user must browse and select files; there is no background folder-watch/auto-import.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Google Drive integration connected and active"],
+    "preconditions": [
+      "Google Drive integration connected and active"
+    ],
     "steps": [
       "Open the Google Drive integration card and launch the file picker",
       "Browse into a folder and select one file",
@@ -65,7 +88,10 @@
       "Return to Vibrantix and check evidence-management for the new file"
     ],
     "expectedResult": "The explicitly picked file appears as evidence via the drive-upload queue with correct name/hash. The file added directly in Drive afterward does NOT appear automatically — Google Drive has no background auto-import/folder-sync in the current implementation, only manual pick-and-upload.",
-    "tags": ["google-drive", "evidence-import"],
+    "tags": [
+      "google-drive",
+      "evidence-import"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "active",
@@ -80,16 +106,25 @@
     "title": "Disconnecting an integration deactivates it on the Hub but leaves previously synced evidence in place (orphaned, not cascade-deleted)",
     "description": "ConnectorService.deleteConnector() soft-deletes the integration document and invalidates caches, but does not touch the integration-evidence collection at all — prior evidence remains queryable by evidenceId/version with its original integrationId reference now pointing at an inactive integration.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An integration with at least one previously synced evidence item"],
+    "preconditions": [
+      "An integration with at least one previously synced evidence item"
+    ],
     "steps": [
       "Note an existing integration-evidence item's evidenceId for a connector",
       "Disconnect that connector from /integrations",
       "Navigate to /evidence-management/integration-evidence and open the same evidenceId"
     ],
     "expectedResult": "The connector card shows disconnected/inactive on the Hub. The previously synced evidence item is still fully viewable with its original data intact, but its 'Source' section now references an integration that no longer appears as active — verify the UI does not error or show a broken/blank state for this now-orphaned reference, and that it's visually distinguishable that the source integration is no longer connected.",
-    "tags": ["disconnect", "evidence-linking", "orphaned-data"],
+    "tags": [
+      "disconnect",
+      "evidence-linking",
+      "orphaned-data"
+    ],
     "requirement": "ISO 27001 Annex A.5.20",
     "owner": "QA",
     "status": "active",
@@ -104,16 +139,26 @@
     "title": "An integration with an expired token surfaces a reconnect prompt on the Hub instead of a false healthy status",
     "description": "GenericIntegrationCard derives needsReauth = tokenExpired || connectionStatus in ('error','pending'), overriding the enabled/connected badge. This end-to-end case confirms an actually-expired token (not just a mocked flag) drives that same UI outcome.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An OAuth integration whose access token has been allowed to expire and whose refresh attempt has failed or is unavailable"],
+    "preconditions": [
+      "An OAuth integration whose access token has been allowed to expire and whose refresh attempt has failed or is unavailable"
+    ],
     "steps": [
       "Force or wait for an integration's token to expire without a valid refresh token",
       "Trigger any action that calls ensureValidToken() for that integration (e.g. a scheduled sync)",
       "Open /integrations and observe the card for that connector"
     ],
     "expectedResult": "The card shows a 'Reconnect' / needs-reauthorization prompt rather than an 'active/connected' badge, and the next sync attempt fails cleanly with a surfaced error rather than silently returning stale or empty data.",
-    "tags": ["health-monitoring", "oauth", "reconnect"],
+    "tags": [
+      "health-monitoring",
+      "oauth",
+      "reconnect"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -127,15 +172,23 @@
     "title": "Triggering a second sync while one is already running for the same integration is rejected, not queued as a duplicate",
     "description": "SyncService.triggerSync() checks for an existing job with status 'pending' or 'running' for the integration and returns an error ('A sync job is already in progress ...') rather than starting a concurrent second job.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An integration with a long-running full sync currently in progress"],
+    "preconditions": [
+      "An integration with a long-running full sync currently in progress"
+    ],
     "steps": [
       "Start a full sync for an integration with a large enough dataset that it stays 'running' for at least a minute",
       "While it is still running, trigger another sync (full or incremental) for the same integration"
     ],
     "expectedResult": "The second trigger is rejected with an error identifying the already-running job (its syncJobId and status); no second sync job document is created and no duplicate evidence collection occurs.",
-    "tags": ["sync", "concurrency"],
+    "tags": [
+      "sync",
+      "concurrency"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -149,16 +202,25 @@
     "title": "A verified GitHub webhook event is queued and eventually produces evidence, and an unverifiable one is dropped before queuing",
     "description": "POST /webhooks/:connectorType verifies the x-hub-signature-256 header against the integration's stored webhookSecret, then enqueues to the evidence-webhook BullMQ queue only on success; on failure it responds without enqueuing anything.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A GitHub integration configured with a webhook secret and webhook URL registered on a real/test GitHub repo"],
+    "preconditions": [
+      "A GitHub integration configured with a webhook secret and webhook URL registered on a real/test GitHub repo"
+    ],
     "steps": [
       "Push a commit to the connected GitHub repo so GitHub delivers a real signed webhook",
       "Confirm the corresponding evidence/event appears in Vibrantix after processing",
       "Separately, POST a payload to the same webhook URL with an incorrect signature header"
     ],
     "expectedResult": "The correctly signed GitHub delivery results in queued processing and eventual evidence/event visibility in Vibrantix. The incorrectly signed request is rejected at the signature-verification step and never reaches the evidence-webhook queue.",
-    "tags": ["webhook", "hmac", "evidence-linking"],
+    "tags": [
+      "webhook",
+      "hmac",
+      "evidence-linking"
+    ],
     "requirement": "ISO 27001 Annex A.8.20",
     "owner": "QA",
     "status": "active",

@@ -6,14 +6,23 @@
     "subFeature": "Page Load",
     "title": "/project-management loads without error for a project-admin user",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user holding project.admin or at least one per-project admin ProjectRole"],
+    "preconditions": [
+      "Logged in as a user holding project.admin or at least one per-project admin ProjectRole"
+    ],
     "steps": [
       "Navigate to /project-management"
     ],
     "expectedResult": "Page renders the dashboard stats row, search/filter bar, and project table without a console error or an infinite spinner; PermissionGate does not block access.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,6 +35,11 @@
     "subFeature": "Project Creation Wizard",
     "title": "Creating a minimal project (name only) succeeds",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -34,7 +48,10 @@
       "Click 'Create Project'"
     ],
     "expectedResult": "Modal closes without error and the new project appears in the list with status 'Planning' and priority 'Medium' (the form defaults), projectCode auto-assigned.",
-    "tags": ["smoke", "project-creation"],
+    "tags": [
+      "smoke",
+      "project-creation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,13 +64,20 @@
     "subFeature": "Project Dashboard",
     "title": "Project detail page loads for an existing project ID",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "From the project list, click the 'View Details' (eye) icon on any project row"
     ],
     "expectedResult": "/project-management/[id] loads showing the project's name, status/priority badges, budget progress, and team card, with no error state.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -66,14 +90,24 @@
     "subFeature": "Project Dashboard",
     "title": "Dashboard stats cards render gracefully for a fresh org with zero projects",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A brand-new organization with no projects created yet"],
+    "preconditions": [
+      "A brand-new organization with no projects created yet"
+    ],
     "steps": [
       "Log in as this org's admin and navigate to /project-management"
     ],
     "expectedResult": "No JavaScript error is thrown despite dashboard.totalStats[0] being undefined; stats cards show 0 / $0 rather than crashing, and (if the user holds project.create) a default 'Default' project is auto-created per the fetchProjects auto-provision logic.",
-    "tags": ["smoke", "empty-state"],
+    "tags": [
+      "smoke",
+      "empty-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -86,14 +120,24 @@
     "subFeature": "Cross-Module Project Context",
     "title": "ProjectSelector renders in the Navbar and lists at least one project after first login",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User belongs to at least one project"],
+    "preconditions": [
+      "User belongs to at least one project"
+    ],
     "steps": [
       "Log in and observe the ProjectSelector control in the Navbar/Sidebar"
     ],
     "expectedResult": "ProjectSelector shows the project name and code for the currently selected project (defaulting to a project the user administers, if any) rather than a blank or perpetually-loading control.",
-    "tags": ["smoke", "cross-module"],
+    "tags": [
+      "smoke",
+      "cross-module"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

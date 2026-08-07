@@ -7,6 +7,10 @@
     "title": "GET /api/dashboard/metrics runs its ~12 sub-aggregations concurrently via Promise.all",
     "description": "dashboard-metrics/index.js's /metrics handler issues projects, compliance, resources, findings, risk overview, risk-level distribution, vendor, audit, RMS posture/governance, audit-assurance metrics, vendor-assessment metrics, and SLA-breach count all inside a single Promise.all — total latency should track the slowest sub-query, not their sum.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +18,10 @@
       "Compare total handler latency to the sum of each individual sub-query's latency measured in isolation"
     ],
     "expectedResult": "Total handler latency is close to the single slowest sub-query's latency (allowing for overhead), not the sum of all sub-queries — confirming they run in parallel rather than sequentially.",
-    "tags": ["performance", "aggregation"],
+    "tags": [
+      "performance",
+      "aggregation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +35,10 @@
     "title": "A repeated /api/dashboard/metrics call within the cache TTL never touches MongoDB",
     "description": "dashboard-cache.js's EXEC_DASH_CACHE_TTL defaults to 60 seconds. A second identical-params request inside that window should be served purely from Redis.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -35,7 +46,11 @@
       "Call it again immediately with identical query params, while monitoring MongoDB query logs/profiler"
     ],
     "expectedResult": "The second call returns the identical payload with zero new MongoDB queries logged, and observably lower latency than the first call.",
-    "tags": ["performance", "cache", "redis"],
+    "tags": [
+      "performance",
+      "cache",
+      "redis"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +64,10 @@
     "title": "A slow or failed trend endpoint doesn't block the main metrics response from rendering",
     "description": "AuditOverviewContent's fetchMetrics fires the main dashboardService.getDashboardMetrics() call alongside 5 trend calls (risk/audit/vendor/framework/resource) via Promise.allSettled — a rejection or timeout on any one trend call must not prevent the main KPI cards from rendering.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -56,7 +75,10 @@
       "Load /dashboard"
     ],
     "expectedResult": "All 6 KPI cards still render with their headline values populated; only the Vendor Board's sparkline falls back to the honest empty/placeholder state, and no page-level error is shown.",
-    "tags": ["performance", "resilience"],
+    "tags": [
+      "performance",
+      "resilience"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -70,15 +92,24 @@
     "title": "A large project-scope selection produces a fixed-size Redis cache key regardless of project count",
     "description": "dashboard-cache.js's buildKey hashes the sorted params object with MD5 and truncates to 12 hex characters, so an org with hundreds of active projects selected via ?projectIds= doesn't produce an oversized Redis key.",
     "priority": "P3",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An org (or synthetic test org) with 200+ active projects, all selected via ?projectIds="],
+    "preconditions": [
+      "An org (or synthetic test org) with 200+ active projects, all selected via ?projectIds="
+    ],
     "steps": [
       "Call GET /api/dashboard/metrics?projectIds=<200+ comma-separated ObjectIds>",
       "Inspect the resulting Redis key via redis-cli KEYS 'exec-dash:*'"
     ],
     "expectedResult": "The key matches exec-dash:{orgId}:dashboard-metrics:{12-hex-char-hash} regardless of how many project IDs were in the params — key length does not grow with project count.",
-    "tags": ["performance", "cache"],
+    "tags": [
+      "performance",
+      "cache"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,6 +123,10 @@
     "title": "Finding totals/severity breakdown/critical count are computed in a single $facet pass",
     "description": "dashboard-metrics/index.js's Finding aggregation uses one $facet stage (total, bySeverity, critical) rather than three separate aggregate calls, avoiding three full collection scans on orgs with very large Finding collections.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -99,7 +134,11 @@
       "Inspect the MongoDB query log/explain output for the Finding aggregation"
     ],
     "expectedResult": "Exactly one aggregate() call against the Finding collection is logged (using $facet), not three separate ones for total/bySeverity/critical.",
-    "tags": ["performance", "mongodb", "n+1"],
+    "tags": [
+      "performance",
+      "mongodb",
+      "n+1"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

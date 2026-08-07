@@ -7,16 +7,26 @@
     "title": "New organization signup through first dashboard view shows zero data everywhere, with no fabricated or borrowed metrics",
     "description": "End-to-end walk from signup to dashboard for a brand-new tenant. Chains project.model.js / organization.model.js creation with every dashboard widget's empty-state handling. Grounds TI-003 (Math.random() fake compliance score), TI-011 (0% vs 'Not configured'), TI-012 (NaN%/Infinity% coverage), and TI-021 (literal 0 vs 'No data yet').",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A brand-new organization has just completed Keycloak signup and onboarding org-setup step"],
+    "preconditions": [
+      "A brand-new organization has just completed Keycloak signup and onboarding org-setup step"
+    ],
     "steps": [
       "Complete signup for a new organization",
       "Navigate to the main dashboard without creating any projects, frameworks, evidence, risks, or vendors",
       "Observe the compliance score widget, evidence coverage widget, and all KPI cards"
     ],
     "expectedResult": "Compliance score widget shows 'Not configured' (not a random or 0% score); evidence coverage shows 'No controls mapped yet' (not NaN%/Infinity%); KPI cards show 'No data yet' or an em-dash placeholder (not literal 0) for risks/controls/evidence/vendor counts.",
-    "tags": ["multi-tenant", "zero-data", "onboarding", "empty-state"],
+    "tags": [
+      "multi-tenant",
+      "zero-data",
+      "onboarding",
+      "empty-state"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "linkedDefect": "TI-003",
     "owner": "QA",
@@ -32,15 +42,26 @@
     "title": "Copy-pasting another organization's deep link into a second browser session (different org) never renders that org's data",
     "description": "Simulates the most common real-world cross-tenant leakage vector: a user with access to two orgs (or a shared support screenshot) pastes a URL containing another org's resource ID while authenticated to a different org.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User is authenticated to Org A in one session", "A known deep-link URL exists for a risk/evidence/audit detail page belonging to Org B"],
+    "preconditions": [
+      "User is authenticated to Org A in one session",
+      "A known deep-link URL exists for a risk/evidence/audit detail page belonging to Org B"
+    ],
     "steps": [
       "While authenticated as an Org A user, paste Org B's risk detail URL (e.g. /risk-register/:riskId) directly into the browser address bar",
       "Repeat for an evidence detail URL and an audit finding URL"
     ],
     "expectedResult": "Each page shows a 403/404/'not found' state — never Org B's risk title, description, evidence file, or finding content. No partial data flashes before an error state replaces it.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "QA",
     "status": "active",
@@ -55,16 +76,27 @@
     "title": "Switching organizations via the org switcher fully refreshes all module data with no stale prior-org content",
     "description": "Verifies that a user belonging to multiple organizations does not see any client-side cached data from the previously active org bleed into the newly selected org's views (React Query / Redux cache keys must include orgId, and the org switcher must only list active memberships per TI-023).",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A user account has active membership in Org A and Org B", "Org A's dashboard has been loaded and populated with data"],
+    "preconditions": [
+      "A user account has active membership in Org A and Org B",
+      "Org A's dashboard has been loaded and populated with data"
+    ],
     "steps": [
       "Log in and load Org A's dashboard, risk register, and evidence pages (populating client-side caches)",
       "Use the organization switcher to change active context to Org B",
       "Immediately revisit the dashboard, risk register, and evidence pages"
     ],
     "expectedResult": "All pages show Org B's data exclusively; no Org A KPI values, risk rows, or evidence items are visible even momentarily during the transition. The organization switcher lists only orgs where the user has an active, non-suspended membership.",
-    "tags": ["multi-tenant", "org-switcher", "cache"],
+    "tags": [
+      "multi-tenant",
+      "org-switcher",
+      "cache"
+    ],
     "requirement": "ISO 27001 Annex A.5.18",
     "linkedDefect": "TI-023",
     "owner": "QA",
@@ -80,15 +112,25 @@
     "title": "Creating a second project in an org with existing data shows the new project as fully empty across every module tab",
     "description": "End-to-end version of TISO-INT-005, walked through the actual UI: project selector, dashboard, risk register, evidence management, and audit assurance tabs must all reflect Project Y's own (empty) state, not Project X's populated data.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A has Project X with populated risks, evidence, and audits", "Project Y has just been created in Org A with zero data"],
+    "preconditions": [
+      "Org A has Project X with populated risks, evidence, and audits",
+      "Project Y has just been created in Org A with zero data"
+    ],
     "steps": [
       "Select Project Y from the project selector in the Navbar",
       "Visit Dashboard, Risk Register, Evidence Management, and Audit Assurance in sequence"
     ],
     "expectedResult": "Every tab shows Project Y's empty state consistently; none of Project X's risks, evidence, or audits appear under any tab while Project Y is the active context.",
-    "tags": ["multi-tenant", "project-isolation", "zero-data"],
+    "tags": [
+      "multi-tenant",
+      "project-isolation",
+      "zero-data"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "linkedDefect": "TI-018",
     "owner": "QA",
@@ -104,15 +146,26 @@
     "title": "A new tenant's AI Assistant session never surfaces another organization's indexed documents in an answer or citation",
     "description": "End-to-end user-facing verification of TISO-SEC-008/TISO-INT-009 — walks through the actual chat UI rather than the API layer.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A has evidence/policy documents indexed with distinctive content", "Org B is a separate tenant with no relation to Org A"],
+    "preconditions": [
+      "Org A has evidence/policy documents indexed with distinctive content",
+      "Org B is a separate tenant with no relation to Org A"
+    ],
     "steps": [
       "As an Org B user, open the AI Assistant and ask a broad question likely to retrieve semantically similar content (e.g. 'What are our top compliance gaps?')",
       "Review the answer text and any citation links returned"
     ],
     "expectedResult": "The answer and citations reference only Org B's own documents (or state no relevant documents exist); no Org A document title, excerpt, or citation link is ever shown or clickable from Org B's session.",
-    "tags": ["ai", "rag", "multi-tenant"],
+    "tags": [
+      "ai",
+      "rag",
+      "multi-tenant"
+    ],
     "requirement": "ISO 27001 Annex A.8.15, GDPR Art.25",
     "linkedDefect": "TI-010",
     "owner": "QA",
@@ -128,16 +181,25 @@
     "title": "Exported risk register / compliance report file names identify the source org and project",
     "description": "Guards against TI-024 — a multi-org user downloading exports from two different orgs in the same session must be able to tell them apart from the file name alone (e.g. before forwarding a file externally).",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has active membership in Org A and Org B"],
+    "preconditions": [
+      "User has active membership in Org A and Org B"
+    ],
     "steps": [
       "Export the risk register as CSV from Org A",
       "Switch to Org B and export the risk register as CSV",
       "Compare the two downloaded file names"
     ],
     "expectedResult": "Each exported file name includes the org name (and project name where applicable) rather than a generic `vibrantix-export-{timestamp}.csv` pattern indistinguishable between orgs.",
-    "tags": ["multi-tenant", "export", "ux"],
+    "tags": [
+      "multi-tenant",
+      "export",
+      "ux"
+    ],
     "linkedDefect": "TI-024",
     "owner": "QA",
     "status": "active",

@@ -7,6 +7,9 @@
     "title": "Uploaded evidence appears in review queue with correct control mapping",
     "description": "Verifies the full path from file selection through S3 upload, BullMQ processing, to visibility in the review queue.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/e2e/evidence-management.spec.ts:88",
@@ -20,7 +23,10 @@
       "Submit the upload"
     ],
     "expectedResult": "Evidence appears in the review queue with status 'Pending Review', correct file hash, and control mapping A.8.15 visible on the detail page.",
-    "tags": ["control-mapping", "s3-upload"],
+    "tags": [
+      "control-mapping",
+      "s3-upload"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "SDET",
     "status": "active",
@@ -34,16 +40,24 @@
     "subFeature": "Review Workflow",
     "title": "Approving evidence updates control coverage on the compliance map within the same session",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An evidence item is in 'Pending Review' status, mapped to a control with 0% prior coverage"],
+    "preconditions": [
+      "An evidence item is in 'Pending Review' status, mapped to a control with 0% prior coverage"
+    ],
     "steps": [
       "Open the pending evidence item as a reviewer",
       "Approve it",
       "Navigate to /grc-framework/[id]/compliance-map without reloading the browser session"
     ],
     "expectedResult": "The mapped control now shows non-zero coverage reflecting the newly approved evidence, without requiring a manual refresh trigger.",
-    "tags": ["cross-module", "compliance-map"],
+    "tags": [
+      "cross-module",
+      "compliance-map"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -56,6 +70,9 @@
     "subFeature": "Versioning",
     "title": "Re-uploading evidence for the same control creates a new version, not a duplicate item",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "planned",
     "steps": [
@@ -64,7 +81,9 @@
       "Submit a second file"
     ],
     "expectedResult": "The evidence item shows version 2 as current, version 1 remains accessible in version history with its original hash intact.",
-    "tags": ["versioning"],
+    "tags": [
+      "versioning"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -78,6 +97,10 @@
     "title": "Mapping creator cannot approve/close their own evidence-control mapping",
     "description": "Regression guard for the separation-of-duties check now live in updateMappingWorkflowStatus (evidence-mapping.controller.js): if the caller is the mapping's mappedBy and requests status 'closed' or 'not_applicable', the API must return 403. This was previously an open defect (self-review not prevented) and must not regress.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/e2e/evidence-management.spec.ts",
@@ -92,7 +115,10 @@
       "Log in as User B (a different reviewer) and repeat the approval"
     ],
     "expectedResult": "User A's approval attempt is rejected with 403 'You cannot approve your own mapping — a different reviewer must action this.' User B's approval succeeds and creates a WorkflowEntry with status 'closed'.",
-    "tags": ["segregation-of-duties", "workflow"],
+    "tags": [
+      "segregation-of-duties",
+      "workflow"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "QA",
     "status": "active",
@@ -107,6 +133,9 @@
     "title": "Framework coverage percentage excludes controls marked Not Applicable in the SoA",
     "description": "getCoverageStats (evidence-mapping.controller.js) subtracts a ClientFramework's excludedRequirementIds from the denominator when a projectId is supplied. Verifies the fix actually changes the displayed percentage end-to-end, not just the raw formula.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -119,7 +148,11 @@
       "Read the displayed coverage percentage and the covered/total breakdown"
     ],
     "expectedResult": "Coverage shows 5/8 (62.5%), not 5/10 (50%) — the 2 Not Applicable requirements are removed from both numerator-eligible pool and denominator.",
-    "tags": ["coverage", "iso27001", "soa"],
+    "tags": [
+      "coverage",
+      "iso27001",
+      "soa"
+    ],
     "requirement": "ISO 27001:2022 Clause 6.1.3",
     "owner": "QA",
     "status": "active",

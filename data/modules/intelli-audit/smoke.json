@@ -5,11 +5,21 @@
     "category": "smoke",
     "title": "Intelli Audit framework selection screen loads without console errors",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["Log in as a seeded test org admin", "Navigate to /intelli-audit"],
+    "steps": [
+      "Log in as a seeded test org admin",
+      "Navigate to /intelli-audit"
+    ],
     "expectedResult": "Framework selection screen renders with activated frameworks listed, no unhandled console errors.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -22,11 +32,20 @@
     "title": "GET /qre-questions loads the strategic/tactical question set",
     "description": "Grounded in intelligent-audit.routes.js GET /qre-questions/strategic and /qre-questions/tactical.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["Call GET /api/intelligent-audit/qre-questions/strategic with a valid session"],
+    "steps": [
+      "Call GET /api/intelligent-audit/qre-questions/strategic with a valid session"
+    ],
     "expectedResult": "Returns 200 with a non-empty question set.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -38,12 +57,24 @@
     "category": "smoke",
     "title": "Creating a new intelligent audit via POST / succeeds for a valid framework selection",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["User holds audit.create", "At least one framework activated for the project"],
-    "steps": ["POST /api/intelligent-audit/ with a valid frameworkId and project scope"],
+    "preconditions": [
+      "User holds audit.create",
+      "At least one framework activated for the project"
+    ],
+    "steps": [
+      "POST /api/intelligent-audit/ with a valid frameworkId and project scope"
+    ],
     "expectedResult": "Audit record is created (201) and Phase 1 becomes accessible.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -55,11 +86,20 @@
     "category": "smoke",
     "title": "Phase 1 progress endpoint loads for a newly created audit",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["GET /api/intelligent-audit/:auditId/phase/1/progress for a freshly created audit"],
+    "steps": [
+      "GET /api/intelligent-audit/:auditId/phase/1/progress for a freshly created audit"
+    ],
     "expectedResult": "Returns 200 with progress at 0% and no server error, even with no sections completed yet.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,11 +111,21 @@
     "category": "smoke",
     "title": "My Assignments list loads for an auditor with no assignments yet",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["GET /api/intelligent-audit/my-assignments as a freshly onboarded auditor"],
+    "steps": [
+      "GET /api/intelligent-audit/my-assignments as a freshly onboarded auditor"
+    ],
     "expectedResult": "Returns 200 with an empty array, not an error.",
-    "tags": ["smoke", "empty-state"],
+    "tags": [
+      "smoke",
+      "empty-state"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

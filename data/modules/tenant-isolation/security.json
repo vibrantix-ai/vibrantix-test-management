@@ -7,6 +7,10 @@
     "title": "DEV_BYPASS must never activate outside NODE_ENV=development, even when DEV_BYPASS=true is set",
     "description": "authenticate.js gates the dev bypass with `const DEV_BYPASS = process.env.DEV_BYPASS === 'true' && process.env.NODE_ENV === 'development'` (allow-list, not deny-list, specifically because the Docker image bakes NODE_ENV=development as its default). If NODE_ENV is anything other than 'development' the hardcoded org (DEV_ORG_ID, default 6897584a54a19172fda820b6) and user must never be assigned to req.orgId/req.userId. Regression guard for a prior finding (TI-001 in QA_Tracker/TENANT_ISOLATION) that characterized this as an unconditional bypass.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/security/tenant-isolation-auth-bypass.test.ts",
@@ -20,7 +24,13 @@
       "Repeat with NODE_ENV=staging and NODE_ENV=test"
     ],
     "expectedResult": "In every non-development NODE_ENV, the request is rejected with 401 'No token provided' — req.orgId is never set to the hardcoded DEV_ORG_ID and no data is returned. Only NODE_ENV=development with DEV_BYPASS=true assigns the dev org/user.",
-    "tags": ["auth-bypass", "multi-tenant", "idor", "owasp-a01", "regression-guard"],
+    "tags": [
+      "auth-bypass",
+      "multi-tenant",
+      "idor",
+      "owasp-a01",
+      "regression-guard"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "linkedDefect": "TI-001",
     "owner": "Security",
@@ -36,16 +46,28 @@
     "title": "Internal service-token endpoint rejects requests presenting a valid x-organization-id header but no (or an invalid) x-service-token",
     "description": "authenticate.js grants SUPERADMIN-equivalent access (req.userRoles=[{systemRoleKey:'SUPERADMIN'}], req.permissions={'project.admin'}) to any request whose x-service-token header exactly matches INTERNAL_SERVICE_TOKEN, and trusts the caller-supplied x-organization-id header verbatim as req.orgId with no further validation against a real ClientOrganization record. This is by design for legitimate internal callers (e.g. audit-report-generator Celery workers), but the entire tenant-scoping guarantee for this path rests on INTERNAL_SERVICE_TOKEN never leaking. This case verifies the token check itself cannot be bypassed by header presence alone.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["INTERNAL_SERVICE_TOKEN configured on the backend", "Attacker does not know the real token value"],
+    "preconditions": [
+      "INTERNAL_SERVICE_TOKEN configured on the backend",
+      "Attacker does not know the real token value"
+    ],
     "steps": [
       "Call an internal-only endpoint with header x-service-token: wrong-or-missing and x-organization-id: <victim-org-id>",
       "Call the same endpoint with x-service-token: <correct token> and x-organization-id: <arbitrary-org-id>",
       "Inspect req.orgId resolution and the response for both cases"
     ],
     "expectedResult": "Step 1 is rejected as a normal (non-service) request — falls through to standard JWT auth and returns 401 without a Bearer token, never reaching the SUPERADMIN-equivalent code path. Step 2 succeeds and req.orgId is set to whatever org id was supplied — confirming that org-scoping on this path is enforced ENTIRELY by secrecy of INTERNAL_SERVICE_TOKEN, which must be flagged for periodic rotation and restricted network exposure (internal service mesh only, never internet-reachable).",
-    "tags": ["service-to-service", "multi-tenant", "idor", "owasp-a01"],
+    "tags": [
+      "service-to-service",
+      "multi-tenant",
+      "idor",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.15, A.5.18",
     "linkedDefect": "TI-004",
     "owner": "Security",
@@ -61,15 +83,25 @@
     "title": "vendor-service refuses to start with BYPASS_PERMISSIONS=true when NODE_ENV=production",
     "description": "vendor-service/src/plugins/keycloak.ts:223-225 throws `new Error('BYPASS_PERMISSIONS must not be true in production')` at startup when both NODE_ENV==='production' and BYPASS_PERMISSIONS==='true'. This is a regression guard verifying that hard-stop still fires and cannot be silently skipped.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["vendor-service deployable with configurable env vars"],
+    "preconditions": [
+      "vendor-service deployable with configurable env vars"
+    ],
     "steps": [
       "Start vendor-service with NODE_ENV=production and BYPASS_PERMISSIONS=true",
       "Observe process startup outcome"
     ],
     "expectedResult": "The service throws at startup and refuses to accept traffic — process exits non-zero rather than starting with all permission/role checks (requirePermission, requireRole) disabled.",
-    "tags": ["auth-bypass", "multi-tenant", "regression-guard"],
+    "tags": [
+      "auth-bypass",
+      "multi-tenant",
+      "regression-guard"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "linkedDefect": "TI-005",
     "owner": "Security",
@@ -85,14 +117,25 @@
     "title": "Vendor detail endpoint (clientVendorService.getById) rejects a vendor ID belonging to another organization",
     "description": "vendor-service/src/routes/client-vendor.routes.ts resolves orgId from the authenticated caller (orgStr(req)) and passes it as the first argument to clientVendorService.getById(orgId, req.params.id, userId). This verifies the service-layer lookup actually scopes by orgId (not just permission role) — the classic tenant IDOR check independent of the BYPASS_PERMISSIONS role gate covered in TISO-SEC-003.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B), each with at least one vendor record", "Valid JWT for a user in org A with vendor.read permission"],
+    "preconditions": [
+      "Two orgs (A, B), each with at least one vendor record",
+      "Valid JWT for a user in org A with vendor.read permission"
+    ],
     "steps": [
       "As an org A user, call GET /vendors/:id (client-vendor route) using a vendor ID that belongs to org B"
     ],
     "expectedResult": "Request returns 403/404 — no vendor metadata, assessment data, or trust score for org B's vendor is returned in the response body.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.19",
     "linkedDefect": "TI-005",
     "owner": "Security",
@@ -108,17 +151,30 @@
     "title": "Socket.IO join-project-room rejects a project belonging to a different organization than the connected socket",
     "description": "vibrantix-backend/src/core/socket.js (PLAC-012 hotfix, ~line 133-154) verifies `project.organizationId?.toString() !== socket.orgId?.toString()` before allowing a socket to join a `project:{projectId}` room, emitting 'project-room-join-denied' on mismatch. socket.orgId is derived only from the verified JWT during the Socket.IO auth middleware — the client-supplied organizationId is never trusted. Regression guard for this specific check.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/security/socket-tenant-isolation.spec.ts",
-    "preconditions": ["Org A user with a valid JWT-authenticated Socket.IO connection", "A project belonging to org B"],
+    "preconditions": [
+      "Org A user with a valid JWT-authenticated Socket.IO connection",
+      "A project belonging to org B"
+    ],
     "steps": [
       "Establish a Socket.IO connection authenticated as an org A user",
       "Emit 'join-project-room' with { projectId: <org B's project ID> }",
       "Observe the emitted response event"
     ],
     "expectedResult": "Socket receives 'project-room-join-denied' for the org B project; the socket is never added to that project's room and receives no subsequent scan-progress or workflow events for it.",
-    "tags": ["idor", "multi-tenant", "socket-io", "owasp-a01", "regression-guard"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "socket-io",
+      "owasp-a01",
+      "regression-guard"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -133,6 +189,10 @@
     "title": "Socket.IO join-project-room rejects a same-org user who is not a member of the target project (project-level isolation within one tenant)",
     "description": "Beyond the org-match check (TISO-SEC-005), socket.js calls computeProjectAccessForUser(socket.userId, socket.orgId) and denies the join unless access.isProjectAdmin or access.projectIds includes the requested projectId — enforcing project-level isolation within the same organization, not just org-level isolation.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -144,7 +204,11 @@
       "Emit 'join-project-room' with { projectId: <Project Y's ID> }"
     ],
     "expectedResult": "Socket receives 'project-room-join-denied' — same-org membership alone is insufficient; User U never joins Project Y's room and receives no Project Y events.",
-    "tags": ["multi-tenant", "project-isolation", "socket-io"],
+    "tags": [
+      "multi-tenant",
+      "project-isolation",
+      "socket-io"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -159,16 +223,26 @@
     "title": "PolicyRepository.search() must not silently drop the organizationId filter when orgId resolves to null/undefined",
     "description": "policy.repository.js:358-368 builds the $text search filter and only adds organizationId with `if (orgId !== null && orgId !== undefined) filter.organizationId = orgId;` — if the caller ever passes a null/undefined orgId (e.g. an upstream bug fails to resolve req.orgId, or a future public/global search route reuses this method without threading orgId through), the $text query silently runs across ALL organizations' policies with no org filter at all. This method has no active route calling it today (verified via repo-wide search), but the latent contract is unsafe by construction and must be fixed defensively before any endpoint is wired to it.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Direct access to PolicyRepository.search() in a test harness with a seeded multi-tenant Policy collection"],
+    "preconditions": [
+      "Direct access to PolicyRepository.search() in a test harness with a seeded multi-tenant Policy collection"
+    ],
     "steps": [
       "Seed policies for org A and org B with an overlapping search term",
       "Call PolicyRepository.search(null, { q: '<shared term>' }) directly",
       "Call PolicyRepository.search(undefined, { q: '<shared term>' }) directly"
     ],
     "expectedResult": "Current behavior: both calls return matching policies from BOTH org A and org B (no organizationId clause is added to the Mongo filter) — this is a defect. Expected/fixed behavior: the method should throw or return an empty result set when orgId is null/undefined, never silently search cross-tenant.",
-    "tags": ["search", "multi-tenant", "latent-defect"],
+    "tags": [
+      "search",
+      "multi-tenant",
+      "latent-defect"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -183,6 +257,10 @@
     "title": "assistant-service RAG bridge call includes organizationId and the Python retrieval backend must filter embeddings by it",
     "description": "assistant-service/src/services/RAGBridgeService.ts threads organizationId through to the Python backend payload (organization_id field, ~line 196) on every retrieval call. This verifies end-to-end that a query from org A's assistant session never returns document chunks indexed for org B, i.e. the org_id metadata filter is actually enforced on the vector store side, not just passed and ignored.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -195,7 +273,12 @@
       "Inspect the RAG context chunks returned to the LLM and the final answer/citations"
     ],
     "expectedResult": "No org A document chunks appear in the retrieval context or citations for org B's session; the assistant responds that it has no relevant information rather than surfacing org A's content.",
-    "tags": ["ai", "rag", "multi-tenant", "gdpr"],
+    "tags": [
+      "ai",
+      "rag",
+      "multi-tenant",
+      "gdpr"
+    ],
     "requirement": "ISO 27001 Annex A.8.15, GDPR Art.25",
     "linkedDefect": "TI-010",
     "owner": "Security",
@@ -211,15 +294,27 @@
     "title": "Project detail endpoint rejects a projectId belonging to another organization even when the caller is authenticated to a valid org",
     "description": "project.model.js stores organizationId as a required, indexed field. Any endpoint resolving a project by :id (e.g. GET /api/projects/:id, or GET /api/risks?projectId=) must verify project.organizationId matches req.orgId before returning data or accepting the projectId as a valid scope filter.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B), each with an active project", "Valid JWT for a user in org A"],
+    "preconditions": [
+      "Two orgs (A, B), each with an active project",
+      "Valid JWT for a user in org A"
+    ],
     "steps": [
       "As an org A user, call GET /api/projects/:id using org B's project ID",
       "As an org A user, call a project-scoped list endpoint (e.g. risks, evidence) passing org B's projectId as a query parameter"
     ],
     "expectedResult": "Both requests are rejected with 403/404, or (for the list endpoint) return an empty result set — org B's project name, code, milestones, budget, or associated records are never returned to an org A caller.",
-    "tags": ["idor", "multi-tenant", "project-isolation", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "project-isolation",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -234,16 +329,26 @@
     "title": "Cached API responses (analytics, dashboard, posture summaries) are keyed with orgId as part of the cache key, not just resource type",
     "description": "Cross-cutting audit: any Redis cache key construction of the form `${resource}:${id}` without an orgId component risks Org A receiving Org B's cached payload if identifiers ever collide, and prevents clean per-tenant cache invalidation on offboarding. Verify concretely for the cloud-posture and risk analytics caches which are the most cache-heavy paths (risk-management-service posture snapshots, cloud-posture-runtime.js).",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B) with a project whose ObjectId-derived cache key component could theoretically collide, or with matching resource-type cache keys"],
+    "preconditions": [
+      "Two orgs (A, B) with a project whose ObjectId-derived cache key component could theoretically collide, or with matching resource-type cache keys"
+    ],
     "steps": [
       "Trigger a cached analytics/posture read for org A (populates cache)",
       "Trigger the same analytics/posture read for org B immediately after",
       "Inspect the actual Redis key names used (via redis-cli KEYS or MONITOR in a test environment) and the returned payload for org B"
     ],
     "expectedResult": "Redis keys include orgId as a namespace segment (e.g. `${orgId}:posture:${projectId}`), and org B's response reflects only org B's data — never a cached org A payload.",
-    "tags": ["redis", "cache", "multi-tenant"],
+    "tags": [
+      "redis",
+      "cache",
+      "multi-tenant"
+    ],
     "requirement": "ISO 27001 Annex A.8.15, SOC 2 CC6.6",
     "linkedDefect": "TI-007",
     "owner": "Security",
@@ -259,14 +364,26 @@
     "title": "Evidence file confirm endpoint pattern (s3Key org-prefix check) is applied consistently to every service that accepts a presigned-upload confirm, not just evidence-management",
     "description": "Regression/consistency guard extending EVID-SEC-003's s3Key-prefix pattern (evidence-upload.controller.js checks s3Key.startsWith('evidence/{req.orgId}/')) — verify the same class of check exists for any other module with direct-to-S3 presigned uploads scoped by tenant (e.g. trust-vault-service certification uploads, vendor-service vendor evidence uploads).",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JWT for a user in org A", "A presigned upload URL generated for org A's own s3Key prefix in trust-vault-service or vendor-service"],
+    "preconditions": [
+      "Valid JWT for a user in org A",
+      "A presigned upload URL generated for org A's own s3Key prefix in trust-vault-service or vendor-service"
+    ],
     "steps": [
       "As an org A user, call the presigned-upload confirm endpoint in trust-vault-service (or vendor-service vendor-evidence route) with a forged s3Key beginning with another org's prefix"
     ],
     "expectedResult": "Request is rejected with 403 — the confirm endpoint validates the s3Key prefix against req.orgId before persisting any file record, mirroring the evidence-management protection.",
-    "tags": ["idor", "multi-tenant", "s3-upload", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "s3-upload",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

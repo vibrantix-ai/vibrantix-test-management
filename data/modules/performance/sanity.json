@@ -7,16 +7,27 @@
     "title": "Slow-query monitor plugin is active and logging against the configured threshold after deploy",
     "description": "database.js:20-40 registers a global mongoose.plugin(slowQueryMonitor) hooking pre/post on find, findOne, findOneAndUpdate, findOneAndDelete, countDocuments, logging trace.db.slow_query when duration >= SLOW_QUERY_THRESHOLD_MS (env, default 100ms). This is a quick post-deploy sanity check that the instrumentation itself is wired up, not a performance test of any specific query.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "planned",
-    "preconditions": ["Fresh deploy of vibrantix-backend to the target environment"],
+    "preconditions": [
+      "Fresh deploy of vibrantix-backend to the target environment"
+    ],
     "steps": [
       "Confirm SLOW_QUERY_THRESHOLD_MS is set (or defaults to 100ms) in the deployed environment config",
       "Run a query artificially delayed past the threshold (e.g. against a large unindexed collection) or use a fault-injection query",
       "Check application logs for a trace.db.slow_query entry"
     ],
     "expectedResult": "A trace.db.slow_query log entry appears with the correct collection name, operation, and duration once the query exceeds threshold, confirming the monitor is wired up correctly post-deploy.",
-    "tags": ["slow-query", "monitoring", "post-deploy"],
+    "tags": [
+      "slow-query",
+      "monitoring",
+      "post-deploy"
+    ],
     "requirement": "Performance Budget - Observability",
     "owner": "SDET",
     "status": "active",
@@ -31,15 +42,26 @@
     "title": "All evidence-pipeline BullMQ workers have both failed and stalled handlers wired after deploy",
     "description": "queue.js's shared createWorker() wires on('failed') (line 90) and on('stalled') (line 97) by default. pipeline.worker.ts uses this shared pattern (on('failed') line 1692, on('stalled') line 1740), but webhook.worker.ts only wires on('failed') (line 134) with no on('stalled') handler — a known parity gap worth a quick post-deploy check so it isn't silently reintroduced elsewhere.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "planned",
-    "preconditions": ["vibrantix-connector-service deployed to the target environment"],
+    "preconditions": [
+      "vibrantix-connector-service deployed to the target environment"
+    ],
     "steps": [
       "Enumerate all BullMQ Worker instances registered at startup (evidence-ingest, evidence-validate, evidence-normalize, evidence-deduplicate, evidence-store, evidence-map, evidence-risk-notify, evidence-webhook, drive-upload)",
       "For each, confirm both a 'failed' and a 'stalled' event listener is registered"
     ],
     "expectedResult": "All 9 workers have a 'failed' handler. Document which workers are still missing a 'stalled' handler (currently: evidence-webhook) as a known gap rather than a new regression, and flag immediately if any additional worker is found missing either handler.",
-    "tags": ["bullmq", "monitoring", "post-deploy"],
+    "tags": [
+      "bullmq",
+      "monitoring",
+      "post-deploy"
+    ],
     "requirement": "Performance Budget - Queue Observability",
     "owner": "SDET",
     "status": "active",
@@ -54,16 +76,27 @@
     "title": "Executive dashboard KPI cache TTL is set to its intended 60-second default in the deployed environment",
     "description": "dashboard-cache.js's setCache uses setex(key, ttl, ...) with a default TTL of 60s controlled by EXEC_DASH_CACHE_TTL. A misconfigured/missing env var could silently disable caching (TTL=0, hammering the DB) or make it effectively permanent (very large TTL, worsening the already-known staleness gap from PERF-PERF-003).",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "planned",
-    "preconditions": ["Fresh deploy with access to environment configuration"],
+    "preconditions": [
+      "Fresh deploy with access to environment configuration"
+    ],
     "steps": [
       "Confirm EXEC_DASH_CACHE_TTL is set or defaults to 60 in the deployed environment",
       "Call a dashboard KPI endpoint twice within 60 seconds and confirm the second call is served from cache (e.g. via a response-time drop or an X-Cache header if present)",
       "Wait past 60 seconds and confirm the next call misses cache"
     ],
     "expectedResult": "Cache TTL behaves as configured (~60s hit window). Flag if TTL is 0 (cache effectively disabled) or unexpectedly large (compounding the known invalidation gap).",
-    "tags": ["redis-cache", "configuration", "post-deploy"],
+    "tags": [
+      "redis-cache",
+      "configuration",
+      "post-deploy"
+    ],
     "requirement": "Performance Budget - Cache Configuration",
     "owner": "SDET",
     "status": "active",
@@ -78,16 +111,27 @@
     "title": "Notification TTL index is present and correctly scoped to read notifications only",
     "description": "notification.model.js:69-72 defines a TTL index on createdAt with expireAfterSeconds: 90*24*60*60 and partialFilterExpression: { isRead: true } — only read notifications should auto-expire after 90 days; unread notifications must persist indefinitely until read. This is a quick sanity check that the index exists as intended after any schema/deploy change, guarding against unbounded notification collection growth.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "planned",
-    "preconditions": ["Access to run db.notifications.getIndexes() against the target environment"],
+    "preconditions": [
+      "Access to run db.notifications.getIndexes() against the target environment"
+    ],
     "steps": [
       "Run db.notifications.getIndexes() and locate the createdAt TTL index",
       "Confirm expireAfterSeconds equals 7776000 (90 days) and partialFilterExpression is {isRead: true}",
       "Seed one read and one unread notification with an old createdAt and confirm only the read one is eventually purged"
     ],
     "expectedResult": "The TTL index exists with the expected expiry and partial filter, and only read notifications older than 90 days are purged — unread notifications are never auto-deleted regardless of age.",
-    "tags": ["mongodb-index", "ttl", "notifications"],
+    "tags": [
+      "mongodb-index",
+      "ttl",
+      "notifications"
+    ],
     "requirement": "Performance Budget - Data Retention",
     "owner": "SDET",
     "status": "active",
@@ -102,16 +146,27 @@
     "title": "next.config.js image optimization formats remain enabled after config changes",
     "description": "next.config.js:96-98 configures images.formats: ['image/webp','image/avif'] for next/image, which affects LCP on pages that use it. A quick sanity check that a future config edit doesn't silently drop this optimization.",
     "priority": "P3",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "planned",
-    "preconditions": ["Access to the built/deployed next.config.js"],
+    "preconditions": [
+      "Access to the built/deployed next.config.js"
+    ],
     "steps": [
       "Inspect the deployed next.config.js images configuration",
       "Confirm formats includes image/webp and image/avif",
       "Load a page using next/image and confirm the served image content-type matches an optimized format in a supporting browser"
     ],
     "expectedResult": "Image optimization formats remain configured as expected; a served next/image asset uses webp/avif where the browser supports it.",
-    "tags": ["core-web-vitals", "configuration", "post-deploy"],
+    "tags": [
+      "core-web-vitals",
+      "configuration",
+      "post-deploy"
+    ],
     "requirement": "Performance Budget - Core Web Vitals",
     "owner": "QA",
     "status": "active",

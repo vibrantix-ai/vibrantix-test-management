@@ -6,14 +6,24 @@
     "subFeature": "Posture Dashboard",
     "title": "Cloud Posture dashboard loads without error for an org with a configured provider",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org has at least one provider configured and one completed scan"],
+    "preconditions": [
+      "Org has at least one provider configured and one completed scan"
+    ],
     "steps": [
       "Log in and navigate to /cloud-posture"
     ],
     "expectedResult": "Page loads within a few seconds with no 500/unhandled error, showing overall security score, critical finding count, and a service breakdown section populated with data.",
-    "tags": ["dashboard", "smoke"],
+    "tags": [
+      "dashboard",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,6 +36,11 @@
     "subFeature": "Provider Onboarding",
     "title": "Configure page renders credential entry forms for all three supported providers",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -33,7 +48,10 @@
       "Switch between the AWS, Azure, and GCP tabs/sections"
     ],
     "expectedResult": "Each provider's credential form renders its expected fields (AWS: accessKeyId/secretAccessKey/region/accountId; GCP: serviceAccountKey/projectId; Azure: clientId/clientSecret/tenantId) with no console errors or blank tabs.",
-    "tags": ["provider-onboarding", "smoke"],
+    "tags": [
+      "provider-onboarding",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -46,14 +64,24 @@
     "subFeature": "Scan Lifecycle",
     "title": "Triggering a scan creates a scan record in an active status",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A project has a verified provider configuration"],
+    "preconditions": [
+      "A project has a verified provider configuration"
+    ],
     "steps": [
       "Click 'Run Scan' for the configured provider"
     ],
     "expectedResult": "The API responds success and a new CloudPostureScan record is created with status in the active set (e.g. 'queued' or 'validating'); the UI navigates to or links the new scan's detail page.",
-    "tags": ["scan-lifecycle", "smoke"],
+    "tags": [
+      "scan-lifecycle",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -66,14 +94,24 @@
     "subFeature": "Provider-Specific View",
     "title": "Provider drill-down page lists services without a server error",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Provider has at least one completed scan with resources across multiple services"],
+    "preconditions": [
+      "Provider has at least one completed scan with resources across multiple services"
+    ],
     "steps": [
       "From the dashboard, click into a configured provider"
     ],
     "expectedResult": "Provider view loads and lists services with resource counts and severity indicators; no 500 error or endless loading spinner.",
-    "tags": ["provider-view", "smoke"],
+    "tags": [
+      "provider-view",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -86,14 +124,24 @@
     "subFeature": "Security Checks",
     "title": "Security checks list renders pass/fail statuses for a completed scan",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A completed scan with a mix of PASS and FAIL findings exists"],
+    "preconditions": [
+      "A completed scan with a mix of PASS and FAIL findings exists"
+    ],
     "steps": [
       "Navigate into a service with known findings and open its security checks list"
     ],
     "expectedResult": "Checks render with clear PASS/FAIL status indicators and are not all shown as a single uniform status; page does not error out.",
-    "tags": ["security-checks", "smoke"],
+    "tags": [
+      "security-checks",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

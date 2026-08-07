@@ -7,14 +7,22 @@
     "title": "Project list Team column is sourced from the real ProjectMember join, not the removed embedded project.team field",
     "description": "Regression guard for T19/PROJECT_LEVEL_ACCESS_CONTROL: an earlier version rendered the Team column from an embedded `project.team` field that never actually existed on the backend Project schema, so it always showed 'No team'. It now reads teamPreview/teamCount, populated server-side by listByOrg's batched ProjectMember query.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A project with 2 ProjectMember rows"],
+    "preconditions": [
+      "A project with 2 ProjectMember rows"
+    ],
     "steps": [
       "Open the project list and locate this project's row"
     ],
     "expectedResult": "The Team column shows an AvatarGroup with 2 avatars and a tooltip reading '2 team members' — it must never regress to showing 'No team' for a project that genuinely has members.",
-    "tags": ["regression-guard", "ui"],
+    "tags": [
+      "regression-guard",
+      "ui"
+    ],
     "requirement": "T19",
     "owner": "QA",
     "status": "active",
@@ -29,15 +37,23 @@
     "title": "After a project-list refresh, the selected project defaults to one the user administers rather than an arbitrary first entry",
     "description": "Regression guard for RBAC-01: projectSlice's fetchProjects.fulfilled reducer prefers `list.find(p => p.isProjectRoleAdmin) || list[0]` both on first load and when the previously-selected project no longer exists in the refreshed list — never falls back to a plain member project when an admin one is available.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User is a plain Member on Project A and the per-project admin on Project B; Project A happens to sort before Project B in the fetched list"],
+    "preconditions": [
+      "User is a plain Member on Project A and the per-project admin on Project B; Project A happens to sort before Project B in the fetched list"
+    ],
     "steps": [
       "Log in fresh (no prior selectedProject in state) and observe which project ProjectSelector defaults to",
       "Get removed from Project A's membership by another admin, then trigger a projects refetch (e.g. reload)"
     ],
     "expectedResult": "In both cases, ProjectSelector defaults to Project B (the one this user administers), never to Project A merely because it appears first in the array.",
-    "tags": ["regression-guard", "rbac"],
+    "tags": [
+      "regression-guard",
+      "rbac"
+    ],
     "requirement": "RBAC-01",
     "owner": "QA",
     "status": "active",
@@ -52,15 +68,24 @@
     "title": "Updating only extraPermissions for a team member must not silently reset their projectRoleId to null (and vice versa)",
     "description": "updateTeamMemberRole (project.controller.js) builds setFields conditionally: `if (projectRoleId !== undefined) ... if (validatedPermissions !== undefined) ...` — only touching a field the caller actually sent. A prior/naive implementation could have applied both fields unconditionally, wiping out whichever one wasn't included in a given request body.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A ProjectMember has projectRoleId set to the 'Auditor' Custom Project Role and extraPermissions ['evidence.approve']"],
+    "preconditions": [
+      "A ProjectMember has projectRoleId set to the 'Auditor' Custom Project Role and extraPermissions ['evidence.approve']"
+    ],
     "steps": [
       "Call PUT /projects/project/:id/team/:userId with body { extraPermissions: ['evidence.approve', 'risk.read'] } only (no projectRoleId field at all)",
       "Re-fetch the member via GET /project/:id/team"
     ],
     "expectedResult": "The member's projectRoleId is still 'Auditor' (unchanged) and extraPermissions now includes both entries — the omitted field was never touched, matching the documented 'both fields independently optional' contract.",
-    "tags": ["regression-guard", "rbac"],
+    "tags": [
+      "regression-guard",
+      "rbac"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -74,14 +99,22 @@
     "title": "Re-adding an existing project team member returns a friendly 409 conflict, not a duplicate row or a 500 crash",
     "description": "The unique index on {projectId, userId} (ProjectMember schema) means a second addTeamMember call for the same pair throws a Mongo 11000 error, which the controller specifically catches and rethrows as AppError.conflict('User is already a member of this project') — 'a friendly no-op, not a crash or a duplicate row (T4 acceptance criteria).'",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["userId U is already a ProjectMember of Project X"],
+    "preconditions": [
+      "userId U is already a ProjectMember of Project X"
+    ],
     "steps": [
       "As a Project X admin, call POST /api/projects/project/:X_id/team with { userId: U } a second time"
     ],
     "expectedResult": "Response is 409 with message 'User is already a member of this project' — no second ProjectMember row is created, and the endpoint does not surface a raw 500/duplicate-key error to the caller.",
-    "tags": ["regression-guard", "team-management"],
+    "tags": [
+      "regression-guard",
+      "team-management"
+    ],
     "requirement": "T4",
     "owner": "SDET",
     "status": "active",
@@ -96,15 +129,24 @@
     "title": "A user removed from a project's ProjectSelector list no longer sees that project's data on a subsequent module-page load",
     "description": "projectSlice's fetchProjects.fulfilled reducer validates the persisted selectedProject still exists in the freshly fetched list; if not, it clears/reassigns rather than leaving a stale selectedProject object (with stale permissions) in memory after a membership change.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User currently has Project X selected and is viewing Evidence Management scoped to it; an admin then removes the user from Project X's team"],
+    "preconditions": [
+      "User currently has Project X selected and is viewing Evidence Management scoped to it; an admin then removes the user from Project X's team"
+    ],
     "steps": [
       "With Project X selected, trigger any action that refetches the project list (e.g. navigating between pages that call initializeProjects, or a manual refresh)",
       "Observe the ProjectSelector and any project-scoped module page"
     ],
     "expectedResult": "Project X no longer appears in the selector's list; selectedProject is reassigned to another project the user still belongs to (or cleared to null if none remain) — Project X's evidence/risk/audit data is not shown under any subsequently selected context.",
-    "tags": ["regression-guard", "multi-project-isolation"],
+    "tags": [
+      "regression-guard",
+      "multi-project-isolation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

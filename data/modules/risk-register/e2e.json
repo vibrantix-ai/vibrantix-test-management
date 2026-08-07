@@ -7,9 +7,15 @@
     "title": "Creating a risk with likelihood/impact scores computes and displays the correct inherent risk level end-to-end",
     "description": "Exercises POST /organizations/:orgId/risks through to the /risk-register/[id] detail page, verifying the server-computed score/level (not a client-side guess) is what renders.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with risk.create permission", "An active project selected"],
+    "preconditions": [
+      "Logged in as a user with risk.create permission",
+      "An active project selected"
+    ],
     "steps": [
       "Navigate to /risk-register and open the create-risk form",
       "Fill in name, description, category='cybersecurity', riskType='vulnerability', inherentRisk likelihood=5, impact=4",
@@ -17,7 +23,11 @@
       "Open the created risk's detail page at /risk-register/[id]"
     ],
     "expectedResult": "Risk is created with riskId RISK-YYYY-NNNN, inherentRisk.score=20 and level='critical' both on the API response and rendered on the detail page's assessment panel.",
-    "tags": ["risk-identification", "scoring", "e2e"],
+    "tags": [
+      "risk-identification",
+      "scoring",
+      "e2e"
+    ],
     "requirement": "ISO 27001 Clause 6.1.2",
     "owner": "QA",
     "status": "active",
@@ -32,6 +42,9 @@
     "title": "Promoting a module risk from the triage queue creates a governed risk register entry linked back to the source finding",
     "description": "Covers the full auto-promotion path shown in /risk-center/risk-triage and /risk-center/module-risks: a pending candidate from one of the 9 integration services (cloud-posture, compliance, audit, policy, trust-vault, evidence, pcl, connector, integration) becomes a real Risk with mappings.controls/frameworks/uclControls pre-populated from the source event's facts.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -45,7 +58,11 @@
       "Navigate to /risk-register and locate the newly created risk"
     ],
     "expectedResult": "A new risk (riskId RISK-YYYY-NNNN, riskCode RK-<PROJECT>-<seq>) appears in the register with source.sourceType/sourceModule populated and, where the event carried control/UCL facts, mappings.controls and mappings.uclControls pre-filled. The module risk's status flips to 'added' and disappears from the pending triage queue.",
-    "tags": ["module-risk-triage", "auto-promotion", "e2e"],
+    "tags": [
+      "module-risk-triage",
+      "auto-promotion",
+      "e2e"
+    ],
     "requirement": "ISO 27001 Clause 6.1.2",
     "owner": "QA",
     "status": "active",
@@ -60,6 +77,9 @@
     "title": "Submitting and approving a risk acceptance request updates status and surfaces on the governance dashboard",
     "description": "Follows the full acceptance workflow: request submission with a named approver, the approver's decision, and the resulting visibility in /risk-center/governance's pendingApprovals / expiringAcceptances panels.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -73,7 +93,11 @@
       "Reload the risk detail page"
     ],
     "expectedResult": "acceptance.status transitions pending -> approved, the risk appears in the accepted-risks list (/risk-center or accepted-risks summary) with the correct validUntil, and pendingApprovals on the governance dashboard decrements.",
-    "tags": ["acceptance", "governance", "e2e"],
+    "tags": [
+      "acceptance",
+      "governance",
+      "e2e"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "QA",
     "status": "active",
@@ -88,9 +112,14 @@
     "title": "Evidence attached to a risk transitions through fresh -> aging -> stale and surfaces in the risk-center evidence view",
     "description": "Exercises freshnessConfig-driven staleness classification (default freshDays=30, agingDays=60, staleDays=90) end-to-end from upload through the /risk-center/evidence page's gap/coverage widgets.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A risk with no existing evidence"],
+    "preconditions": [
+      "A risk with no existing evidence"
+    ],
     "steps": [
       "Upload a document as risk evidence with the default freshnessConfig",
       "Immediately check /risk-center/evidence — confirm the item shows 'fresh'",
@@ -98,7 +127,11 @@
       "Reload /risk-center/evidence"
     ],
     "expectedResult": "The evidence item's currentFreshness recalculates to 'aging' (60-89 days) and the risk-center evidence coverage/gap widget reflects it as no longer 'fresh', without requiring the evidence to be re-uploaded.",
-    "tags": ["evidence", "freshness", "e2e"],
+    "tags": [
+      "evidence",
+      "freshness",
+      "e2e"
+    ],
     "requirement": "ISO 27001 Annex A.5.12",
     "owner": "QA",
     "status": "active",
@@ -112,16 +145,26 @@
     "subFeature": "Governance & Escalation",
     "title": "Escalating a risk records an escalation entry and updates the governance escalatedRisks panel",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An existing risk", "A second user to escalate to"],
+    "preconditions": [
+      "An existing risk",
+      "A second user to escalate to"
+    ],
     "steps": [
       "On the risk detail page, use the escalate action, selecting the target user, level=2, and a reason of 10+ characters",
       "Confirm the escalated-to user receives an in-app notification",
       "Navigate to /risk-center/governance"
     ],
     "expectedResult": "The risk's escalationHistory shows the new entry with level=2 and the correct escalatedTo/escalatedBy; the governance dashboard's escalatedRisks list includes the risk with escalationLevel='L2'.",
-    "tags": ["escalation", "governance", "e2e"],
+    "tags": [
+      "escalation",
+      "governance",
+      "e2e"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -135,16 +178,25 @@
     "title": "Heat map and top risks widgets on the risk-center dashboard reflect the current inherent risk distribution",
     "description": "Validates /risk-center's heatmapDistribution (keyed '${likelihood}-${impact}') and topRisks against the actual risks seeded for the project.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Project has at least one risk at likelihood=5/impact=5 and one at likelihood=2/impact=2"],
+    "preconditions": [
+      "Project has at least one risk at likelihood=5/impact=5 and one at likelihood=2/impact=2"
+    ],
     "steps": [
       "Navigate to /risk-center",
       "Locate the heat map cell for likelihood=5, impact=5",
       "Locate the top risks widget"
     ],
     "expectedResult": "The 5-5 heat map cell count matches the number of risks with that exact likelihood/impact pair, and the top risks list is ordered by inherentRisk.score descending with the critical risk surfaced first.",
-    "tags": ["risk-center", "heatmap", "dashboard"],
+    "tags": [
+      "risk-center",
+      "heatmap",
+      "dashboard"
+    ],
     "requirement": "ISO 27001 Clause 9.1",
     "owner": "QA",
     "status": "active",
@@ -159,6 +211,10 @@
     "title": "AI Predictions panel content is deterministic and reproducible for an unchanged risk posture",
     "description": "RiskCenterService.computeRuleBasedPredictions() is rule-based (not an LLM call) — driven synchronously off already-fetched stats/posture/treatment/drift/governance/findings. Re-fetching the dashboard with no underlying data change must return the same predictions, confirming /risk-center/ai-predictions isn't presenting non-deterministic or fabricated content as 'AI'.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -166,7 +222,10 @@
       "Reload the page twice more within the 5-minute dashboard cache TTL without changing any risk data"
     ],
     "expectedResult": "All three loads show identical predictions — confirming the output is deterministic rule evaluation, not a per-request generative call that could hallucinate varying content.",
-    "tags": ["ai-predictions", "risk-center"],
+    "tags": [
+      "ai-predictions",
+      "risk-center"
+    ],
     "requirement": "ISO 27001 Annex A.8.16",
     "owner": "QA",
     "status": "active",
@@ -180,9 +239,14 @@
     "subFeature": "Treatment Plan Lifecycle",
     "title": "Completing a treatment plan's final milestone closes the loop from /risk-center/treatments through to residual score display",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A risk in phase 'mitigation' with a treatment plan containing one open milestone at 90% progress"],
+    "preconditions": [
+      "A risk in phase 'mitigation' with a treatment plan containing one open milestone at 90% progress"
+    ],
     "steps": [
       "Navigate to /risk-center/treatments and open the risk's treatment plan",
       "Mark the remaining milestone as 100% complete",
@@ -190,7 +254,11 @@
       "Open the risk detail page's assessment tab"
     ],
     "expectedResult": "Treatment status shows 'completed' with a completedDate, the treatment dashboard's 'completed' count increments, and the residual risk score/level reflects the post-treatment likelihood/impact entered at assessment update.",
-    "tags": ["treatment", "lifecycle", "e2e"],
+    "tags": [
+      "treatment",
+      "lifecycle",
+      "e2e"
+    ],
     "requirement": "ISO 27001 Clause 10.1",
     "owner": "QA",
     "status": "active",

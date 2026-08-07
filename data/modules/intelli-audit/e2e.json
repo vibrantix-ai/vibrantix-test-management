@@ -7,6 +7,9 @@
     "title": "User selects an active authority framework and starts a new Intelli Audit through to the workspace",
     "description": "Full happy-path journey: /intelli-audit lists authority frameworks sourced from Smart Compliance, clicking into one opens /intelli-audit/[frameworkId], and 'Start New Audit' creates the audit and redirects into the workspace.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -21,7 +24,11 @@
       "Fill title (>= 3 chars) and description (>= 10 chars) in the create modal and submit"
     ],
     "expectedResult": "Toast shows 'Success' / 'Intelligent audit created successfully'; browser redirects to /intelli-audit/[frameworkId]/[newAuditId] and the Phase 1 workspace loads with 'Phase 1 of 4' shown in the progress banner.",
-    "tags": ["framework-selection", "audit-creation", "happy-path"],
+    "tags": [
+      "framework-selection",
+      "audit-creation",
+      "happy-path"
+    ],
     "requirement": "ISO 27001 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -36,6 +43,10 @@
     "title": "Phase 1 completion silently degrades to a retryable Phase 2 recommendation state when the IACR service fails",
     "description": "completeTacticalSection swallows any error from generatePhase2Recommendations (intelligent-audit.controller.js:1504-1509) and still returns HTTP 200 with message 'Tactical + Phase 1 completed. Phase 2 recommendation generation needs retry.' instead of surfacing an error. The UI must show the retry banner rather than silently presenting an empty, unexplained Phase 2.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -48,7 +59,11 @@
       "Navigate to Phase 2 (Framework Controls)"
     ],
     "expectedResult": "Phase 1 still completes successfully (no user-facing error on the completion step). Phase 2 shows the red 'AI recommendation generation needs retry' alert with the IACR error text (or fallback 'The canonical requirement catalogue could not be resolved.') and a visible 'Retry' button; recommendedControls is empty until retried.",
-    "tags": ["ai-plan", "phase2", "error-handling"],
+    "tags": [
+      "ai-plan",
+      "phase2",
+      "error-handling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -61,6 +76,9 @@
     "subFeature": "Audit Scope Customisation",
     "title": "User adds a manual control, deselects an AI-suggested control, and completes Phase 2 with the resulting selection",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -74,7 +92,10 @@
       "Click 'Complete Phase 2 ({n} controls selected)'"
     ],
     "expectedResult": "The deselected control is excluded and the manually added control is included in the finalized scope; after completion the screen shows the read-only banner '✓ Phase 2 completed' / 'Control recommendations have been finalized. This view is read-only.' and Phase 3 becomes unlockable.",
-    "tags": ["scope-customisation", "phase2"],
+    "tags": [
+      "scope-customisation",
+      "phase2"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -87,9 +108,15 @@
     "subFeature": "Phase Navigation",
     "title": "Complete Phase 3 button stays disabled until every initialized control has been assessed",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Phase 2 completed with 3 selected controls", "Phase 3 not yet initialized"],
+    "preconditions": [
+      "Phase 2 completed with 3 selected controls",
+      "Phase 3 not yet initialized"
+    ],
     "steps": [
       "Click 'Initialize Phase 3' and confirm 3 assessment controls are created, evidence from Phase 1 auto-linked where relevant",
       "Assess 2 of the 3 controls, leaving 1 as 'Not Started'",
@@ -98,7 +125,10 @@
       "Click 'Complete Phase 3'"
     ],
     "expectedResult": "While 1 control is unassessed, 'Complete Phase 3' remains disabled (completedControls < totalControls). Once all 3 are assessed the button becomes enabled and clicking it shows '✓ Phase 3 completed successfully' / 'Pre-assessment has been completed. 3 controls assessed.'",
-    "tags": ["phase3", "phase-gate"],
+    "tags": [
+      "phase3",
+      "phase-gate"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -112,9 +142,15 @@
     "title": "Running gap analysis surfaces all 7 gap types across controls and blocks completion until every gap is resolved",
     "description": "runGapAnalysis (intelligent-audit.controller.js:3449-3517) can produce Missing Evidence, Failed Findings, Not Assessed, Revision Required, Low Client Coverage, Integration Failure, No Policy Coverage, and Vendor Risk gaps on the same control, each contributing to a clamped riskScore that drives priority/severity.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Phase 3 is completed", "At least one control has zero evidence attachments and a failed finding"],
+    "preconditions": [
+      "Phase 3 is completed",
+      "At least one control has zero evidence attachments and a failed finding"
+    ],
     "steps": [
       "On Phase 4, click 'Run Analysis'",
       "Wait for the success toast 'Analysis Complete' / 'Gap analysis has been completed'",
@@ -122,7 +158,10 @@
       "Attempt to click 'Complete Audit' while gaps remain open"
     ],
     "expectedResult": "The gap for that control lists both 'Missing Evidence' and 'Failed Findings' in gapTypes. 'Complete Audit' is disabled/blocked with toast 'Cannot Complete' / 'There are still {n} unresolved gaps' while any gap is open.",
-    "tags": ["gap-analysis", "evidence"],
+    "tags": [
+      "gap-analysis",
+      "evidence"
+    ],
     "requirement": "ISO 27001 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -136,15 +175,24 @@
     "subFeature": "Audit Completion",
     "title": "Completing an audit with compliance score below 50% requires an explicit 'Complete Anyway' confirmation",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["All gaps are resolved (isReadyToComplete=true)", "Computed compliance score for the audit is below 50%"],
+    "preconditions": [
+      "All gaps are resolved (isReadyToComplete=true)",
+      "Computed compliance score for the audit is below 50%"
+    ],
     "steps": [
       "Resolve every open gap so the 'Complete Audit' button becomes enabled",
       "Click 'Complete Audit'"
     ],
     "expectedResult": "An AlertDialog titled 'Low Compliance Score' appears with body text \"Your compliance score is {score}%, which is below the recommended 50% threshold. Completing the audit with a low score may indicate insufficient remediation. Are you sure you want to proceed?\" and 'Go Back' / 'Complete Anyway' buttons. Clicking 'Complete Anyway' finalizes the audit and shows 'Audit Complete' / 'Congratulations! Your audit is now complete.'",
-    "tags": ["phase4", "audit-completion"],
+    "tags": [
+      "phase4",
+      "audit-completion"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -158,16 +206,24 @@
     "title": "Creating a second Intelli Audit for the same framework and project succeeds silently with no duplicate warning",
     "description": "createIntelligentAudit (intelligent-audit.controller.js:704-863) has no query for an existing non-archived IntelligentAudit on the same frameworkId+projectId before creating a new one, and CreatePreAuditModal.jsx has no duplicate-check UI. This captures the current (permissive) behavior as a deliberate baseline pending a product decision.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["An in-progress Intelli Audit 'Audit A' already exists for Framework F / Project P"],
+    "preconditions": [
+      "An in-progress Intelli Audit 'Audit A' already exists for Framework F / Project P"
+    ],
     "steps": [
       "Navigate to /intelli-audit/[F's frameworkId]",
       "Click 'Start New Audit' and create 'Audit B' with the same framework and project",
       "Observe any warning dialog or blocking behavior"
     ],
     "expectedResult": "No duplicate-audit warning is shown anywhere in the create flow; 'Audit B' is created (HTTP 201) and both 'Audit A' and 'Audit B' appear side-by-side in the framework's audits table with independent phase progress.",
-    "tags": ["duplicate-detection", "known-gap"],
+    "tags": [
+      "duplicate-detection",
+      "known-gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -181,6 +237,9 @@
     "title": "A completed Intelli Audit imports into Audit Assurance with assessmentStatus reset but sourceAssessmentStatus preserved",
     "description": "AuditAssuranceService.importFromIntelliAudit (audit-assurance.service.js:87-215) requires the source audit's Phase 4 to be complete and every Phase 3 control to carry a canonical frameworkRequirementId. Each created AuditScopeItem hardcodes assessmentStatus='not_started' while separately copying the original status into sourceAssessmentStatus.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -193,7 +252,11 @@
       "Open the newly created audit-assurance scope item corresponding to the Phase 3 control that was 'Completed' in Intelli Audit"
     ],
     "expectedResult": "Import succeeds; the created AuditScopeItem has assessmentStatus='not_started' (reset) while sourceAssessmentStatus='Completed' (the original Intelli Audit status is preserved in the audit-trail field only) and sourceType='intelli_audit'. importSummary.pclVersion is null since PCL is retired.",
-    "tags": ["plan-to-audit-assurance", "handoff", "field-mapping"],
+    "tags": [
+      "plan-to-audit-assurance",
+      "handoff",
+      "field-mapping"
+    ],
     "requirement": "ISO 27001 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -207,14 +270,23 @@
     "subFeature": "Plan-to-Audit-Assurance Handoff",
     "title": "Import from Intelli Audit is rejected when the source audit's Phase 4 is not yet completed",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Intelli Audit 'Audit C' exists for the same org/project/framework but phaseStatus.phase4.isCompleted is false"],
+    "preconditions": [
+      "Intelli Audit 'Audit C' exists for the same org/project/framework but phaseStatus.phase4.isCompleted is false"
+    ],
     "steps": [
       "In Audit Assurance, attempt to create a new engagement importing from Intelli Audit 'Audit C'"
     ],
     "expectedResult": "Response is 400 with message 'Selected Intelli Audit must be Phase 4 complete and use canonical requirements in the same organization, project, and framework'; no AuditAssurance or AuditScopeItem documents are created.",
-    "tags": ["plan-to-audit-assurance", "handoff", "phase-gate"],
+    "tags": [
+      "plan-to-audit-assurance",
+      "handoff",
+      "phase-gate"
+    ],
     "requirement": "ISO 27001 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -228,15 +300,23 @@
     "subFeature": "Empty States",
     "title": "Fresh project with no authority frameworks activated shows the correct empty state, not a blank or errored table",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A newly created project with zero frameworks marked active in Smart Compliance"],
+    "preconditions": [
+      "A newly created project with zero frameworks marked active in Smart Compliance"
+    ],
     "steps": [
       "Select the fresh project in the project switcher",
       "Navigate to /intelli-audit"
     ],
     "expectedResult": "The 'Active Frameworks' table renders the empty message 'No active frameworks found. Please set authority frameworks in Smart Compliance.' — no error toast, no console exception, and the search box/count still render ('0 framework(s) found').",
-    "tags": ["empty-state", "fresh-tenant"],
+    "tags": [
+      "empty-state",
+      "fresh-tenant"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

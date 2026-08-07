@@ -7,9 +7,15 @@
     "title": "Submitting the Report a Bug modal with description and screenshot creates a ticket visible in My Tickets",
     "description": "Full path through BugReportModal.jsx -> bugReportService.createBugReport -> POST /bug-reports -> Jira issue creation -> ticket appears in the /support My Tickets table.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in with a project selected in the Redux project store", "Jira integration configured and reachable"],
+    "preconditions": [
+      "Logged in with a project selected in the Redux project store",
+      "Jira integration configured and reachable"
+    ],
     "steps": [
       "Open the global 'Report a Bug' modal (BugReportModal)",
       "Enter a description of at least 20 characters",
@@ -18,7 +24,10 @@
       "Navigate to /support"
     ],
     "expectedResult": "A success toast shows the generated ticket number (e.g. TKT4F2A1B); the new ticket appears at the top of the My Tickets table with status 'Open' and the screenshot visible as a Jira attachment on the linked issue.",
-    "tags": ["bug-report-creation", "screenshot"],
+    "tags": [
+      "bug-report-creation",
+      "screenshot"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -32,6 +41,9 @@
     "title": "Submit button stays disabled until a project is selected and description reaches 20 characters",
     "description": "BugReportModal's canSubmit memo requires selectedProject?._id AND description.trim().length >= 20. Verifies the client-side gate matches the server-side 20-char minimum so users get instant feedback rather than a round-trip 400.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -41,7 +53,10 @@
       "Reduce the description to 10 characters"
     ],
     "expectedResult": "Submit stays disabled while no project is selected (warning text shown); becomes enabled once a project is selected and the description is >= 20 chars; becomes disabled again when the description drops below 20 chars.",
-    "tags": ["bug-report-creation", "ux"],
+    "tags": [
+      "bug-report-creation",
+      "ux"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -55,15 +70,23 @@
     "title": "My Tickets / All Tickets tabs are only rendered for a user holding bug-report.read_all, and switching tabs re-fetches the correct scope",
     "description": "SupportPage only renders the Tabs component when canReadAll is true; fetchData calls getAllBugReports only when scope==='all' && canReadAll, otherwise always falls back to getMyBugReports — a defense-in-depth match for the backend's route-level permission gate.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["User A holds bug-report.read_all; User B does not; both are in the same org with existing tickets from multiple users"],
+    "preconditions": [
+      "User A holds bug-report.read_all; User B does not; both are in the same org with existing tickets from multiple users"
+    ],
     "steps": [
       "Log in as User B (no read_all) and open /support",
       "Log in as User A (has read_all) and open /support, then click the 'All Tickets' tab"
     ],
     "expectedResult": "User B sees no tab control at all, only their own tickets. User A sees both tabs; 'All Tickets' shows tickets from every user in the org, 'My Tickets' shows only User A's own.",
-    "tags": ["rbac", "ticket-listing"],
+    "tags": [
+      "rbac",
+      "ticket-listing"
+    ],
     "requirement": "bug-report.read_all",
     "owner": "QA",
     "status": "active",
@@ -78,16 +101,24 @@
     "title": "Closing an Open ticket and then reopening it updates status in the table and drawer without a manual page refresh",
     "description": "Exercises closeBugReport then reopenBugReport end to end through the row action menu and the drawer footer button, including the optimistic selectedTicket update in SupportPage.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["An Open ticket with a valid jiraKey exists"],
+    "preconditions": [
+      "An Open ticket with a valid jiraKey exists"
+    ],
     "steps": [
       "From the ticket row's action menu (⋮), click 'Close'",
       "Observe the status badge update in the table",
       "Open the ticket's detail drawer and click 'Re-Open Ticket' in the drawer footer"
     ],
     "expectedResult": "After Close: status badge turns green 'Closed' in-place, success toast references the ticket number, and the corresponding Jira issue transitions. After Re-Open: status badge returns to blue 'Open' in both the table and the open drawer, and a status-change email is triggered.",
-    "tags": ["reopen-close-workflow", "jira-sync"],
+    "tags": [
+      "reopen-close-workflow",
+      "jira-sync"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -101,16 +132,24 @@
     "title": "Posting a comment on a synced ticket appends it to the thread with correct author attribution, even on a Closed ticket",
     "description": "Verifies the drawer's Comments section end to end: fetchComments on drawer open, handleSendComment posting through POST /:id/comments, and the placeholder copy change on Closed tickets ('This ticket is closed, but you can still add a comment...').",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A ticket with a valid jiraKey, status Closed"],
+    "preconditions": [
+      "A ticket with a valid jiraKey, status Closed"
+    ],
     "steps": [
       "Open the ticket detail drawer for the closed, synced ticket",
       "Confirm the textarea placeholder mentions the ticket is closed but commenting is still allowed",
       "Type a comment and click 'Add Comment'"
     ],
     "expectedResult": "The comment list refreshes and shows the new comment with the current user's name as author and correct timestamp; the ticket's status remains 'Closed' (commenting does not implicitly reopen it).",
-    "tags": ["comments", "jira-sync"],
+    "tags": [
+      "comments",
+      "jira-sync"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -124,9 +163,14 @@
     "title": "Search and status filter narrow the ticket table with a 400ms debounce",
     "description": "handleSearchChange debounces via a 400ms setTimeout before committing filters.search and resetting page to 1; the status filter (CustomSelectDropdown) applies immediately.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["At least 3 tickets exist with different ticket numbers, descriptions, and statuses"],
+    "preconditions": [
+      "At least 3 tickets exist with different ticket numbers, descriptions, and statuses"
+    ],
     "steps": [
       "Type a partial ticket number into the search box and stop typing",
       "Wait under 400ms and confirm no fetch has fired yet, then wait past 400ms",
@@ -134,7 +178,10 @@
       "Click 'Clear all'"
     ],
     "expectedResult": "The table only updates after the 400ms debounce elapses and shows rows matching the ticket/description/jiraKey regex; selecting a status filters immediately; 'Clear all' resets both search and status and reloads the unfiltered first page.",
-    "tags": ["ticket-listing", "search"],
+    "tags": [
+      "ticket-listing",
+      "search"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -148,16 +195,24 @@
     "title": "A Jira agent closing the linked issue reflects as 'Closed' in the client panel and sends the customer a closure email",
     "description": "End-to-end proof that the jira:issue_updated webhook (not just polling/background sync) drives status changes: a support engineer closes the issue directly in Jira, Jira's webhook posts to /bug-reports/webhook/jira, and the change is visible next time the client refreshes /support.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Ticket is 'In Progress' in both the app and Jira, with the webhook correctly configured with JIRA_WEBHOOK_SECRET matching Jira's configured secret query param"],
+    "preconditions": [
+      "Ticket is 'In Progress' in both the app and Jira, with the webhook correctly configured with JIRA_WEBHOOK_SECRET matching Jira's configured secret query param"
+    ],
     "steps": [
       "In Jira, transition the linked issue to 'Done'",
       "Wait for Jira's issue_updated webhook to fire against /bug-reports/webhook/jira?secret=...",
       "Refresh /support as the ticket's owner"
     ],
     "expectedResult": "The ticket's status shows 'Closed' without the user needing to click anything, and the owner receives a 'Ticket Closed' email (bugReportStatusUpdated template) generated from the webhook handler, not from a user-initiated close action.",
-    "tags": ["jira-webhook", "email-notification"],
+    "tags": [
+      "jira-webhook",
+      "email-notification"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

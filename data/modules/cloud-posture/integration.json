@@ -6,6 +6,10 @@
     "subFeature": "Provider Onboarding",
     "title": "PUT config endpoint stores AWS credentials in Vault and only sets credentialConfigured on the Mongo document",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/cloud-posture-config.controller.test.js",
@@ -15,7 +19,11 @@
       "Inspect Vault for the persisted secret"
     ],
     "expectedResult": "The Mongo document has providers.aws.credentialConfigured=true and no raw accessKeyId/secretAccessKey fields; the actual secret material exists only in Vault at the provider's configured path.",
-    "tags": ["provider-onboarding", "vault", "aws"],
+    "tags": [
+      "provider-onboarding",
+      "vault",
+      "aws"
+    ],
     "requirement": "ISO 27001 Annex A.8.9",
     "owner": "SDET",
     "status": "active",
@@ -30,6 +38,10 @@
     "title": "Test-connection with no credentials in the request body re-validates the already-stored configuration",
     "description": "When testProviderConnection is called without raw creds in the payload, config.controller.js sets isTestingStoredCreds=true, pulls the existing Vault-stored secret, and best-effort persists connectionHealth.status/lastTestedAt/message onto the config document.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -38,7 +50,10 @@
       "Inspect the CloudPostureConfig document afterward"
     ],
     "expectedResult": "The stored Vault credential is used for validation (not a fresh submission); connectionHealth.status, connectionHealth.lastTestedAt, and connectionHealth.message are updated to reflect the outcome of this re-test.",
-    "tags": ["provider-onboarding", "connection-health"],
+    "tags": [
+      "provider-onboarding",
+      "connection-health"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,16 +67,25 @@
     "title": "totalFindings on the dashboard includes PASS results while the sibling criticalFindings query filters to FAIL/ERROR only",
     "description": "Confirmed live defect (BUGS_FOUND.csv #17): the findingStats/totalFindings aggregation in dashboard.controller.js (getDashboardStats) has no status filter and counts PASS+FAIL+ERROR+SKIP+INFO together, while criticalFindingsByProvider in the same Promise.all correctly filters severity=CRITICAL AND status IN [FAIL,ERROR]. This produces an internally inconsistent dashboard.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A completed scan exists with a known mix of PASS, FAIL, ERROR, and SKIP findings"],
+    "preconditions": [
+      "A completed scan exists with a known mix of PASS, FAIL, ERROR, and SKIP findings"
+    ],
     "steps": [
       "Call GET the dashboard stats endpoint for the project",
       "Compare returned totalFindings against a manual count of FAIL+ERROR+CRITICAL findings only",
       "Compare totalFindings against a manual count of all Finding docs regardless of status"
     ],
     "expectedResult": "Currently reproduces the bug: totalFindings equals the unfiltered all-status count, not a status-scoped count — flagged for remediation so the dashboard's 'Total Findings' label matches what it actually counts.",
-    "tags": ["dashboard", "data-integrity"],
+    "tags": [
+      "dashboard",
+      "data-integrity"
+    ],
     "linkedDefect": "CLPO-BUG-17",
     "owner": "SDET",
     "status": "active",
@@ -76,6 +100,10 @@
     "title": "getCloudProviderResources accepts page/limit/search/service/severity but silently drops an unsupported 'status' filter param",
     "description": "Confirmed live defect (BUGS_FOUND.csv #20): resource.controller.js's getCloudProviderResources reads page, limit (default 500, capped 1000), search, service, and severity from the query string, but a 'status' param sent by the frontend has no corresponding server-side filter and is silently ignored.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -83,7 +111,11 @@
       "Compare the returned resource set against one fetched with only ?severity=HIGH"
     ],
     "expectedResult": "Currently reproduces the bug: both calls return the identical result set — the status parameter has no effect on filtering, even though the frontend UI exposes a status filter control.",
-    "tags": ["provider-view", "filtering", "data-integrity"],
+    "tags": [
+      "provider-view",
+      "filtering",
+      "data-integrity"
+    ],
     "linkedDefect": "CLPO-BUG-20",
     "owner": "SDET",
     "status": "active",
@@ -98,6 +130,10 @@
     "title": "Provider summary metric cards ignore the search/service/severity filters applied to the resource table below them",
     "description": "Confirmed live defect (BUGS_FOUND.csv #14): getProviderSummaryDetails (resource.controller.js) that feeds the provider page's metric cards is invoked with no filters at all, while the sibling resource-list query honors search/service/severity — so the cards always show unfiltered provider totals even when the visible table is filtered.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -105,7 +141,11 @@
       "Compare the summary/metric-card counts in the response against the count of rows actually returned in the filtered resource list"
     ],
     "expectedResult": "Currently reproduces the bug: metric-card totals equal the full unfiltered provider totals and do not match the count of rows in the filtered resource list returned in the same response.",
-    "tags": ["provider-view", "filtering", "data-integrity"],
+    "tags": [
+      "provider-view",
+      "filtering",
+      "data-integrity"
+    ],
     "linkedDefect": "CLPO-BUG-14",
     "owner": "SDET",
     "status": "active",
@@ -119,9 +159,15 @@
     "subFeature": "Compliance Mapping",
     "title": "onCloudPostureScanCompleted derives dominantStatus with FAIL-over-PASS-over-SKIP priority and updates ClientControl.scores.cloud once per scan",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A scan's findings for a given checkId resolve to a UCL id present and active in ucl_master_v2"],
+    "preconditions": [
+      "A scan's findings for a given checkId resolve to a UCL id present and active in ucl_master_v2"
+    ],
     "steps": [
       "Complete a scan where a given checkId has 3 FAIL and 2 PASS findings across resources; observe client-compliance-sync.service's onCloudPostureScanCompleted call",
       "Complete a separate scan where the same checkId has 0 FAIL and 4 PASS findings",
@@ -129,7 +175,11 @@
       "Re-invoke the completion handler a second time for the same already-synced scan"
     ],
     "expectedResult": "Case 1 sets dominantStatus='FAIL' (fail>pass); case 2 sets 'PASS' (pass>0, no fail); case 3 sets 'SKIP'. The second invocation for the same scan is a no-op because scan.metadata.complianceSyncFired is already true — ClientControl.scores.cloud is not double-applied.",
-    "tags": ["compliance-mapping", "prowler-integration", "idempotency"],
+    "tags": [
+      "compliance-mapping",
+      "prowler-integration",
+      "idempotency"
+    ],
     "requirement": "ISO 27001 Annex A.8.7",
     "owner": "SDET",
     "status": "active",
@@ -144,16 +194,26 @@
     "title": "scan-scheduler.job's runDue() claims a due scheduled_recurring scan under a distributed lock and triggers exactly one scan",
     "description": "runDue() polls CloudPostureScan docs with status='scheduled_recurring' and schedule.nextRun<=now every 5s, using a Redis distributed lock, claims via findOneAndUpdate, and calls prowlerService.triggerScan. Verifies two scheduler instances (or two poll ticks racing) cannot double-fire the same due schedule.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-scheduler.test.js",
-    "preconditions": ["Two scheduler worker instances are running against the same Redis and MongoDB (simulating horizontal scaling)"],
+    "preconditions": [
+      "Two scheduler worker instances are running against the same Redis and MongoDB (simulating horizontal scaling)"
+    ],
     "steps": [
       "Set a schedule document's nextRun to a timestamp in the past",
       "Allow both scheduler instances' 5-second poll ticks to run concurrently"
     ],
     "expectedResult": "Only one prowlerService.triggerScan call is made for that schedule; the losing instance's findOneAndUpdate claim attempt matches zero documents. metadata.runCount increments by exactly 1, not 2.",
-    "tags": ["scheduling", "distributed-lock", "race-condition"],
+    "tags": [
+      "scheduling",
+      "distributed-lock",
+      "race-condition"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -167,14 +227,24 @@
     "title": "A stale active scan older than 30 minutes is auto-failed before a new scan is allowed to start on the same project",
     "description": "Before triggering a new scan, the backend sweeps for any active scan on the project with no state update in over 30 minutes and auto-fails it; a partial unique index prevents two concurrently-active scans existing for the same project.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A scan for project P has status='running' with updatedAt older than 30 minutes (simulated stall)"],
+    "preconditions": [
+      "A scan for project P has status='running' with updatedAt older than 30 minutes (simulated stall)"
+    ],
     "steps": [
       "Attempt to trigger a new scan for project P"
     ],
     "expectedResult": "The stale scan is transitioned to 'failed' (with a reason indicating staleness) before the new scan is created; the new scan is created successfully and no duplicate-active-scan constraint violation occurs.",
-    "tags": ["scan-lifecycle", "stale-detection", "race-condition"],
+    "tags": [
+      "scan-lifecycle",
+      "stale-detection",
+      "race-condition"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

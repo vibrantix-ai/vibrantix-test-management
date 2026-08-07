@@ -6,15 +6,23 @@
     "subFeature": "Task List",
     "title": "/tasks page renders the full table with Module, Task, Status, Priority, Due Date, Assigned, and Open columns",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged-in user has at least one open task across 3+ different modules"],
+    "preconditions": [
+      "Logged-in user has at least one open task across 3+ different modules"
+    ],
     "steps": [
       "Navigate to /tasks",
       "Observe the Owner tab (default) table"
     ],
     "expectedResult": "Every row renders: a colored Module pill (ModuleCell, icon+label per MODULE_CONFIG), a Task title with an optional monospace requirementId chip and sourceEntityName subtitle (TitleCell), a rounded Status badge (TaskStatusBadge), a Priority dot+label (PriorityCell), a Due Date with calendar/red-alert icon (DueDateCell), a relative 'assigned X ago' label (AssignedCell), and an 'Open ->' link (OpenCell).",
-    "tags": ["ui", "table-rendering"],
+    "tags": [
+      "ui",
+      "table-rendering"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,16 +36,25 @@
     "title": "Clicking the Overdue summary card filters the table to isOverdue tasks, not a literal 'overdue' status",
     "description": "Regression guard for TK-007 (fixed): TaskSummaryBar's Overdue card calls onFilterChange('normalizedStatus', 'overdue'). The backend special-cases this exact string to mean `t.isOverdue && t.normalizedStatus !== 'done'` rather than a literal equality match against normalizedStatus (which is never actually 'overdue' — that value doesn't exist in the normaliser output set of pending/in_progress/done).",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "TK-007",
-    "preconditions": ["User has at least one task with a dueDate in the past and normalizedStatus != 'done', plus other non-overdue tasks"],
+    "preconditions": [
+      "User has at least one task with a dueDate in the past and normalizedStatus != 'done', plus other non-overdue tasks"
+    ],
     "steps": [
       "Navigate to /tasks",
       "Click the 'Overdue' stat card"
     ],
     "expectedResult": "The card gets an active outline, the table narrows to only the overdue task(s) (shown with red DueDateCell styling), and clicking the same card again clears the filter and restores the full list.",
-    "tags": ["filter", "overdue", "regression"],
+    "tags": [
+      "filter",
+      "overdue",
+      "regression"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -51,6 +68,9 @@
     "title": "Switching between Owner and Review tabs updates the URL, refetches with the correct assignmentType, and the tab badge counts come from the independent tab-counts poll",
     "description": "page.jsx merges the URL ?tab= param with useTabCounts (a separate 30s-polled query, staleTime 30_000) for the badge numbers next to each tab label — these are NOT derived from the main useTasks(filters) result, so the badge can legitimately be momentarily stale relative to the visible table.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -59,7 +79,11 @@
       "Observe the URL and the table content"
     ],
     "expectedResult": "URL updates to ?tab=review, page resets to page 1, the table now shows only assignmentType='review' tasks (WorkflowEntry reviews, escalated risks, vendor evidence reviews, trust-vault certifications/reports), and both tab badges continue to show counts sourced from GET /tasks/tab-counts.",
-    "tags": ["tabs", "assignment-type", "navigation"],
+    "tags": [
+      "tabs",
+      "assignment-type",
+      "navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -73,6 +97,9 @@
     "title": "Search input debounces 300ms before triggering a new query",
     "description": "TaskFilters.jsx keeps a local searchValue state and only calls onFilterChange('search', ...) after a 300ms setTimeout with no further keystrokes — every filter change also resets page to 1 via the page.jsx onFilterChange wrapper.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -81,7 +108,11 @@
       "Stop typing and wait"
     ],
     "expectedResult": "No GET /api/tasks request fires per keystroke; exactly one request fires ~300ms after the last keystroke, with search='evid' and page reset to 1.",
-    "tags": ["debounce", "search", "filter"],
+    "tags": [
+      "debounce",
+      "search",
+      "filter"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -95,15 +126,24 @@
     "title": "Opening a Policy review task always lands on the fixed reviews tab, never the per-task URL the backend stored",
     "description": "normaliseWorkflowEntry sets navigateTo='/policy-management/{entityId}' for policy reviews, but page.jsx's MODULE_FIXED_DESTINATIONS unconditionally overrides sourceModule='policy' to '/policy-management?tab=reviews' — per the comment, this is deliberate because /policy-management/[entityId] is not a real Next.js route and would 404. OpenCell's precedence is MODULE_FIXED_DESTINATIONS first, so the backend-provided per-entity URL is never actually used for policy tasks.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has an open Policy review task"],
+    "preconditions": [
+      "User has an open Policy review task"
+    ],
     "steps": [
       "Navigate to /tasks",
       "Click 'Open' on a Policy review row"
     ],
     "expectedResult": "Browser navigates to /policy-management?tab=reviews (a real, existing route) and does NOT attempt /policy-management/{entityId}. No 404 occurs, but the user lands on the general reviews list rather than the specific policy — confirm this is the intended UX, not an oversight.",
-    "tags": ["navigation", "policy", "navigateTo"],
+    "tags": [
+      "navigation",
+      "policy",
+      "navigateTo"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -117,15 +157,25 @@
     "title": "Opening a Vendor task always routes to /vendors/engagement even for VendorAssessment tasks whose own navigateTo is /vendors/assessment",
     "description": "vendor-service's internal-tasks route sets navigateTo='/vendors/assessment' for VendorAssessment tasks and '/vendors/engagement' for VendorEvidenceReview tasks — two distinct destinations. However page.jsx's MODULE_FIXED_DESTINATIONS maps ALL sourceModule='vendor' tasks to a single fixed '/vendors/engagement', which takes precedence over the per-task navigateTo in OpenCell. This means clicking Open on a VendorAssessment task does not take the user to the assessment page.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has an open VendorAssessment task (entityType='VendorAssessment', not a VendorEvidenceReview)"],
+    "preconditions": [
+      "User has an open VendorAssessment task (entityType='VendorAssessment', not a VendorEvidenceReview)"
+    ],
     "steps": [
       "Navigate to /tasks",
       "Click 'Open' on the VendorAssessment row"
     ],
     "expectedResult": "Current behavior: navigates to /vendors/engagement, not /vendors/assessment — the assessment-specific destination the backend computed is discarded by the frontend's fixed-destination override. Flag for product/UX confirmation on whether this is intended.",
-    "tags": ["navigation", "vendor", "navigateTo", "gap"],
+    "tags": [
+      "navigation",
+      "vendor",
+      "navigateTo",
+      "gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -139,16 +189,25 @@
     "title": "The Sort By dropdown only reorders the currently-loaded page of tasks, not the full filtered result set",
     "description": "page.jsx's `sortBy` is stripped out of apiFilters before calling useTasks — it's applied client-side afterward, sorting `rawTasks` which is only `data.tasks` (the server's already-paginated slice, up to `limit`, default 25). On a result set larger than one page, 'Priority: High -> Low' will correctly order the visible 25 rows but will NOT bring a critical-priority task from page 2 onto page 1.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has 30+ open tasks (more than one page at the default limit of 25), including a critical-priority task that falls on page 2 by the default sort order"],
+    "preconditions": [
+      "User has 30+ open tasks (more than one page at the default limit of 25), including a critical-priority task that falls on page 2 by the default sort order"
+    ],
     "steps": [
       "Navigate to /tasks with 30+ tasks loaded, on page 1",
       "Select 'Priority: High -> Low' from the Sort By dropdown",
       "Check whether the page-2 critical task now appears on page 1"
     ],
     "expectedResult": "Current behavior: only the 25 rows already on page 1 are re-ordered by priority; the critical task sitting on page 2 does not move to page 1. Document this as a client-side-only sort limitation, not a full-dataset sort.",
-    "tags": ["sort", "pagination", "gap"],
+    "tags": [
+      "sort",
+      "pagination",
+      "gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -162,6 +221,9 @@
     "title": "useTasks treats data as immediately stale (staleTime: 0) and auto-refetches every 30s while the tab is focused",
     "description": "useTasks.js: staleTime:0, refetchInterval:30_000, refetchOnWindowFocus:true, refetchOnMount:true, retry:1. Practically this means switching tabs away from and back to the browser, or any component remount, always triggers a fresh GET /api/tasks rather than serving a cached response — distinct from useTabCounts, which has staleTime:30_000 and can legitimately serve a slightly stale cached badge count.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -170,7 +232,11 @@
       "Observe network requests"
     ],
     "expectedResult": "A new GET /api/tasks request fires on window refocus (refetchOnWindowFocus), and again automatically every 30 seconds even with no user interaction (refetchInterval), confirming the task list is never served from a stale cache the way tab-count badges can be.",
-    "tags": ["tanstack-query", "caching", "polling"],
+    "tags": [
+      "tanstack-query",
+      "caching",
+      "polling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

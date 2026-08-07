@@ -31,9 +31,9 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-04",
+    "updatedAt": "2026-08-07",
     "execution": {
-      "result": "pass",
+      "result": "not_run",
       "notes": ""
     },
     "automationStatus": "not_automated"

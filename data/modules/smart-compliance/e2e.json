@@ -7,6 +7,9 @@
     "title": "Submitting a completed CFRS questionnaire produces AI framework recommendations and lands on the response detail page",
     "description": "Full path: CFRSQuestionnaireModal collects assessment metadata + per-question answers via Formik, POSTs to /smart-compliance/responses (synchronous LLM call, ~3-8s AILoadingScreen), clears the local draft, invalidates the navbar credits display, then routes to /smart-compliance/response/[id].",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -21,7 +24,11 @@
       "Observe the AI loading screen, then the resulting navigation"
     ],
     "expectedResult": "A new SCResponse is created with a denormalized questionnaireSnapshot and a persisted recommendation.supportedFrameworks; the browser navigates to /smart-compliance/response/{responseId} showing the recommended frameworks; the localStorage draft key for this project is cleared.",
-    "tags": ["questionnaire", "llm", "submission"],
+    "tags": [
+      "questionnaire",
+      "llm",
+      "submission"
+    ],
     "requirement": "ISO 27001:2022 Clause 9.1",
     "owner": "SDET",
     "status": "active",
@@ -36,16 +43,25 @@
     "title": "Closing the browser mid-questionnaire preserves answers and resumes at the same step on reopen",
     "description": "DraftAutosaver writes {values, currentQuestionIndex, savedAt} to localStorage key `cfrs-questionnaire-draft:{projectId}` on every answer/step change (once the initial restore pass completes). Reopening the modal for the same project restores the saved values and step, and shows a 'Draft restored' toast.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Questionnaire has at least 4 questions"],
+    "preconditions": [
+      "Questionnaire has at least 4 questions"
+    ],
     "steps": [
       "Open the questionnaire, fill assessment name, answer the first 2 questions and advance to question 3",
       "Close the modal (or the browser tab) without submitting",
       "Reopen /smart-compliance and click 'Start AI Assessment' again for the same project"
     ],
     "expectedResult": "A 'Draft restored' toast appears; the modal reopens on question 3 (not the metadata step) with the first two answers still populated; nothing was lost.",
-    "tags": ["save-resume", "draft", "localStorage"],
+    "tags": [
+      "save-resume",
+      "draft",
+      "localStorage"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -59,6 +75,9 @@
     "title": "Adding an LLM-recommended framework from the response detail page activates it as an Authority Framework",
     "description": "CFRSResponseDetails.handleAddFramework resolves the frameworkId from response.enrichedSupportedFrameworks and calls POST /smart-compliance/responses/:responseId/frameworks/:frameworkId/add. On success the framework appears in CurrentAuthorityFrameworks and in the Active Frameworks tab, and grc-preferences is fire-and-forget synced.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -70,7 +89,10 @@
       "Navigate to the 'Active Frameworks' tab on /smart-compliance"
     ],
     "expectedResult": "A 'Framework Added' toast is shown; the framework now appears under Current Authority Frameworks on the response page and in the Active Frameworks table, with status 'active'.",
-    "tags": ["framework-adoption", "cross-module"],
+    "tags": [
+      "framework-adoption",
+      "cross-module"
+    ],
     "requirement": "ISO 27001:2022 Clause 9.2",
     "owner": "QA",
     "status": "active",
@@ -85,14 +107,22 @@
     "title": "Adding a framework that was not part of a response's LLM recommendation is rejected",
     "description": "The addFramework controller checks response.recommendation.supportedFrameworks for the requested frameworkId before allowing adoption — it does not accept an arbitrary catalog frameworkId just because the user is authorized.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A response exists whose recommendation does NOT include framework X"],
+    "preconditions": [
+      "A response exists whose recommendation does NOT include framework X"
+    ],
     "steps": [
       "Call POST /smart-compliance/responses/:responseId/frameworks/:frameworkIdX/add where frameworkIdX was never recommended in that response"
     ],
     "expectedResult": "400 'Framework was not recommended in this response' — no ClientFramework document is created or reactivated.",
-    "tags": ["framework-adoption", "validation"],
+    "tags": [
+      "framework-adoption",
+      "validation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -106,14 +136,22 @@
     "title": "An empty question catalog shows a graceful empty state instead of a broken questionnaire wizard",
     "description": "When GET /smart-compliance/questions?status=active returns zero rows, CFRSQuestionnaireModal renders 'No questions available' with a Refresh button rather than attempting to show a metadata/question step wizard with totalQuestions=0.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["No active SCQuestion documents exist (all archived or none created)"],
+    "preconditions": [
+      "No active SCQuestion documents exist (all archived or none created)"
+    ],
     "steps": [
       "Open /smart-compliance and click 'Start AI Assessment'"
     ],
     "expectedResult": "Modal shows 'No questions available' with a 'Refresh' button; no crash, no infinite loading spinner, and the Submit button is never reachable.",
-    "tags": ["empty-state", "questionnaire"],
+    "tags": [
+      "empty-state",
+      "questionnaire"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -127,15 +165,23 @@
     "title": "Reaching the yearly Smart Compliance run limit disables 'Start AI Assessment' and blocks submission server-side",
     "description": "ComplianceHeroSection.deriveScGate computes runsExhausted from the billing usage metrics and disables the button client-side with a tooltip explanation. Independently, submitResponse enforces the same runsPerYear limit server-side (SC_RUNS_EXHAUSTED, 402) so a direct API call cannot bypass the UI gate.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Org's smartCompliance module config has a finite runsPerYear already met by prior submissions this year"],
+    "preconditions": [
+      "Org's smartCompliance module config has a finite runsPerYear already met by prior submissions this year"
+    ],
     "steps": [
       "Load /smart-compliance and observe the 'Start AI Assessment' button and its tooltip",
       "Attempt to call POST /smart-compliance/responses directly with a valid payload, bypassing the UI"
     ],
     "expectedResult": "The button is disabled with tooltip text containing 'Run limit reached'; the direct API call is rejected with 402 and error code SC_RUNS_EXHAUSTED — no LLM call is made and no SCResponse is created.",
-    "tags": ["billing-tier", "usage-gate"],
+    "tags": [
+      "billing-tier",
+      "usage-gate"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -149,6 +195,9 @@
     "title": "Framework Recommendations analysis aggregates recommendation frequency and average scores across multiple submitted assessments",
     "description": "getFrameworkAnalysis (GET /smart-compliance/responses/analysis) walks every active SCResponse for the project and rolls up recommendationCount, avgConfidence and avgValueScore per frameworkId, then marks isAdded from the live ClientFramework list.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -160,7 +209,10 @@
       "Open the 'Framework Recommendations' history tab"
     ],
     "expectedResult": "ISO 27001 shows recommendationCount = 2 and avgConfidence = 70 (rounded average of 80 and 60); isAdded reflects whether it is currently active on the project.",
-    "tags": ["analytics", "control-coverage"],
+    "tags": [
+      "analytics",
+      "control-coverage"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -174,14 +226,24 @@
     "title": "A project member from a different organization cannot open a Smart Compliance response link belonging to another org",
     "description": "getResponseById calls assertOrgAccess (403 unless organization.admin) before resolveProjectScope. End-to-end check that navigating directly to another tenant's response URL fails closed rather than rendering partial data.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Org A user has a valid session", "A response ID belonging to org B is known/guessed"],
+    "preconditions": [
+      "Org A user has a valid session",
+      "A response ID belonging to org B is known/guessed"
+    ],
     "steps": [
       "As an org A user, navigate directly to /smart-compliance/response/{orgB-response-id}"
     ],
     "expectedResult": "Page shows the 'Error Loading Response'/'Access denied' state — no questionnaire snapshot, recommendation, or framework data from org B is rendered or present in the network response body.",
-    "tags": ["multi-tenant", "idor"],
+    "tags": [
+      "multi-tenant",
+      "idor"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

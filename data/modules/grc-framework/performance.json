@@ -7,15 +7,24 @@
     "title": "A framework exceeding 2,000 leaf requirements is truncated with a visible warning, not a silent partial dataset",
     "description": "listRequirements enforces MAX_LIMIT=2000 (chosen to cover NIST SP 800-53's 1,189 controls with headroom). FrameworkComplianceMap sets `truncated` when reqRes.pagination.total exceeds the returned count and shows a warning banner rather than silently under-reporting coverage totals.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A test framework is seeded with 2,500 leaf requirements"],
+    "preconditions": [
+      "A test framework is seeded with 2,500 leaf requirements"
+    ],
     "steps": [
       "Activate the oversized framework for a project",
       "Open its compliance map"
     ],
     "expectedResult": "A warning banner reads 'This framework has more than 2,000 controls. Only the first 2,000 are shown — coverage totals may be incomplete.' Page remains responsive (no unbounded DOM render of all 2,500 rows at once).",
-    "tags": ["performance", "scalability"],
+    "tags": [
+      "performance",
+      "scalability"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -29,15 +38,25 @@
     "title": "CSV export fetches per-control asset detail in batches of 6, not as one unbounded fan-out",
     "description": "exportCSV() fetches getRequirementAssets for every control-with-assets in parallel batches of BATCH=6, and warns the user first if more than 50 controls are being exported ('Preparing export… This may take a moment.'). Verifies large exports don't fire hundreds of simultaneous requests.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A framework has 120 controls, all with at least one attached asset"],
+    "preconditions": [
+      "A framework has 120 controls, all with at least one attached asset"
+    ],
     "steps": [
       "Clear all filters (full-framework export) and click 'Export CSV'",
       "Observe network activity and the info toast"
     ],
     "expectedResult": "An info toast appears warning about fetching resource details for 120 controls. Network panel shows requests to getRequirementAssets going out in waves of at most 6 concurrent calls, not all 120 at once.",
-    "tags": ["performance", "csv-export", "n-plus-one"],
+    "tags": [
+      "performance",
+      "csv-export",
+      "n-plus-one"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -51,14 +70,23 @@
     "title": "Repeated frameworks-catalog loads within the 1-hour window read the cached ClientComplianceSummary in O(1) instead of recomputing live aggregation",
     "description": "getFrameworkList/getProjectSummary check ClientComplianceSummary.lastRefreshedAt first; if under the 1-hour STALE_THRESHOLD_MS, they return the cached doc directly instead of re-aggregating every ClientRequirement/ClientControl for the project. This keeps repeat page loads for large frameworks fast.",
     "priority": "P3",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A project's ClientComplianceSummary was refreshed less than 1 hour ago"],
+    "preconditions": [
+      "A project's ClientComplianceSummary was refreshed less than 1 hour ago"
+    ],
     "steps": [
       "Load /grc-framework twice in a row within a few minutes, measuring the response time of GET /compliance-frameworks/projects/:projectId/compliance/frameworks each time"
     ],
     "expectedResult": "Both calls return quickly and with identical coverage figures (served from the cached summary doc) — no live re-aggregation query pattern appears in the second call's timing/logs while the cache is fresh.",
-    "tags": ["performance", "caching"],
+    "tags": [
+      "performance",
+      "caching"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

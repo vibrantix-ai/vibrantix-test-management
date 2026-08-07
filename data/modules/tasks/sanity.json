@@ -7,6 +7,9 @@
     "title": "normalizedStatus on every task is always exactly one of pending / in_progress / done — never the literal string 'overdue'",
     "description": "'overdue' is a derived filter/display concept driven purely by the isOverdue boolean; no normaliser function or microservice ever assigns normalizedStatus='overdue'. This is the root cause TK-007 fixed at the filter layer — this sanity check verifies the invariant holds at the data layer too.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -14,7 +17,11 @@
       "Inspect the normalizedStatus field of every returned task"
     ],
     "expectedResult": "Every value is one of 'pending', 'in_progress', 'done'. Overdue tasks show normalizedStatus reflecting their real underlying state (e.g. 'pending') with isOverdue=true set separately.",
-    "tags": ["sanity", "data-integrity", "status"],
+    "tags": [
+      "sanity",
+      "data-integrity",
+      "status"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +35,9 @@
     "title": "isOverdue is never true on a task whose normalizedStatus is 'done'",
     "description": "Both the shared isOverdue() helper in tasks.normalise.js and the re-computation pass in tasks.service.js step E ('re-compute for any microservice tasks that may have it wrong') require normalizedStatus !== 'done' as part of the overdue condition.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -35,7 +45,11 @@
       "Check isOverdue on each"
     ],
     "expectedResult": "isOverdue is false for every done task, regardless of how far in the past dueDate is.",
-    "tags": ["sanity", "overdue", "data-integrity"],
+    "tags": [
+      "sanity",
+      "overdue",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,6 +63,9 @@
     "title": "The 'Done' summary card always reads 0 under current query logic — known limitation, not a fresh regression",
     "description": "Every internal source query explicitly excludes terminal/done statuses at the Mongo query level (AuditScopeItem $nin closed/not_applicable, NonConformance $nin closed/verified/cancelled, EvidenceRequest $nin fulfilled/closed/cancelled, Finding remediation.status != resolved, WorkflowEntry $in only assigned/re-assign/under_review, ManagementReview/CI flatMap filters exclude completed/cancelled, Audit $nin closed/cancelled/archived). Since getMyTasks never fetches a 'done' item in the first place, summary.done can only ever be incremented for a task whose normalizedStatus is 'done' AND is present in `filtered` — which structurally never happens for any internal source today.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "TK-022",
@@ -57,7 +74,11 @@
       "Navigate to /tasks and observe the 'Done' stat card"
     ],
     "expectedResult": "Current behavior: the Done card shows 0 regardless of how many tasks the user has actually completed, because completed items are excluded from the underlying queries entirely rather than being fetched and counted. This should be flagged for remediation (either query done items separately for the summary count, or hide/relabel the Done card) rather than treated as a fresh finding each run.",
-    "tags": ["sanity", "summary", "known-gap"],
+    "tags": [
+      "sanity",
+      "summary",
+      "known-gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,6 +92,9 @@
     "title": "Every task row's Open control either renders a valid link or renders nothing — never a broken/empty href",
     "description": "OpenCell returns null when none of MODULE_FIXED_DESTINATIONS, fixEvidenceDestination(navigateTo), or MODULE_ROUTES[sourceModule] produce a truthy href (e.g. an unrecognised sourceModule) — it deliberately does not render a dead link.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -78,7 +102,10 @@
       "For each row, check the Open cell"
     ],
     "expectedResult": "For every one of the 9 known sourceModule values (audit, evidence, policy, risk, vendor, trust-vault, cloud-posture, management-review, continuous-improvement), Open renders a real, non-empty href. No row shows an 'Open' link with an empty/undefined destination.",
-    "tags": ["sanity", "navigation"],
+    "tags": [
+      "sanity",
+      "navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -91,6 +118,9 @@
     "subFeature": "Data Integrity",
     "title": "Priority is always one of low / medium / high / critical after normalisation, never raw/mixed-case source data",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -98,7 +128,11 @@
       "Inspect the priority field of every returned task"
     ],
     "expectedResult": "Every value is exactly one of 'low', 'medium', 'high', 'critical' (lowercase). Tasks from WorkflowEntry sources (evidence/policy reviews), which have no source priority field, show 'medium'.",
-    "tags": ["sanity", "priority", "data-integrity"],
+    "tags": [
+      "sanity",
+      "priority",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

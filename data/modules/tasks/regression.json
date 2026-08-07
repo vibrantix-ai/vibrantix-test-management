@@ -7,15 +7,24 @@
     "title": "The Overdue filter must remain special-cased against isOverdue, never regress to a literal normalizedStatus='overdue' match",
     "description": "TK-007 (Sprint 3B, fixed): before the fix, `normalizedStatus === 'overdue'` was compared literally against task.normalizedStatus, which is never actually 'overdue' — the Overdue summary card/filter matched zero tasks. The fix in tasks.service.js special-cases this exact filter value: `if (normalizedStatus === 'overdue') { filtered = filtered.filter(t => t.isOverdue && t.normalizedStatus !== 'done'); }`.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-007",
-    "preconditions": ["At least one task with dueDate in the past and normalizedStatus='pending', plus non-overdue tasks"],
+    "preconditions": [
+      "At least one task with dueDate in the past and normalizedStatus='pending', plus non-overdue tasks"
+    ],
     "steps": [
       "Call GET /api/tasks?normalizedStatus=overdue"
     ],
     "expectedResult": "Only tasks where isOverdue=true AND normalizedStatus != 'done' are returned. Must not regress to returning zero results (the pre-fix behavior).",
-    "tags": ["regression", "overdue", "filter"],
+    "tags": [
+      "regression",
+      "overdue",
+      "filter"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -29,6 +38,10 @@
     "title": "WorkflowEntry evidence/policy tasks must remain org-scoped via the Evidence/Policy post-filter",
     "description": "TK-009 (Sprint 3B, fixed): WorkflowEntry queries originally had no organizationId filter at all, so evidence/policy review tasks assigned to a user leaked across organizations whenever a WorkflowEntry referenced an entity outside the caller's org. The fix added fetchWorkflowEntries()'s post-fetch filter against the Evidence/Policy collection scoped by organizationId.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-009",
@@ -39,7 +52,11 @@
       "Call GET /api/tasks as the test user scoped to their own organization"
     ],
     "expectedResult": "The cross-org WorkflowEntry task never appears. Must not regress to WORKFLOW_ENTITY_MODEL post-filter being removed or bypassed.",
-    "tags": ["regression", "multi-tenant", "idor"],
+    "tags": [
+      "regression",
+      "multi-tenant",
+      "idor"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,15 +70,26 @@
     "title": "risk-management-service must declare userOid before use and compare riskOwner.userId/treatment.leadOwner.userId as ObjectId, not as a raw string",
     "description": "TK-010 (fixed as ObjectId comparison) was re-opened as TK-019 (Run 3) after the fix introduced a ReferenceError: `userOid` was referenced in the ownerRisks/leadOwnerRisks queries but never declared before use, crashing every call to this endpoint. Current source confirms `let userOid: ObjectId; try { userOid = new ObjectId(userId); }` is declared before both queries that reference it (riskOwner.userId, treatment.leadOwner.userId).",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-019",
-    "preconditions": ["A Risk document has riskOwner.userId stored as a genuine ObjectId (not a string) equal to the test user's id"],
+    "preconditions": [
+      "A Risk document has riskOwner.userId stored as a genuine ObjectId (not a string) equal to the test user's id"
+    ],
     "steps": [
       "Call GET http://risk-management-service/internal/tasks?userId=<test user>&organizationId=<org> with a valid X-Internal-Token"
     ],
     "expectedResult": "200 with the risk correctly included in the tasks array — no ReferenceError / 500, and the ObjectId-typed field match succeeds (would silently miss the risk entirely if compared as a string against an ObjectId field).",
-    "tags": ["regression", "risk", "crash", "data-integrity"],
+    "tags": [
+      "regression",
+      "risk",
+      "crash",
+      "data-integrity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -75,6 +103,9 @@
     "title": "Done/closed items must remain excluded from AuditScopeItem and ContinuousImprovement task queries",
     "description": "TK-013 (fixed): AuditScopeItem's Mongo query must keep `assessmentStatus: { $nin: ['closed', 'not_applicable'] }` (applied on both the direct-assignee and WorkflowEntry-fallback branches), and the ContinuousImprovement flatMap must keep filtering out `!['completed','cancelled'].includes(init.status)` — otherwise closed/completed items reappear as open tasks, inflating pending/in_progress counts and cluttering the Owner tab with already-finished work.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-013",
@@ -86,7 +117,12 @@
       "Call GET /api/tasks as that user"
     ],
     "expectedResult": "Neither the closed scope item nor the completed initiative appears in data.tasks.",
-    "tags": ["regression", "audit", "continuous-improvement", "data-integrity"],
+    "tags": [
+      "regression",
+      "audit",
+      "continuous-improvement",
+      "data-integrity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -100,6 +136,10 @@
     "title": "A null assignedTo on a ManagementReview action item or ContinuousImprovement initiative must not crash GET /api/tasks",
     "description": "TK-014 and TK-018 (both fixed): the flatMap filters `item.assignedTo && item.assignedTo.toString() === userIdStr` (ManagementReview) and `init.assignedTo && init.assignedTo.toString() === userIdStr` (ContinuousImprovement) must keep the leading null-guard — removing it re-introduces a TypeError on `.toString()` of null/undefined for any unassigned item, which is NOT caught by the outer try/catch (that only wraps the earlier Promise.all of the 9 internal source queries, not this later flatMap step).",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-014",
@@ -111,7 +151,12 @@
       "Call GET /api/tasks as the test user who owns the OTHER items in those same parent documents"
     ],
     "expectedResult": "200 response, no 500/crash. The null-assignedTo items are silently skipped; the user's own properly-assigned items still appear.",
-    "tags": ["regression", "crash", "management-review", "continuous-improvement"],
+    "tags": [
+      "regression",
+      "crash",
+      "management-review",
+      "continuous-improvement"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -125,15 +170,25 @@
     "title": "A single internal-source model throw must not crash the entire GET /api/tasks response",
     "description": "TK-017 (fixed): the outer try/catch around the Promise.all of the 9 internal-source sub-queries falls back to `_internalRaw = [[], [], [], [], [], [], [], [], []]` on any unexpected throw (e.g. ObjectId construction failure surfacing unexpectedly, or a model registration edge case not already guarded by the inner per-query try/catch). Must not regress to an unguarded Promise.all whose rejection propagates as an unhandled 500.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-017",
-    "preconditions": ["Simulate one internal sub-query throwing synchronously outside its own inner try/catch (e.g. via a mocked Mongoose model)"],
+    "preconditions": [
+      "Simulate one internal sub-query throwing synchronously outside its own inner try/catch (e.g. via a mocked Mongoose model)"
+    ],
     "steps": [
       "Call GET /api/tasks while the fault-injected model is active"
     ],
     "expectedResult": "200 response with the 8 remaining internal arrays emptied (fallback) rather than the whole endpoint returning 500 — microservice fan-out and any working internal sources still get a chance to run/merge (or return an empty-but-valid result if the fallback path was hit before them).",
-    "tags": ["regression", "crash", "resilience"],
+    "tags": [
+      "regression",
+      "crash",
+      "resilience"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -147,17 +202,27 @@
     "title": "Summary card counts still shift when any filter is applied — known open gap, not yet fixed",
     "description": "TK-021 (open): tasks.service.js builds `summary` and `byModule` from `filtered` (the array AFTER sourceModule/normalizedStatus/priority/projectScope/dueBefore/search/assignmentType are all applied), not from the full pre-filter task set. This means the 4 TaskSummaryBar stat cards (Pending/In Progress/Overdue/Done) do not represent 'all my tasks' once any other filter (e.g. sourceModule=risk) is active — they silently narrow to match that filter too, which can read as the cards themselves being broken rather than reflecting the current filter combination.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "linkedDefect": "TK-021",
-    "preconditions": ["User has open tasks across at least 2 different sourceModule values with a mix of pending/in_progress/overdue statuses"],
+    "preconditions": [
+      "User has open tasks across at least 2 different sourceModule values with a mix of pending/in_progress/overdue statuses"
+    ],
     "steps": [
       "Navigate to /tasks with no filters, note the 4 summary card numbers",
       "Apply sourceModule=risk via the Module dropdown",
       "Re-observe the same 4 summary cards"
     ],
     "expectedResult": "Current behavior: the summary card numbers change to reflect ONLY risk-module tasks after the module filter is applied — they do not stay fixed at the org-wide 'all my tasks' totals. This is a known, still-open gap (TK-021); this case exists to detect the day it silently changes (fixed OR made worse) rather than to assert it as correct.",
-    "tags": ["regression", "summary", "known-gap", "filter"],
+    "tags": [
+      "regression",
+      "summary",
+      "known-gap",
+      "filter"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -171,15 +236,25 @@
     "title": "DueDateCell and AssignedCell still render a blank cell (not '—') when date parsing throws — known open gap, not yet fixed",
     "description": "TK-023 (open): both cells guard the missing-value case (`if (!task.dueDate) return <Text>—</Text>`) but the try/catch around date-fns format()/formatDistanceToNow() returns `null` on a parse error rather than falling back to the same '—' placeholder used for the missing-value case. A malformed date string (as opposed to an absent one) therefore renders as a visually blank cell instead of a dash, which is easy to misread as a rendering failure.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "linkedDefect": "TK-023",
-    "preconditions": ["A task's dueDate (or assignedAt) contains a value that is present but fails Date parsing, e.g. an empty string or a non-ISO garbage value from a misbehaving upstream source"],
+    "preconditions": [
+      "A task's dueDate (or assignedAt) contains a value that is present but fails Date parsing, e.g. an empty string or a non-ISO garbage value from a misbehaving upstream source"
+    ],
     "steps": [
       "Render the tasks table with a row whose dueDate is a non-empty but unparseable string"
     ],
     "expectedResult": "Current behavior: the Due Date cell for that row is completely blank (catch block returns null), inconsistent with the '—' shown for a genuinely absent dueDate. This case exists to detect whether a future fix aligns the two fallback paths, or whether the gap persists/worsens.",
-    "tags": ["regression", "ui", "date-rendering", "known-gap"],
+    "tags": [
+      "regression",
+      "ui",
+      "date-rendering",
+      "known-gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

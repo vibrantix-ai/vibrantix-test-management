@@ -7,15 +7,25 @@
     "title": "GET /api/dashboard/metrics returns risk/vendor/audit-assurance KPI data with no per-module permission check",
     "description": "dashboard-metrics/index.js's router only calls router.use(authenticate) — none of /metrics, /risk-distribution, /risk-areas, or /:orgId ever call requirePermission or requireAllPermissions. This is a materially looser gate than the drill-down boards under /api/client/dashboard/executive/*, which each require requireAllPermissions(['compliance.read', '<module>.read']) (executive-dashboard.routes.js boardPermission()). A caller holding only compliance.read (no risk.read/vendor.read/audit.read/scan.read) can still see aggregated risk/vendor/audit KPI numbers on the main dashboard cards even though the matching drill-down board would reject them. Verify whether this is the intended design or a real enforcement gap between the summary cards and their own drill-downs.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["User with a role holding compliance.read only — no risk.read, vendor.read, audit.read, framework.read, or scan.read"],
+    "preconditions": [
+      "User with a role holding compliance.read only — no risk.read, vendor.read, audit.read, framework.read, or scan.read"
+    ],
     "steps": [
       "As that user, call GET /api/dashboard/metrics",
       "As the same user, call GET /api/client/dashboard/executive/risk-summary"
     ],
     "expectedResult": "If module-level KPI visibility is meant to mirror the drill-down boards' permission model, data.risk/data.vendorRisk/data.audit should be withheld or empty in the first call; the second call correctly 403s today. Flag any mismatch found for triage rather than assuming either behavior is correct.",
-    "tags": ["rbac", "permission-gap", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "permission-gap",
+      "owasp-a01"
+    ],
     "requirement": "Verify Permission Enforcement Before Listing",
     "owner": "Security",
     "status": "active",
@@ -30,14 +40,24 @@
     "title": "A non-admin cannot pull another project's data into /api/dashboard/metrics via ?projectIds=",
     "description": "resolveProjectIdsScope silently drops any requested project ID that isn't in the caller's own ProjectMember set for a non-admin (unlike resolveProjectScope, which throws 403 on a single foreign ID). Verify the drop actually happens rather than the foreign ID leaking into the $in match.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["User is a member of Project A only; Project B belongs to the same org but the user has no ProjectMember row for it"],
+    "preconditions": [
+      "User is a member of Project A only; Project B belongs to the same org but the user has no ProjectMember row for it"
+    ],
     "steps": [
       "As that user, call GET /api/dashboard/metrics?projectIds=<projectA>,<projectB>"
     ],
     "expectedResult": "The response's numbers reflect Project A only; Project B's risks/vendors/findings never appear, and no error is thrown for the foreign ID.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -51,14 +71,24 @@
     "title": "GET /api/dashboard/:orgId rejects a path orgId belonging to a different organization",
     "description": "The :orgId handler compares requestedOrgId against req.orgId and req.permissions.has('organization.admin') before calling fetchProviderCoverage. A caller without organization.admin who supplies any orgId other than their own must be rejected before any query runs.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Two distinct orgs A and B; caller belongs to org A only, no organization.admin"],
+    "preconditions": [
+      "Two distinct orgs A and B; caller belongs to org A only, no organization.admin"
+    ],
     "steps": [
       "As the org A caller, call GET /api/dashboard/<org B's ObjectId>"
     ],
     "expectedResult": "403 Access denied, with no providerCoverage data for org B in the response body.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -72,15 +102,25 @@
     "title": "Two non-admin users with disjoint project memberships never receive each other's cached dashboard response",
     "description": "resolveProjectIdsScope's output feeds scopeCacheKey, which must produce distinct cache keys for distinct resolved project-ID sets. Guards against the previously-fixed bug where naively stringifying the {$in:[...]} array collapsed to '[object Object]' for every non-admin, letting any two non-admins in the same org share one Redis-cached response regardless of their actual project access.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["User X is a member of Project A only; User Y is a member of Project B only; both in the same org"],
+    "preconditions": [
+      "User X is a member of Project A only; User Y is a member of Project B only; both in the same org"
+    ],
     "steps": [
       "As User X, call GET /api/dashboard/metrics (no projectIds override) and record the response",
       "Immediately after, as User Y, call GET /api/dashboard/metrics (no projectIds override)"
     ],
     "expectedResult": "User Y's response reflects Project B's data, not User X's cached Project A response.",
-    "tags": ["cache", "multi-tenant", "idor"],
+    "tags": [
+      "cache",
+      "multi-tenant",
+      "idor"
+    ],
     "linkedDefect": "PLAC-015",
     "owner": "Security",
     "status": "active",
@@ -95,6 +135,10 @@
     "title": "A malformed projectIds value is rejected with 400, not silently swallowed into a Mongo query",
     "description": "resolveProjectIdsScope validates every comma-separated entry with mongoose.Types.ObjectId.isValid before use, throwing AppError.badRequest('Invalid projectId in projectIds') on the first bad entry.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -102,7 +146,11 @@
       "Call GET /api/client/dashboard/executive/risk-summary?projectIds=<24 zero chars>,'; return true;//"
     ],
     "expectedResult": "Both calls return 400 with a validation error; neither reaches the aggregation pipeline with the malformed value.",
-    "tags": ["input-validation", "injection", "owasp-a03"],
+    "tags": [
+      "input-validation",
+      "injection",
+      "owasp-a03"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -116,15 +164,25 @@
     "title": "requireAllPermissions on a board endpoint truly requires both permissions, not either",
     "description": "boardPermission('risk') = requireAllPermissions(['compliance.read', 'risk.read']). A caller with only one of the two permissions must still be rejected — verifies this isn't accidentally implemented as an OR check.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["User A holds compliance.read but not risk.read", "User B holds risk.read but not compliance.read"],
+    "preconditions": [
+      "User A holds compliance.read but not risk.read",
+      "User B holds risk.read but not compliance.read"
+    ],
     "steps": [
       "As User A, call GET /api/client/dashboard/executive/risk-summary",
       "As User B, call the same endpoint"
     ],
     "expectedResult": "Both calls return 403 — only a caller holding both compliance.read AND risk.read succeeds.",
-    "tags": ["rbac", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

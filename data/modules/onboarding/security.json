@@ -7,6 +7,10 @@
     "title": "A bootstrap JWT with the wrong issuer or type falls through to standard Keycloak auth and is rejected without a valid session",
     "description": "authenticateOnboarding.js verifies the token with { issuer: 'vibrantix-onboarding' } and requires decoded.type === 'onboarding'; on any verify/type failure it delegates to the standard authenticate middleware rather than granting access.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +18,11 @@
       "Call GET /api/v1/onboarding/state with 'Authorization: Bearer <that JWT>' and no Keycloak session"
     ],
     "expectedResult": "The bootstrap verification fails (wrong issuer), falls through to Keycloak authenticate, and — with no valid Keycloak token present — the request is rejected with 401.",
-    "tags": ["auth", "jwt", "owasp-a07"],
+    "tags": [
+      "auth",
+      "jwt",
+      "owasp-a07"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,6 +35,10 @@
     "subFeature": "Bootstrap Authentication",
     "title": "Protected onboarding endpoints reject requests with no Authorization header",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -34,7 +46,10 @@
       "Call POST /api/v1/onboarding/steps/step-1/complete with no Authorization header"
     ],
     "expectedResult": "Both requests are rejected with 401 { error: { code: 'UNAUTHORIZED', message: 'No token provided' } } before any controller logic or DB access runs.",
-    "tags": ["auth", "owasp-a07"],
+    "tags": [
+      "auth",
+      "owasp-a07"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -48,15 +63,26 @@
     "title": "orgId for onboarding state is derived solely from the authenticated JWT, ignoring any client-supplied orgId",
     "description": "onboarding.controller.js reads req.orgId (populated by the auth middleware from the token claims) for both getState and completeStep — it never reads an orgId from req.body/req.query/req.params. Confirms a forged orgId in the request cannot redirect a write to another org's OnboardingState (IDOR guard).",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid bootstrap/Keycloak token for User A of Org A", "Org B exists with its own OnboardingState"],
+    "preconditions": [
+      "Valid bootstrap/Keycloak token for User A of Org A",
+      "Org B exists with its own OnboardingState"
+    ],
     "steps": [
       "As User A (Org A), call POST /api/v1/onboarding/steps/step-1/complete with a JSON body additionally containing { orgId: '<Org B id>' }",
       "Fetch Org B's OnboardingState directly to check for unauthorized modification"
     ],
     "expectedResult": "The completion is recorded against Org A's OnboardingState (from the token), not Org B's — the extraneous orgId field in the body has no effect.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -70,13 +96,21 @@
     "title": "Concurrent signups for the same domain cannot both succeed (unique index race)",
     "description": "signup.controller.js relies on a Mongo unique index (E11000 -> DOMAIN_TAKEN/EMAIL_TAKEN) rather than an application-level pre-check-then-insert, which is the correct pattern to avoid a TOCTOU race under concurrent requests.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "Fire two POST /api/v1/onboarding/signup requests concurrently with the same domain and different emails"
     ],
     "expectedResult": "Exactly one request succeeds (201); the other returns 409 DOMAIN_TAKEN — no two Organization documents are created for the same domain.",
-    "tags": ["race-condition", "signup", "multi-tenant"],
+    "tags": [
+      "race-condition",
+      "signup",
+      "multi-tenant"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -90,13 +124,20 @@
     "title": "Platform tour update requires both orgId and userId resolved from auth context before any write",
     "description": "onboarding.controller.js updatePlatformTourStatus (the live, second definition) returns 401 if either req.userId or req.orgId is missing, before touching PlatformTourState.findOneAndUpdate.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "Call POST /api/v1/onboarding/platform-tour/update with a token/session that resolves userId but not orgId (or vice versa)"
     ],
     "expectedResult": "The request is rejected with 401 UNAUTHORIZED and no PlatformTourState document is created or modified.",
-    "tags": ["auth", "platform-tour"],
+    "tags": [
+      "auth",
+      "platform-tour"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -110,6 +151,10 @@
     "title": "Public onboarding endpoints expose no cross-org data",
     "description": "onboarding.routes.js exposes GET /frameworks, POST /signup, and the DIY /request, /verify-otp, /complete-activation endpoints without auth by design. They must only ever return public catalog data (active compliance frameworks) or act on the specific email/OTP supplied — never leak another organization's OnboardingState, users, or setup progress.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -117,7 +162,11 @@
       "Attempt to pass an arbitrary orgId/email query parameter to /frameworks and /signup to see if it changes the response scope"
     ],
     "expectedResult": "GET /frameworks returns only the public compliance-framework catalog (name/title/description/region/version) with no org-specific or user-specific fields; extraneous query parameters have no effect on response scope.",
-    "tags": ["public-endpoint", "data-exposure", "owasp-a01"],
+    "tags": [
+      "public-endpoint",
+      "data-exposure",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

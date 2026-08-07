@@ -6,6 +6,11 @@
     "subFeature": "Connector Startup",
     "title": "Connector binary boots, loads config, and serves /metrics on loopback within 5 seconds",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -32,6 +37,11 @@
     "subFeature": "Management Service Startup",
     "title": "vtec-management-service starts, connects to MongoDB, and its health check returns 200",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -58,6 +68,10 @@
     "subFeature": "Config Defaults",
     "title": "A fresh checkout with no local config.yaml still boots to sane defaults",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -83,6 +97,11 @@
     "subFeature": "Client-Panel Module",
     "title": "The /vtec sidebar item and fleet page load without a console error",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -109,6 +128,10 @@
     "subFeature": "Docker Deployment",
     "title": "docker compose up brings up a running, healthy connector container with default Site A settings",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -135,6 +158,10 @@
     "subFeature": "Graceful Shutdown",
     "title": "SIGTERM to the connector process triggers a graceful shutdown within the target time budget",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [

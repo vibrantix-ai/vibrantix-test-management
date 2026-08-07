@@ -6,12 +6,21 @@
     "subFeature": "Module Routing",
     "title": "Visiting /vtec redirects to /vtec/fleet",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.read"],
-    "steps": ["Navigate directly to /vtec"],
+    "preconditions": [
+      "Logged in as a user with vtec.read"
+    ],
+    "steps": [
+      "Navigate directly to /vtec"
+    ],
     "expectedResult": "The browser is redirected to /vtec/fleet on mount, matching the /vciso module's own no-content-index pattern.",
-    "tags": ["routing"],
+    "tags": [
+      "routing"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -24,12 +33,23 @@
     "subFeature": "Permission Gate",
     "title": "A user without vtec.read sees the PermissionGate fallback on every /vtec/* route, never page content",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A user with no vtec.* permissions"],
-    "steps": ["Navigate directly to /vtec/fleet, /vtec/workflows, and /vtec/fleet/<any-id>"],
+    "preconditions": [
+      "A user with no vtec.* permissions"
+    ],
+    "steps": [
+      "Navigate directly to /vtec/fleet, /vtec/workflows, and /vtec/fleet/<any-id>"
+    ],
     "expectedResult": "All three routes show the Access Denied fallback; none render fleet/connector data.",
-    "tags": ["rbac", "ui"],
+    "tags": [
+      "rbac",
+      "ui"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -43,12 +63,22 @@
     "title": "Status badges never show a fabricated 'degraded' state",
     "description": "ConnectorStatusEnum is only pending|active|offline|revoked — there is no 'degraded' value anywhere in the real schema, only in earlier mockup prose.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Connectors in each of the 4 real statuses"],
-    "steps": ["View the fleet dashboard with connectors in pending/active/offline/revoked states"],
+    "preconditions": [
+      "Connectors in each of the 4 real statuses"
+    ],
+    "steps": [
+      "View the fleet dashboard with connectors in pending/active/offline/revoked states"
+    ],
     "expectedResult": "Exactly those 4 states render as Pending/Online/Offline/Revoked; no 'Degraded' badge or summary tile appears anywhere.",
-    "tags": ["ui", "data-integrity"],
+    "tags": [
+      "ui",
+      "data-integrity"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -61,12 +91,23 @@
     "subFeature": "Connector Detail",
     "title": "The cert expiry countdown reflects the real certExpiresAt field, not a placeholder",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A registered connector with a known certExpiresAt"],
-    "steps": ["Open /vtec/fleet/<connectorId>", "Compare the displayed countdown against the raw GET /connectors/<id>/status response"],
+    "preconditions": [
+      "A registered connector with a known certExpiresAt"
+    ],
+    "steps": [
+      "Open /vtec/fleet/<connectorId>",
+      "Compare the displayed countdown against the raw GET /connectors/<id>/status response"
+    ],
     "expectedResult": "The countdown's underlying timestamp matches certExpiresAt exactly; it is not a fixed/hardcoded duration.",
-    "tags": ["ui", "certificate"],
+    "tags": [
+      "ui",
+      "certificate"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -79,12 +120,23 @@
     "subFeature": "Config Documentation",
     "title": "config.example.yaml's documented defaults match Config Manager's real Load() defaults",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Current configs/config.example.yaml and internal/core/config/config.go"],
-    "steps": ["Diff every default value in config.example.yaml's comments against the literal v.SetDefault(...) calls in Load()"],
+    "preconditions": [
+      "Current configs/config.example.yaml and internal/core/config/config.go"
+    ],
+    "steps": [
+      "Diff every default value in config.example.yaml's comments against the literal v.SetDefault(...) calls in Load()"
+    ],
     "expectedResult": "No documented default has drifted from the real code default.",
-    "tags": ["documentation", "config"],
+    "tags": [
+      "documentation",
+      "config"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -97,12 +149,23 @@
     "subFeature": "Register Connector UI",
     "title": "A newly-registered connector appears on the fleet dashboard without a manual page refresh",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["The fleet dashboard open in a browser tab"],
-    "steps": ["Register a fresh connector via a different session/terminal while the fleet tab stays open", "Wait up to the page's auto-refresh interval"],
+    "preconditions": [
+      "The fleet dashboard open in a browser tab"
+    ],
+    "steps": [
+      "Register a fresh connector via a different session/terminal while the fleet tab stays open",
+      "Wait up to the page's auto-refresh interval"
+    ],
     "expectedResult": "The new connector's row appears without the operator reloading the page.",
-    "tags": ["ui", "polling"],
+    "tags": [
+      "ui",
+      "polling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",

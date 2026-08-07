@@ -6,13 +6,20 @@
     "subFeature": "Wizard",
     "title": "/onboarding/step-1 renders the organization details form",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "As a newly bootstrapped onboarding session, navigate to /onboarding/step-1"
     ],
     "expectedResult": "The page renders 'Tell us about your organization' with Industry and Company size selects and a Continue button, wrapped by the Stepper showing step 1 active.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -25,13 +32,21 @@
     "subFeature": "State API",
     "title": "GET /api/v1/onboarding/state returns 200 for an authenticated user",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "Call GET /api/v1/onboarding/state with a valid bootstrap or Keycloak token"
     ],
     "expectedResult": "Response is 200 with currentStep, completedSteps, and setupHealthScore fields present.",
-    "tags": ["smoke", "api"],
+    "tags": [
+      "smoke",
+      "api"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -44,14 +59,24 @@
     "subFeature": "Getting Started Checklist Widget",
     "title": "SetupChecklist widget renders on /dashboard for an org with incomplete setup",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org's setupHealthScore < 100"],
+    "preconditions": [
+      "Org's setupHealthScore < 100"
+    ],
     "steps": [
       "Log in and open /dashboard"
     ],
     "expectedResult": "The Setup Checklist card is visible in the bottom-right of the viewport with a progress bar and up to 5 checklist items.",
-    "tags": ["smoke", "getting-started-widget"],
+    "tags": [
+      "smoke",
+      "getting-started-widget"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -64,6 +89,11 @@
     "subFeature": "Platform Tour",
     "title": "Platform tour starts and mounts its overlay and tooltip without console errors",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -71,7 +101,10 @@
       "Observe the browser console and DOM"
     ],
     "expectedResult": "The tour overlay/spotlight and tooltip mount over the first configured TOUR_STEPS target with no uncaught console errors.",
-    "tags": ["smoke", "platform-tour"],
+    "tags": [
+      "smoke",
+      "platform-tour"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -84,13 +117,21 @@
     "subFeature": "Step Completion API",
     "title": "Completing step-1 advances currentStep to step-2",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
       "POST /api/v1/onboarding/steps/step-1/complete with { industry: 'Technology', size: '11-50' }"
     ],
     "expectedResult": "Response is 200 with completedSteps including 'step-1' and currentStep 'step-2'.",
-    "tags": ["smoke", "api"],
+    "tags": [
+      "smoke",
+      "api"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

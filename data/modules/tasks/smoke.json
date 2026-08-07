@@ -6,6 +6,11 @@
     "subFeature": "API Availability",
     "title": "GET /api/tasks returns 200 with the expected top-level shape for an authenticated user",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -13,7 +18,10 @@
       "Call GET /api/tasks with no query parameters"
     ],
     "expectedResult": "200 { success: true, data: { tasks: [...], total, page: 1, limit: 25, summary: { pending, in_progress, overdue, done }, byModule: {...9 keys...}, _partial: [...] } }.",
-    "tags": ["smoke", "api"],
+    "tags": [
+      "smoke",
+      "api"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,6 +34,11 @@
     "subFeature": "API Availability",
     "title": "GET /api/tasks/tab-counts returns 200 with owner/review totals",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "planned",
     "steps": [
@@ -33,7 +46,10 @@
       "Call GET /api/tasks/tab-counts"
     ],
     "expectedResult": "200 { success: true, data: { owner: { total, summary }, review: { total, summary }, _partial: [] } }.",
-    "tags": ["smoke", "api"],
+    "tags": [
+      "smoke",
+      "api"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -46,6 +62,11 @@
     "subFeature": "Page Load",
     "title": "/tasks page loads without a client-side crash or unhandled promise rejection",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -53,7 +74,10 @@
       "Open the browser devtools console"
     ],
     "expectedResult": "Breadcrumb, TaskSummaryBar (4 stat cards), Owner/Review tabs, TaskFilters row, and either the table or the empty state render. No red console errors (React error boundary not triggered).",
-    "tags": ["smoke", "ui"],
+    "tags": [
+      "smoke",
+      "ui"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -66,15 +90,25 @@
     "subFeature": "Empty State",
     "title": "A fresh user with zero assigned tasks across every module sees the 'You're all caught up' empty state, not an error",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A newly onboarded user with no task assignments in any of the 9 entity types"],
+    "preconditions": [
+      "A newly onboarded user with no task assignments in any of the 9 entity types"
+    ],
     "steps": [
       "Log in as the fresh user",
       "Navigate to /tasks"
     ],
     "expectedResult": "Summary cards all show 0. The empty-state panel renders ('You're all caught up' with the green check icon), not the error Alert and not an infinite loading skeleton. Switching to the Review tab shows the equivalent review-specific empty message.",
-    "tags": ["smoke", "empty-state"],
+    "tags": [
+      "smoke",
+      "empty-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

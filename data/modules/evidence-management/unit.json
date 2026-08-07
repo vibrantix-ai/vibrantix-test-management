@@ -6,6 +6,9 @@
     "subFeature": "Evidence Hashing",
     "title": "SHA-256 hash is computed deterministically for identical file content",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "preconditions": [
@@ -32,6 +35,9 @@
     "subFeature": "Coverage Formula",
     "title": "Control coverage percentage excludes deprecated evidence from the denominator",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "preconditions": [
@@ -58,6 +64,9 @@
     "subFeature": "Retention Policy",
     "title": "Retention expiry date is calculated from upload date plus policy duration",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "steps": [
       "Call the retention calculator with uploadDate=2026-01-01 and policy=365 days"
@@ -79,6 +88,9 @@
     "title": "hasTriggerFieldChange() bumps a version only for title/description/category/subCategory/files updates",
     "description": "EvidenceVersionService.VERSION_TRIGGER_FIELDS gates whether an update goes through the versioned-transaction path or a cheap direct $set. Ground truth: evidence-version.service.js hasTriggerFieldChange().",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "preconditions": [
@@ -107,6 +119,9 @@
     "title": "buildOrgScope() ignores a spoofed ?orgId query param for non-super-admin callers",
     "description": "buildOrgScope(req) is duplicated across evidence.controller.js, evidence-upload.controller.js, and evidence-mapping.controller.js. It must only honor req.query.orgId when the caller holds the 'organization.admin' permission; otherwise it must always return req.orgId.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "preconditions": [

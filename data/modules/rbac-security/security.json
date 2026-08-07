@@ -7,15 +7,27 @@
     "title": "requireProjectMembership rejects a ProjectMember row whose organizationId does not match the requester's org",
     "description": "middleware/requireProjectMembership.js:64-73 filters the membership lookup on organizationId: req.orgId, not just projectId+userId. This is the structural guard against a stray/forged cross-org ProjectMember row granting access; a membership document that was somehow created under the wrong org can never satisfy this query.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/security/plac-idor.test.ts",
-    "preconditions": ["User U belongs to Org A", "A ProjectMember row exists for User U on a project belonging to Org B (simulated data-integrity anomaly or forged request)"],
+    "preconditions": [
+      "User U belongs to Org A",
+      "A ProjectMember row exists for User U on a project belonging to Org B (simulated data-integrity anomaly or forged request)"
+    ],
     "steps": [
       "As User U (authenticated in Org A's JWT context), call a project-scoped route targeting the Org B project's id"
     ],
     "expectedResult": "403 'You are not a member of this project' — the ProjectMember query's organizationId:req.orgId filter excludes the Org B row even though projectId+userId alone would have matched.",
-    "tags": ["idor", "multi-tenant", "security", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "security",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -30,15 +42,27 @@
     "title": "'project.admin' (org-wide project bypass) cannot be assigned via Custom Role or User.extraPermissions",
     "description": "utils/catalogSeparation.js:80-94, ORG_WIDE_PROJECT_BYPASS_PERMISSION='project.admin'. This permission makes isProjectAdmin(req) bypass ALL project membership checks org-wide (requireProjectMembership.js:59-62). Only the code-generated SUPERADMIN role may hold it (systemRoles.js's generateFullAccess()) — it must never reach a Role or User document through a controller write.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["Logged in as an org admin with role.create/user.update permission", "CATALOG_SEPARATION_ENFORCEMENT unset (default enforce)"],
+    "preconditions": [
+      "Logged in as an org admin with role.create/user.update permission",
+      "CATALOG_SEPARATION_ENFORCEMENT unset (default enforce)"
+    ],
     "steps": [
       "Attempt POST /api/roles with permissions including 'project.admin'",
       "Attempt PUT /api/users/:id/extra-permissions with extraPermissions including 'project.admin'"
     ],
     "expectedResult": "Both writes are rejected with 400 ('These permissions are not allowed here: project.admin'). No Role or User document in the system other than the built-in SUPERADMIN/ADMIN role definitions ever carries 'project.admin'.",
-    "tags": ["privilege-escalation", "security", "owasp-a01", "plac"],
+    "tags": [
+      "privilege-escalation",
+      "security",
+      "owasp-a01",
+      "plac"
+    ],
     "requirement": "ISO 27001 Annex A.5.18",
     "owner": "Security",
     "status": "active",
@@ -53,16 +77,27 @@
     "title": "vendor-service refuses to start with BYPASS_PERMISSIONS=true in production",
     "description": "vendor-service/src/plugins/keycloak.ts:223-224 — `if (NODE_ENV==='production' && BYPASS_PERMISSIONS==='true') throw new Error('BYPASS_PERMISSIONS must not be true in production')`. This is the hardened successor to the historical RBAC-003/BAC-003 finding (BYPASS_PERMISSIONS hardcoded to true unconditionally).",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["vendor-service deployable in a test harness with configurable env vars"],
+    "preconditions": [
+      "vendor-service deployable in a test harness with configurable env vars"
+    ],
     "steps": [
       "Start vendor-service with NODE_ENV=production and BYPASS_PERMISSIONS=true",
       "Start vendor-service with NODE_ENV=production and BYPASS_PERMISSIONS unset",
       "Start vendor-service with NODE_ENV=development and BYPASS_PERMISSIONS=true"
     ],
     "expectedResult": "Case 1 fails fast at startup with the explicit guard error — the process must not come up serving traffic with RBAC disabled in production. Case 2 starts normally with RBAC enforced. Case 3 starts with a logged warning ('BYPASS_PERMISSIONS=true — permission & role checks are DISABLED') and is only ever expected in local/dev.",
-    "tags": ["security", "dev-bypass", "owasp-a01", "microservice-security"],
+    "tags": [
+      "security",
+      "dev-bypass",
+      "owasp-a01",
+      "microservice-security"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "Security",
     "status": "active",
@@ -77,16 +112,27 @@
     "title": "A leaked INTERNAL_SERVICE_TOKEN grants SUPERADMIN-equivalent access against any org supplied via x-organization-id",
     "description": "vibrantix-backend/src/middleware/authenticate.js:60-88. Any caller presenting the correct x-service-token is granted req.userRoles=[{systemRoleKey:'SUPERADMIN'}] (which satisfies isSuperAdmin() and bypasses every requirePermission check) with orgId taken directly from the caller-supplied x-organization-id header or organization_id query param — an untrusted, attacker-controllable value if the shared secret is ever exposed.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/security/s2s-trust.test.js",
-    "preconditions": ["A valid INTERNAL_SERVICE_TOKEN value (simulating a leaked secret)"],
+    "preconditions": [
+      "A valid INTERNAL_SERVICE_TOKEN value (simulating a leaked secret)"
+    ],
     "steps": [
       "Send GET /api/evidence with headers x-service-token: <INTERNAL_SERVICE_TOKEN> and x-organization-id: <arbitrary target org id>",
       "Repeat for a second, different x-organization-id"
     ],
     "expectedResult": "Both requests succeed with full SUPERADMIN-equivalent access scoped to whichever org id was supplied — confirming the single shared INTERNAL_SERVICE_TOKEN is the sole trust boundary for internal calls and its compromise defeats org isolation entirely. Flag for hardening: bind the token to a specific caller service identity rather than a bare shared secret.",
-    "tags": ["security", "microservice-security", "owasp-a01", "trust-model"],
+    "tags": [
+      "security",
+      "microservice-security",
+      "owasp-a01",
+      "trust-model"
+    ],
     "requirement": "ISO 27001 Annex A.5.18",
     "owner": "Security",
     "status": "active",
@@ -101,17 +147,28 @@
     "title": "verifyKeycloakToken() rejects alg:none and HS256-signed forgeries — only RS256 verified against live JWKS is accepted",
     "description": "authenticate.js:303-320 calls jwt.verify(token, getKey, {algorithms:['RS256'], issuer: KEYCLOAK_ISSUER}) with the signing key resolved per-kid from the live JWKS endpoint. auth.controller.js's decodePayload() (line 96-99) and the admin-authorize path both route through this same verifyKeycloakToken(), not jwt.decode() — closing the historical BAC-001/BAC-002 unverified-claim pattern.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/security/jwt-forgery.test.js",
-    "preconditions": ["KEYCLOAK_ISSUER configured and reachable"],
+    "preconditions": [
+      "KEYCLOAK_ISSUER configured and reachable"
+    ],
     "steps": [
       "Craft a JWT with header {alg:'none'}, a payload claiming resource_access.admin-portal, and an empty signature; send it as Bearer token to POST /api/auth/admin/authorize",
       "Craft a JWT signed HS256 with a guessed/weak secret (e.g. a value found in a committed .env), claiming an arbitrary sub/organizationId; send it to /api/auth/oauth-callback's decodePayload path",
       "Send a genuinely RS256-signed, JWKS-verifiable token"
     ],
     "expectedResult": "Both forged tokens are rejected (401 Invalid token / JsonWebTokenError) — algorithms:['RS256'] refuses alg:none and HS256 tokens outright, regardless of any guessed secret. The genuine RS256 token is accepted.",
-    "tags": ["security", "jwt", "owasp-a02", "authentication-bypass"],
+    "tags": [
+      "security",
+      "jwt",
+      "owasp-a02",
+      "authentication-bypass"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "Security",
     "status": "active",
@@ -126,15 +183,25 @@
     "title": "SKIP_JWKS_VERIFY only takes effect when NODE_ENV is simultaneously 'development'",
     "description": "authenticate.js:29 — SKIP_JWKS = SKIP_JWKS_VERIFY==='true' && NODE_ENV==='development'. This double condition means a stray SKIP_JWKS_VERIFY=true left in a staging/production env file has no effect unless NODE_ENV is also explicitly 'development' — the escape hatch is allow-listed, not a deny-list on 'production' alone.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Test harness can set SKIP_JWKS_VERIFY and NODE_ENV independently and re-require authenticate.js"],
+    "preconditions": [
+      "Test harness can set SKIP_JWKS_VERIFY and NODE_ENV independently and re-require authenticate.js"
+    ],
     "steps": [
       "Set SKIP_JWKS_VERIFY=true, NODE_ENV=staging; send an unsigned/garbage-signature Bearer token",
       "Set SKIP_JWKS_VERIFY=true, NODE_ENV=development; send the same garbage-signature token"
     ],
     "expectedResult": "Case 1 (staging): full JWKS RS256 verification still runs; the garbage token is rejected with 401. Case 2 (development): the token is accepted via jwt.decode() with no signature check, as intended for local dev only.",
-    "tags": ["security", "dev-bypass", "owasp-a05"],
+    "tags": [
+      "security",
+      "dev-bypass",
+      "owasp-a05"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "Security",
     "status": "active",
@@ -149,15 +216,25 @@
     "title": "DEV_BYPASS remains reachable on any environment that leaves NODE_ENV defaulted to 'development'",
     "description": "authenticate.js:24-28 documents the residual risk explicitly in-code: the Docker image bakes NODE_ENV=development as its default, so a deploy that forgets to set NODE_ENV=production would leave DEV_BYPASS reachable if DEV_BYPASS=true is also set (e.g. copied from a shared staging .env). The code intentionally uses an allow-list (NODE_ENV==='development') rather than a deny-list, which narrows but does not eliminate this class of misconfiguration.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Deployment pipeline / infra config for the target environment"],
+    "preconditions": [
+      "Deployment pipeline / infra config for the target environment"
+    ],
     "steps": [
       "Deploy a build to a shared staging environment with DEV_BYPASS=true set (as sometimes copied wholesale from local .env) and verify whether NODE_ENV is explicitly set to 'production' or 'staging' in that environment's actual runtime config",
       "If NODE_ENV is left unset (falling back to the Docker default of 'development'), send an unauthenticated request with no Bearer token"
     ],
     "expectedResult": "If NODE_ENV was left at its Docker default, DEV_BYPASS activates and the request is authenticated as the hardcoded dev user/org with zero credentials — this must be caught as a deployment configuration finding, not a code finding. Remediation: deployment configs must explicitly set NODE_ENV for every non-local environment; consider failing startup if DEV_BYPASS=true and NODE_ENV is unset.",
-    "tags": ["security", "dev-bypass", "owasp-a05", "deployment-config"],
+    "tags": [
+      "security",
+      "dev-bypass",
+      "owasp-a05",
+      "deployment-config"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "Security",
     "status": "active",
@@ -172,16 +249,26 @@
     "title": "Backend requirePermission() never expands wildcard permission strings — only the frontend does",
     "description": "requirePermission.js:29 does an exact Set.has(permission) check with zero wildcard logic, unlike usePermission.js's frontend `${module}.*` expansion (line 33-35). generateFullAccess()/generateModulePermissions() (config/permissions.js:131-144) only ever emit fully expanded module.action strings, never a bare '<module>.*' — so this asymmetry is currently dormant, but would become exploitable if any Role/User document is ever manually seeded with a literal wildcard string.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["A test Role document manually seeded with permissions: ['evidence.*'] (simulating a data-entry error or future regression)"],
+    "preconditions": [
+      "A test Role document manually seeded with permissions: ['evidence.*'] (simulating a data-entry error or future regression)"
+    ],
     "steps": [
       "Assign the wildcard-seeded Role to a test user",
       "In the frontend, confirm usePermission('evidence.delete') returns true for this user (UI shows the delete button)",
       "Call the real backend DELETE /api/evidence/:id as this user"
     ],
     "expectedResult": "Frontend optimistically shows the delete action (wildcard match), but the backend call is REJECTED with 403 'Missing permission: evidence.delete' — req.permissions.has('evidence.delete') is false since only the literal string 'evidence.*' is present. Confirms no route can be unlocked server-side by a wildcard string, but flags a broken/misleading UI state as a defect if this data shape ever occurs.",
-    "tags": ["security", "frontend-guard", "owasp-a01"],
+    "tags": [
+      "security",
+      "frontend-guard",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

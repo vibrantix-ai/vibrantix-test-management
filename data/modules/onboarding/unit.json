@@ -7,6 +7,9 @@
     "title": "OnboardingState requires orgId and enforces a unique index per org",
     "description": "onboarding-state.model.js declares orgId as required with a unique index (one OnboardingState document per organization). Mirrors the existing suite at vibrantix-backend/tests/modules/onboarding-state.model.test.js.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/modules/onboarding-state.model.test.js",
@@ -15,7 +18,10 @@
       "Create an OnboardingState for a given orgId, then attempt to create a second document for the same orgId"
     ],
     "expectedResult": "The first validate() rejects with an orgId-required error. The second create() rejects with a duplicate-key error from the unique orgId index.",
-    "tags": ["mongoose", "schema-validation"],
+    "tags": [
+      "mongoose",
+      "schema-validation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -28,6 +34,9 @@
     "subFeature": "Onboarding State Model",
     "title": "setupHealthScore is clamped to the 0-100 range at the schema level",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/modules/onboarding-state.model.test.js",
@@ -36,7 +45,10 @@
       "Build an OnboardingState with setupHealthScore = -1 and call validate()"
     ],
     "expectedResult": "Both validate() calls reject — the schema's min:0/max:100 constraints on setupHealthScore are enforced.",
-    "tags": ["mongoose", "schema-validation"],
+    "tags": [
+      "mongoose",
+      "schema-validation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -50,6 +62,9 @@
     "title": "currentStep only accepts the 6 declared enum values",
     "description": "STEPS = ['step-1','step-2','step-3','step-4','step-5','complete'] in onboarding-state.model.js. Any other string must fail schema validation.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vibrantix-backend/tests/modules/onboarding-state.model.test.js",
@@ -58,7 +73,10 @@
       "Iterate all 6 values in the exported STEPS constant and validate() each as currentStep"
     ],
     "expectedResult": "'step-99' is rejected. All 6 exported STEPS values (including 'complete') validate successfully.",
-    "tags": ["mongoose", "schema-validation"],
+    "tags": [
+      "mongoose",
+      "schema-validation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -72,15 +90,22 @@
     "title": "compute() sums per-step weights and caps the total at 100",
     "description": "setup-health.service.js WEIGHTS: step-1=10, step-2=20, step-3=30, step-4=15, step-5=0, plus +25 when firstScanAt is set. Score is persisted via updateOne after every compute().",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An OnboardingState with completedSteps = ['step-1','step-2','step-3','step-4','step-5'] and firstScanAt set"],
+    "preconditions": [
+      "An OnboardingState with completedSteps = ['step-1','step-2','step-3','step-4','step-5'] and firstScanAt set"
+    ],
     "steps": [
       "Call compute(orgId) for the org above",
       "Re-fetch the OnboardingState document"
     ],
     "expectedResult": "compute() returns 100 (10+20+30+15+0+25, capped at 100) and the same value is persisted to setupHealthScore on the document.",
-    "tags": ["setup-health-score"],
+    "tags": [
+      "setup-health-score"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -94,14 +119,23 @@
     "title": "Completing all 5 wizard steps without a successful cloud scan only reaches 75%, not 100%",
     "description": "step-5's weight is 0 — its 25 points come solely from firstScanAt being set (setup-health.service.js line 18/34-35), not from completing the wizard. If the org never had a successful Prowler scan (e.g. cloud connect was skipped in step-3), the score plateaus at 10+20+30+15=75 even with completedSteps containing all 5 steps.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["OnboardingState.completedSteps = ['step-1','step-2','step-3','step-4','step-5']", "firstScanAt is null (cloud connect was skipped or no scan has completed yet)"],
+    "preconditions": [
+      "OnboardingState.completedSteps = ['step-1','step-2','step-3','step-4','step-5']",
+      "firstScanAt is null (cloud connect was skipped or no scan has completed yet)"
+    ],
     "steps": [
       "Call compute(orgId) for the org above"
     ],
     "expectedResult": "compute() returns 75, not 100 — confirming the score is not simply '(completedSteps.length / 5) * 100' and depends on the independent firstScanAt milestone.",
-    "tags": ["setup-health-score", "edge-case"],
+    "tags": [
+      "setup-health-score",
+      "edge-case"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -115,6 +149,9 @@
     "title": "nextStep() returns the first missing step in ORDERED_STEPS regardless of completion order",
     "description": "onboarding.controller.js's local nextStep(completedSteps) helper iterates ORDERED_STEPS = ['step-1'..'step-5'] and returns the first entry not present in completedSteps, or 'complete' if all are present. Completion order is not tracked — only set membership.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -122,7 +159,9 @@
       "Call nextStep(['step-1','step-2','step-3','step-4','step-5'])"
     ],
     "expectedResult": "nextStep(['step-3']) returns 'step-1' (the first missing step in order, not step-4). nextStep with all 5 present returns 'complete'.",
-    "tags": ["step-sequencing"],
+    "tags": [
+      "step-sequencing"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -136,13 +175,18 @@
     "title": "Stepper renders a checkmark and green fill only for steps present in completedSteps",
     "description": "Stepper.jsx (components/onboarding/Stepper.jsx) computes isDone = completedSteps.includes(step.key) and isCurrent = currentStep === step.key independently — a step can be isDone without being isCurrent (e.g. after moving past it) and the reverse (isCurrent but not isDone).",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Render <Stepper currentStep=\"step-3\" completedSteps={['step-1','step-2']} />"
     ],
     "expectedResult": "Steps 1 and 2 show the green doneBg circle with a CheckIcon; step 3 shows the activeBg circle with the number '3', not a checkmark; steps 4 and 5 show pendingBg with their numbers.",
-    "tags": ["ui-component"],
+    "tags": [
+      "ui-component"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -156,13 +200,19 @@
     "title": "SetupChecklist renders null once setupHealthScore reaches 100",
     "description": "SetupChecklist.jsx line 42: 'if (state.setupHealthScore >= 100) return null;' — the widget unmounts entirely rather than showing a completed/100% state.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Render <SetupChecklist /> with a mocked onboardingService.getState() resolving { setupHealthScore: 100, completedSteps: [...] }"
     ],
     "expectedResult": "The component renders nothing (no DOM node) — there is no 'all done' celebratory state, it simply disappears.",
-    "tags": ["ui-component", "getting-started-widget"],
+    "tags": [
+      "ui-component",
+      "getting-started-widget"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

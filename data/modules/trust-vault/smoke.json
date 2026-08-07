@@ -6,15 +6,25 @@
     "subFeature": "Navigation",
     "title": "Trust Vault page loads at /trust-vault with the Certifications tab active by default",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
-    "preconditions": ["Logged in as a user with trust_vault.read"],
+    "preconditions": [
+      "Logged in as a user with trust_vault.read"
+    ],
     "steps": [
       "Navigate to /trust-vault"
     ],
     "expectedResult": "The page loads without a console error or blank screen; the Certifications tab is selected and either a certification list or an appropriate empty state renders.",
-    "tags": ["navigation", "smoke"],
+    "tags": [
+      "navigation",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,6 +37,11 @@
     "subFeature": "Certification Creation",
     "title": "Upload Certification modal opens and blocks submit when required fields are empty",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
@@ -36,7 +51,10 @@
       "Click Save"
     ],
     "expectedResult": "The modal opens without error, the Save action is blocked or shows required-field validation, and no certification is created.",
-    "tags": ["smoke", "validation"],
+    "tags": [
+      "smoke",
+      "validation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -49,15 +67,26 @@
     "subFeature": "Vault Health",
     "title": "Vault Health widget renders a score and grade for a brand-new, empty vault without crashing",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
-    "preconditions": ["A freshly onboarded org/project with zero certifications, reports, and incidents"],
+    "preconditions": [
+      "A freshly onboarded org/project with zero certifications, reports, and incidents"
+    ],
     "steps": [
       "Navigate to /trust-vault and view the Vault Health widget"
     ],
     "expectedResult": "The widget renders a numeric score and letter grade (expected low/F given zero data) without throwing, and shows a 'No active certifications' style recommendation rather than an error state.",
-    "tags": ["vault-health", "empty-state", "smoke"],
+    "tags": [
+      "vault-health",
+      "empty-state",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -70,6 +99,11 @@
     "subFeature": "Expiry Dashboard",
     "title": "Expiry Dashboard loads and toggles between the Certifications and Reports pills without error",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
@@ -78,7 +112,10 @@
       "Click the 'Reports' pill, then click 'Certs' again"
     ],
     "expectedResult": "Both toggles complete without a loading spinner hang or console error; the table columns switch appropriately (Framework column for certs, Type column for reports).",
-    "tags": ["expiry-dashboard", "smoke"],
+    "tags": [
+      "expiry-dashboard",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -91,15 +128,26 @@
     "subFeature": "My Reviews",
     "title": "My Reviews tab shows the correct empty-state message when nothing is assigned to the current user",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
-    "preconditions": ["The logged-in user has no certifications or reports currently assigned to them for review"],
+    "preconditions": [
+      "The logged-in user has no certifications or reports currently assigned to them for review"
+    ],
     "steps": [
       "Open the My Reviews tab"
     ],
     "expectedResult": "The table renders the empty-state message 'No reviews assigned. Items assigned to you for review will appear here.' with no rows and no error toast.",
-    "tags": ["my-reviews", "empty-state", "smoke"],
+    "tags": [
+      "my-reviews",
+      "empty-state",
+      "smoke"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -8,6 +8,9 @@
     "title": "Logger redacts sensitive fields from all log output, including security/audit entries",
     "description": "config/logger.js's redactFormat/_deepRedact walks every log call's meta object (top-level and nested) and replaces known-sensitive keys with '[REDACTED]' before any transport serializes the entry. Verify this holds for the exact key set the module defines, at arbitrary nesting depth, across both the JSON (production) and dev console formats.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "testData": "Meta object containing password, token, secret, authorization, cookie, refreshToken, accessToken, apiKey, clientSecret, privateKey at top level and nested 2+ levels deep inside a sub-object.",
@@ -17,7 +20,11 @@
       "Inspect the emitted output under both the production jsonFormat transport and the dev-mode devFormat transport."
     ],
     "expectedResult": "Every key present in _REDACT_KEYS is replaced with the literal string \"[REDACTED]\" in the emitted log line regardless of nesting depth or which transport formatted it, and the real secret value never appears anywhere in the output. Keys not in _REDACT_KEYS pass through unmodified.",
-    "tags": ["logging", "redaction", "audit-trail"],
+    "tags": [
+      "logging",
+      "redaction",
+      "audit-trail"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "draft",

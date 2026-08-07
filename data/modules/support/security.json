@@ -7,16 +7,27 @@
     "title": "Sync/reopen/close/comment endpoints reject a bug report ID belonging to another organization",
     "description": "Every mutating action (syncBugReportStatus, reopenBugReport, closeBugReport, getComments, addComment) independently checks `String(report.organizationId) === String(req.orgId)` and throws 403 'Access denied' before any ownership/permission check runs — this must hold even for a valid, well-formed ObjectId that simply belongs to a different tenant.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
     "automationRef": "test-framework/tests/security/support-idor.test.ts",
-    "preconditions": ["Org A and Org B each have a bug report", "Valid JWT for a user in Org A"],
+    "preconditions": [
+      "Org A and Org B each have a bug report",
+      "Valid JWT for a user in Org A"
+    ],
     "steps": [
       "As an Org A user, call POST /bug-reports/:id/sync using Org B's report _id",
       "Repeat against /:id/reopen, /:id/close, GET /:id/comments, and POST /:id/comments"
     ],
     "expectedResult": "All five requests return 403 'Access denied' — no field from Org B's report (description, jiraKey, comments) is present in any response body.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "OWASP API1:2023 Broken Object Level Authorization",
     "owner": "Security",
     "status": "active",
@@ -31,15 +42,25 @@
     "title": "A non-creator without bug-report.read_all cannot view, sync, reopen, close, or comment on another user's report in the same org",
     "description": "The ownership check `String(report.userId) !== String(req.userId) && !canReadAll(req)` gates every single-report action. A regular user (no read_all) targeting a co-worker's ticket in the same organization/project must be blocked identically to the cross-org case, distinguishing horizontal privilege escalation within a tenant from IDOR across tenants.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["User A and User B in the same org; User B has no bug-report.read_all; User A owns a bug report"],
+    "preconditions": [
+      "User A and User B in the same org; User B has no bug-report.read_all; User A owns a bug report"
+    ],
     "steps": [
       "As User B, call POST /bug-reports/:id/reopen and /:id/close on User A's report id",
       "As User B, call GET /:id/comments and POST /:id/comments on the same report id"
     ],
     "expectedResult": "All four requests return 403 'Access denied'. The response does not leak whether the resource exists vs. is merely inaccessible (same generic message and status as the cross-org case in SUPP-SEC-001).",
-    "tags": ["idor", "rbac", "owasp-a01"],
+    "tags": [
+      "idor",
+      "rbac",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,16 +74,26 @@
     "title": "Jira webhook uses timing-safe comparison and rejects mismatched or missing secrets",
     "description": "jiraWebhook() compares Buffer.from(expectedSecret) against Buffer.from(receivedSecret) with crypto.timingSafeEqual only after confirming equal length (timingSafeEqual throws on length mismatch, so the length check must run first) — this guards against a timing side-channel on secret comparison, unlike a naive === check.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["JIRA_WEBHOOK_SECRET is configured with a known value"],
+    "preconditions": [
+      "JIRA_WEBHOOK_SECRET is configured with a known value"
+    ],
     "steps": [
       "POST /bug-reports/webhook/jira?secret=<wrong-value-same-length> with a valid webhookEvent payload",
       "POST /bug-reports/webhook/jira?secret=<wrong-length-value>",
       "POST /bug-reports/webhook/jira with no secret query param at all"
     ],
     "expectedResult": "All three requests return 401 'Unauthorized' (or 'Webhook not configured' if unset) and no BugReport document is read or modified; response timing does not leak how many leading characters of the secret matched.",
-    "tags": ["jira-webhook", "timing-attack", "owasp-a07"],
+    "tags": [
+      "jira-webhook",
+      "timing-attack",
+      "owasp-a07"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -76,14 +107,24 @@
     "title": "Webhook fails closed (401) when JIRA_WEBHOOK_SECRET is not configured, rather than accepting unauthenticated requests",
     "description": "`if (!expectedSecret) return res.status(401).json({success:false, message:'Webhook not configured'})` runs before any secret comparison — an operator forgetting to set the secret must not accidentally leave the webhook open to arbitrary status-changing requests from the internet.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["JIRA_WEBHOOK_SECRET environment variable is unset/empty"],
+    "preconditions": [
+      "JIRA_WEBHOOK_SECRET environment variable is unset/empty"
+    ],
     "steps": [
       "POST /bug-reports/webhook/jira?secret=anything with a well-formed jira:issue_updated payload targeting a real jiraKey"
     ],
     "expectedResult": "401 'Webhook not configured' is returned and the targeted report's status/jiraStatusRaw is unchanged in the database.",
-    "tags": ["jira-webhook", "fail-closed", "owasp-a05"],
+    "tags": [
+      "jira-webhook",
+      "fail-closed",
+      "owasp-a05"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -97,15 +138,24 @@
     "title": "Webhook silently ignores non-issue_updated events and updates for an untracked Jira key",
     "description": "jiraWebhook() only processes req.body.webhookEvent === 'jira:issue_updated'; any other event type returns {received:true} without touching the database. Likewise, a jiraKey that doesn't match any BugReport returns {received:true} with a warning log — an attacker who guesses/enumerates jiraKey values with a valid secret cannot use the webhook to discover which keys exist in this tenant's data via a differing response.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JIRA_WEBHOOK_SECRET known to the caller"],
+    "preconditions": [
+      "Valid JIRA_WEBHOOK_SECRET known to the caller"
+    ],
     "steps": [
       "POST the webhook with webhookEvent:'jira:issue_created' and a valid secret",
       "POST the webhook with webhookEvent:'jira:issue_updated' and an issue.key that does not match any BugReport"
     ],
     "expectedResult": "Both requests return 200 {received:true} with an identical response shape — no information about which jiraKeys exist is inferable from the response.",
-    "tags": ["jira-webhook", "information-disclosure"],
+    "tags": [
+      "jira-webhook",
+      "information-disclosure"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -119,14 +169,23 @@
     "title": "GET /bug-reports/all cannot be reached by directly calling the API even if a user manipulates client-side state to force the All Tickets tab",
     "description": "requirePermission('bug-report.read_all') is enforced as Express middleware on the route itself, independent of the frontend's canReadAll gate — this closes the gap where a user could otherwise use browser devtools to flip local component state and call the underlying service function directly.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["User without bug-report.read_all, valid session/JWT"],
+    "preconditions": [
+      "User without bug-report.read_all, valid session/JWT"
+    ],
     "steps": [
       "Using devtools or a direct HTTP client (bypassing the React UI entirely), call GET /bug-reports/all with the user's own valid JWT"
     ],
     "expectedResult": "403 is returned by the requirePermission middleware before listAllBugReports executes — no cross-user ticket data from the org is returned.",
-    "tags": ["rbac", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "owasp-a01"
+    ],
     "requirement": "bug-report.read_all",
     "owner": "Security",
     "status": "active",
@@ -141,15 +200,26 @@
     "title": "Organization isolation is enforced even for a superadmin/read_all holder — the org check runs before the ownership/permission bypass",
     "description": "In every handler (sync/reopen/close/getComments/addComment), the `sameOrg` check throws 403 unconditionally before canReadAll()/isSuperAdmin() is ever consulted for ownership. A user with bug-report.read_all (or a superadmin role) can bypass the *ownership* check within their own org, but must never bypass the *organizationId* boundary itself.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A user in Org A holding bug-report.read_all (or superadmin)", "A bug report belonging to Org B"],
+    "preconditions": [
+      "A user in Org A holding bug-report.read_all (or superadmin)",
+      "A bug report belonging to Org B"
+    ],
     "steps": [
       "As the Org A read_all/superadmin user, call GET /bug-reports/:id/comments using Org B's report id",
       "Compare against the same user calling the same route with an Org A report id owned by a different Org A user"
     ],
     "expectedResult": "The Org B request is rejected with 403 regardless of read_all/superadmin status; the Org A request (different owner, same org) succeeds because read_all legitimately bypasses only the ownership check, not the tenant boundary.",
-    "tags": ["idor", "multi-tenant", "privilege-escalation"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "privilege-escalation"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -163,6 +233,10 @@
     "title": "Bug report description containing script/HTML payload is not executed when rendered in the ticket detail drawer",
     "description": "The description is stored verbatim (trimmed) in MongoDB and also sent to Jira as ADF plain text (buildAdf wraps it in a {type:'text', text: ...} node, not raw HTML), so no markup interpretation happens on the Jira side either. The client panel renders selectedTicket.description inside a plain Chakra <Box> (React default-escapes text content), not via dangerouslySetInnerHTML.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -171,7 +245,11 @@
       "Inspect the Jira issue's description field"
     ],
     "expectedResult": "The drawer renders the literal text '<script>alert(1)</script> ...' with no script execution; the Jira issue description shows the same literal text inside its ADF text node, not as an executed/rendered HTML element.",
-    "tags": ["xss", "owasp-a03", "input-validation"],
+    "tags": [
+      "xss",
+      "owasp-a03",
+      "input-validation"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",

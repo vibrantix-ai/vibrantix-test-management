@@ -8,6 +8,11 @@
     "title": "Activity-log query endpoints strictly scope results to the caller's organization",
     "description": "GET /api/activity-logs and its /dashboard summary both build their MongoDB filter from req.orgId server-side. Verify a user from one org can never retrieve another org's log entries, including via query-parameter manipulation.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -21,7 +26,13 @@
       "Confirm which entries are returned in each case."
     ],
     "expectedResult": "Both endpoints only ever return entries where organizationId matches req.orgId (the $or: [{organizationId: req.orgId}, {organizationId: orgIdStr}] filter in vibrantix-backend/src/modules/activity/activity-logs.routes.js lines 27-33 and 84-88) — Org B's entries are never returned to the Org A caller under any combination of client-supplied query parameters, since organizationId is derived from the authenticated session, not from client input.",
-    "tags": ["logging", "multi-tenant", "audit-trail", "rbac", "idor"],
+    "tags": [
+      "logging",
+      "multi-tenant",
+      "audit-trail",
+      "rbac",
+      "idor"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "draft",
@@ -37,6 +48,11 @@
     "title": "Reading the audit trail is itself captured as a compliance.audit_log.accessed event",
     "description": "activity-logs.routes.js logs a meta-event every time GET /api/activity-logs or its dashboard summary is called, recording who queried the log and with what filters — so access to the audit trail is itself forensically traceable.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -45,7 +61,11 @@
       "Inspect the log entries emitted by these two calls themselves (not the entries they returned in the response body)."
     ],
     "expectedResult": "Each call produces a type: \"compliance\", event: \"compliance.audit_log.accessed\" entry recording accessedBy (req.userId), orgId, the filters applied (module/resourceType/action), and either resultCount + totalMatched (list endpoint) or queryType: \"dashboard_summary\" (dashboard endpoint) — per vibrantix-backend/src/modules/activity/activity-logs.routes.js lines 55-63 and 98-105.",
-    "tags": ["logging", "audit-trail", "compliance"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "compliance"
+    ],
     "requirement": "ISO 27001 Annex A.8.15",
     "owner": "QA",
     "status": "draft",
@@ -61,6 +81,10 @@
     "title": "Cross-organization role mutation attempts are captured as authz.cross_org.attempt security events",
     "description": "role.controller.js checks that a custom role's organizationId matches the caller's org before allowing update/delete, and logs a distinct security event when that check fails. Verify this IDOR guard is both enforced and logged with full attribution.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -73,7 +97,13 @@
       "Inspect the log entry emitted for each attempt."
     ],
     "expectedResult": "Each attempt emits a type: \"security\", event: \"authz.cross_org.attempt\" entry with userId, email, requestingOrgId, targetOrgId, resource (req.path), action (HTTP method), and ip (vibrantix-backend/src/modules/rbac/role.controller.js lines 142-152 for update, 225-236 for delete) before the request is rejected with 403 — the cross-tenant IDOR attempt against the role model is captured in the audit trail, not just silently blocked.",
-    "tags": ["logging", "audit-trail", "multi-tenant", "idor", "rbac"],
+    "tags": [
+      "logging",
+      "audit-trail",
+      "multi-tenant",
+      "idor",
+      "rbac"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "QA",
     "status": "draft",

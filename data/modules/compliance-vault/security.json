@@ -7,16 +7,26 @@
     "title": "Vault content has NO separate permission level from evidence-management — verified as a real gap, not just a suspicion",
     "description": "The task premise ('vault items have separate permission levels from standard evidence-management') does not hold: src/config/permissions.js's MODULES/NAV_MODULES arrays contain no 'compliance_vault' entry at all. Every route that could plausibly back a compliance-vault UI (evidence.routes.js) is gated exclusively by 'evidence.read'/'evidence.update'/'evidence.delete'. This test guards against a future implementation accidentally introducing a compliance_vault.* permission that is checked nowhere, or worse, granting compliance-vault access via evidence.* while believing it is a separate, narrower grant.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["A role with 'evidence.read' but explicitly no other GRC module permissions"],
+    "preconditions": [
+      "A role with 'evidence.read' but explicitly no other GRC module permissions"
+    ],
     "steps": [
       "Assign a user a role with only 'evidence.read'",
       "As that user, request every endpoint that would plausibly serve compliance-vault content (GET /api/evidence, GET /api/evidence/organization/:orgId, GET /api/evidence/:evidenceId)",
       "Confirm each succeeds solely on the strength of 'evidence.read'"
     ],
     "expectedResult": "All requests succeed under 'evidence.read' alone — confirming there is no additional, narrower 'vault' permission gate a security reviewer might mistakenly assume exists. Document this as a real finding: access control for compliance-vault content is entirely inherited from evidence-management, with zero independent enforcement layer.",
-    "tags": ["rbac", "access-control", "permission-catalog"],
+    "tags": [
+      "rbac",
+      "access-control",
+      "permission-catalog"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -31,15 +41,25 @@
     "title": "Role/permission update endpoint rejects an attempt to grant a fabricated 'compliance_vault.read' or 'compliance_vault.admin' permission string",
     "description": "Regression guard: if a role-management UI or API ever accepts arbitrary permission strings without validating against isValidPermission(), an admin (or a compromised admin session) could persist a meaningless 'compliance_vault.admin' grant that looks authoritative in an audit but enforces nothing anywhere, creating a false sense of least-privilege.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as org admin with role.update permission"],
+    "preconditions": [
+      "Logged in as org admin with role.update permission"
+    ],
     "steps": [
       "PUT /api/roles/:roleId with permissions array including 'compliance_vault.read'",
       "Observe the API response"
     ],
     "expectedResult": "Request is rejected (400) citing an invalid/unrecognized permission string — the backend's isValidPermission() check must reject 'compliance_vault.*' since it is not in MODULES or EXTRA_VALID_PERMISSIONS.",
-    "tags": ["rbac", "permission-catalog", "owasp-a01"],
+    "tags": [
+      "rbac",
+      "permission-catalog",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,15 +73,26 @@
     "title": "Cross-org access to evidence backing compliance-vault content is blocked identically to the evidence-management endpoint (no vault-specific bypass path)",
     "description": "Because compliance-vault has no dedicated backend routes, this is a regression guard mirroring EVID-SEC-001: confirms there is no shadow/legacy route (e.g. /api/compliance-vault/*, /api/vault/evidence/*) that duplicates evidence retrieval logic without the same augmentPermissionsWithProjectGrant + requireProjectMembership + org-scoping middleware chain applied in evidence.routes.js.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Two orgs (A, B), each with an evidence item of type 'certificate'", "Valid JWT for a user in org A"],
+    "preconditions": [
+      "Two orgs (A, B), each with an evidence item of type 'certificate'",
+      "Valid JWT for a user in org A"
+    ],
     "steps": [
       "As an org A user, probe for any route matching /api/compliance-vault/*, /api/vault/*, /api/evidence-vault/* on the backend",
       "If any such route exists, attempt GET against org B's evidence ID through it"
     ],
     "expectedResult": "No such route exists (404 on all probes) — all evidence data, including certificate-type items a vault UI would surface, is served exclusively through the existing evidence.routes.js endpoints, which already enforce org/project scoping. There is no parallel, less-guarded surface.",
-    "tags": ["idor", "multi-tenant", "owasp-a01"],
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -76,15 +107,26 @@
     "title": "A user removed from a project immediately loses access to previously-viewed vault file attachments",
     "description": "evidence.routes.js:55-56 gates GET /:evidenceId/files/:fileId/download-url and /content behind requirePermission('evidence.read') plus requireProjectMembership() via augmentPermissionsWithProjectGrant(getEvidenceProjectId). Since a compliance-vault detail view would call the same endpoints for its 'file attachments' section, a stale client-side cache of a previously-generated presigned URL must not remain the only access control — the endpoint itself must re-check membership on every call.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["User B was a member of Project X and viewed an evidence file's attachments", "User B is then removed from Project X"],
+    "preconditions": [
+      "User B was a member of Project X and viewed an evidence file's attachments",
+      "User B is then removed from Project X"
+    ],
     "steps": [
       "As User B, call GET /:evidenceId/files/:fileId/download-url for a file in Project X after removal",
       "As User B, attempt to reuse a previously-obtained presigned S3 URL directly against S3"
     ],
     "expectedResult": "The download-url endpoint call returns 403 post-removal. Any already-issued presigned URL is short-lived and expires independently, but the application-level endpoint must not re-issue new URLs to the removed user.",
-    "tags": ["access-control", "s3-upload", "owasp-a01"],
+    "tags": [
+      "access-control",
+      "s3-upload",
+      "owasp-a01"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -98,6 +140,10 @@
     "title": "No evidence/compliance-vault API response ever leaks VAULT_ADDRESS, VAULT_CP_WRITE_ROLE_ID, or a HashiCorp Vault client_token",
     "description": "vault.service.js manages a completely separate HashiCorp Vault instance (AppRole login, KV v2 secrets) for cloud-posture provider credentials — unrelated to the compliance-vault GRC feature. The shared word 'vault' creates a real risk that a future developer or an error-message leak conflates the two, e.g. an unhandled exception in evidence upload accidentally surfacing a Vault client_token in a stack trace returned to the client.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -105,7 +151,11 @@
       "Inspect the full error response body and any server logs correlated to the request"
     ],
     "expectedResult": "No response body or log line reachable by the client contains VAULT_ADDRESS, VAULT_CP_WRITE_ROLE_ID, VAULT_CP_WRITE_SECRET_ID, or a raw Vault client_token — the two 'vault' systems remain fully isolated even under error conditions.",
-    "tags": ["secrets-management", "naming-collision", "owasp-a09"],
+    "tags": [
+      "secrets-management",
+      "naming-collision",
+      "owasp-a09"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -119,16 +169,26 @@
     "title": "A user without evidence.read cannot infer vault item existence from the confidentialityLevel field via error message differences",
     "description": "evidence.model.js's metadata.confidentialityLevel enum ('public','internal','confidential','restricted','top_secret') suggests differentiated access is intended for sensitive vault documents, but evidence.routes.js applies a single flat 'evidence.read' gate with no per-confidentiality-level check. Verifies the API does not leak whether a 'restricted'/'top_secret' item exists via a distinguishable 403 vs 404 response to an unauthorized caller.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["An evidence item exists with metadata.confidentialityLevel = 'top_secret' in a project the caller is not a member of"],
+    "preconditions": [
+      "An evidence item exists with metadata.confidentialityLevel = 'top_secret' in a project the caller is not a member of"
+    ],
     "steps": [
       "As a user with no membership in the item's project, call GET /api/evidence/:evidenceId for the top_secret item",
       "Repeat for a random non-existent evidenceId",
       "Compare response status codes and bodies"
     ],
     "expectedResult": "Both cases return an identical, non-distinguishing response (403 or 404 consistently) — the confidentialityLevel field has no dedicated enforcement path today, so at minimum existence must not be leaked through response variance; flag if confidentialityLevel is found to have zero server-side enforcement anywhere, since that field would then be decorative metadata only.",
-    "tags": ["idor", "information-disclosure", "owasp-a01"],
+    "tags": [
+      "idor",
+      "information-disclosure",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",

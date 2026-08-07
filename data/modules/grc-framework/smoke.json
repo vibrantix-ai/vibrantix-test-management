@@ -6,14 +6,25 @@
     "subFeature": "Framework Catalog",
     "title": "/grc-framework loads with 4 stats cards and no console errors for a project with data",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["Logged in with framework.read", "A project with at least one active framework is selected"],
+    "preconditions": [
+      "Logged in with framework.read",
+      "A project with at least one active framework is selected"
+    ],
     "steps": [
       "Navigate to /grc-framework"
     ],
     "expectedResult": "Page renders 'Active Frameworks', 'Compliant', 'Overall Compliance' and 'In Progress' stats cards with numeric values (not stuck on skeleton/'—'), and the Manage Frameworks card lists both active and available frameworks.",
-    "tags": ["smoke", "core-flow"],
+    "tags": [
+      "smoke",
+      "core-flow"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,13 +37,21 @@
     "subFeature": "Framework Catalog",
     "title": "Catalog fetch (getAvailableFrameworks + getProjectFrameworkList) both resolve successfully on page load",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
       "Navigate to /grc-framework and observe network calls to /compliance-frameworks/projects/:id/available-frameworks and /compliance-frameworks/projects/:id/compliance/frameworks"
     ],
     "expectedResult": "Both requests return 200 with success:true; no error/warning banner about the catalog or live scores is shown.",
-    "tags": ["smoke", "api-health"],
+    "tags": [
+      "smoke",
+      "api-health"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -45,14 +64,24 @@
     "subFeature": "Compliance Map",
     "title": "/grc-framework/:id/compliance-map loads for an active framework and renders at least one domain",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["Framework is active for the current project and has at least one requirement"],
+    "preconditions": [
+      "Framework is active for the current project and has at least one requirement"
+    ],
     "steps": [
       "From /grc-framework, click 'View Compliance Map' on an active framework"
     ],
     "expectedResult": "The compliance map page loads, showing the header with framework title, the 4-tile stats strip (Overall Compliance/Covered/Partial/Gap), the filter bar, and at least one expandable domain accordion section.",
-    "tags": ["smoke", "compliance-map"],
+    "tags": [
+      "smoke",
+      "compliance-map"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -65,15 +94,25 @@
     "subFeature": "Framework Activation",
     "title": "A licensed framework can be activated and appears active without error",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["At least one licensed, not-yet-added framework exists in the catalog"],
+    "preconditions": [
+      "At least one licensed, not-yet-added framework exists in the catalog"
+    ],
     "steps": [
       "On /grc-framework, click Activate on a licensed available framework",
       "Wait for the success toast"
     ],
     "expectedResult": "Framework becomes active with no error toast, and re-fetching the page shows it listed under Active Frameworks.",
-    "tags": ["smoke", "activation"],
+    "tags": [
+      "smoke",
+      "activation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

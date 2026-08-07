@@ -6,14 +6,24 @@
     "subFeature": "Page Load",
     "title": "/smart-compliance loads the hero section, usage chips, and three tabs without error",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A project is selected in the Redux store"],
+    "preconditions": [
+      "A project is selected in the Redux store"
+    ],
     "steps": [
       "Navigate to /smart-compliance"
     ],
     "expectedResult": "Page renders ComplianceHeroSection (Start AI Assessment / Add Framework buttons), and the Active Frameworks / Framework Recommendations / Questionnaire History tabs, with no console errors.",
-    "tags": ["smoke", "page-load"],
+    "tags": [
+      "smoke",
+      "page-load"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -26,14 +36,24 @@
     "subFeature": "Questionnaire Modal",
     "title": "'Start AI Assessment' opens the questionnaire modal and loads the active question catalog",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["At least one active SCQuestion exists"],
+    "preconditions": [
+      "At least one active SCQuestion exists"
+    ],
     "steps": [
       "Click 'Start AI Assessment'"
     ],
     "expectedResult": "Modal opens on the assessment-metadata step with a progress bar showing 'Step 1 of N'; no error state or infinite skeleton.",
-    "tags": ["smoke", "questionnaire"],
+    "tags": [
+      "smoke",
+      "questionnaire"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -46,15 +66,26 @@
     "subFeature": "Questionnaire Submission",
     "title": "Submitting a minimal single-question assessment returns a recommendation and redirects to the response page",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Questionnaire catalog has at least one active question", "AI credits/run limits not exhausted"],
+    "preconditions": [
+      "Questionnaire catalog has at least one active question",
+      "AI credits/run limits not exhausted"
+    ],
     "steps": [
       "Fill assessment name, answer the single question, click 'Submit Assessment'",
       "Wait for the AI loading screen to complete"
     ],
     "expectedResult": "Browser redirects to /smart-compliance/response/{id}; the page shows at least the AI overall analysis text and one supported-or-empty framework grid without a JS error.",
-    "tags": ["smoke", "llm"],
+    "tags": [
+      "smoke",
+      "llm"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -67,14 +98,24 @@
     "subFeature": "Response Detail Page",
     "title": "Response detail page renders all core sections for a freshly created response",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A response was just created by SMCM-SMK-003"],
+    "preconditions": [
+      "A response was just created by SMCM-SMK-003"
+    ],
     "steps": [
       "Open /smart-compliance/response/{id} directly (or via redirect from submission)"
     ],
     "expectedResult": "Current Authority Frameworks banner, Framework Recommendations grid, and Questionnaire Results sections all render without throwing; loading skeletons resolve to real content.",
-    "tags": ["smoke", "page-load"],
+    "tags": [
+      "smoke",
+      "page-load"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -87,14 +128,24 @@
     "subFeature": "Add Framework Modal",
     "title": "'Add Framework' opens the catalog modal with Added/Available/Coming Soon tabs populated",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Compliance framework catalog has at least one entry"],
+    "preconditions": [
+      "Compliance framework catalog has at least one entry"
+    ],
     "steps": [
       "Click 'Add Framework' on the hero section"
     ],
     "expectedResult": "Modal opens showing the search bar and three tabs (Added / Available / Coming Soon) with correct counts; no error state.",
-    "tags": ["smoke", "framework-adoption"],
+    "tags": [
+      "smoke",
+      "framework-adoption"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

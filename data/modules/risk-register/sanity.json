@@ -6,15 +6,26 @@
     "subFeature": "Risk List",
     "title": "Risk list at /risk-center/risks loads and displays previously seeded risks after a deploy",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Deploy of risk-management-service and/or vibrantix-client-panel just completed", "Project with at least one pre-existing risk"],
+    "preconditions": [
+      "Deploy of risk-management-service and/or vibrantix-client-panel just completed",
+      "Project with at least one pre-existing risk"
+    ],
     "steps": [
       "Log in and select the known project",
       "Navigate to /risk-center/risks"
     ],
     "expectedResult": "The pre-existing risk(s) still appear in the list with their names, risk level badges, and phase intact — confirms GET /organizations/:orgId/risks and the DB connection survived the deploy.",
-    "tags": ["sanity", "post-deploy"],
+    "tags": [
+      "sanity",
+      "post-deploy"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,16 +38,28 @@
     "subFeature": "Risk Detail",
     "title": "Risk detail page loads and shows correct score/level for a known risk after a deploy",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Deploy just completed", "A known risk with a recorded inherent score/level"],
+    "preconditions": [
+      "Deploy just completed",
+      "A known risk with a recorded inherent score/level"
+    ],
     "steps": [
       "Open the known risk from /risk-center/risks",
       "Confirm the URL loads /risk-register/[id]",
       "Compare the displayed inherent score/level against the previously known value"
     ],
     "expectedResult": "GET /risks/:riskId returns 200 with the same score/level as before the deploy — confirms calculateRiskLevel()/scoring logic wasn't broken by the release.",
-    "tags": ["sanity", "post-deploy", "scoring"],
+    "tags": [
+      "sanity",
+      "post-deploy",
+      "scoring"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -50,15 +73,27 @@
     "title": "Treatment Plan section on the risk detail page loads without error after a deploy",
     "description": "risk-register/[id]/page.jsx renders a 'Treatment Plan' Section reading risk.treatment (falling back to risk.riskTreatment for older documents) — a quick confidence check that this fallback and the treatment sub-view didn't regress.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Deploy just completed", "A known risk with an existing treatment plan (strategy, status, milestones)"],
+    "preconditions": [
+      "Deploy just completed",
+      "A known risk with an existing treatment plan (strategy, status, milestones)"
+    ],
     "steps": [
       "Open the known risk's detail page",
       "Scroll to (or click) the 'Treatment Plan' section"
     ],
     "expectedResult": "Treatment strategy, status, and milestone list render with their previously known values — no blank section, spinner stuck, or console error.",
-    "tags": ["sanity", "post-deploy", "treatment"],
+    "tags": [
+      "sanity",
+      "post-deploy",
+      "treatment"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -71,15 +106,27 @@
     "subFeature": "Risk Center Dashboard",
     "title": "Risk-center dashboard widgets render with non-error state after a deploy",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Deploy just completed", "Project has at least one risk"],
+    "preconditions": [
+      "Deploy just completed",
+      "Project has at least one risk"
+    ],
     "steps": [
       "Navigate to /risk-center",
       "Confirm the heat map and top risks widgets render"
     ],
     "expectedResult": "Heat map cells and the top risks list populate from current data (not an error state or all-zero placeholder), confirming the dashboard aggregation endpoints survived the deploy.",
-    "tags": ["sanity", "post-deploy", "risk-center"],
+    "tags": [
+      "sanity",
+      "post-deploy",
+      "risk-center"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,15 +139,27 @@
     "subFeature": "Risk Creation",
     "title": "Creating a risk via the API succeeds and the new risk is immediately visible in the list",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Deploy just completed", "User with risk.create"],
+    "preconditions": [
+      "Deploy just completed",
+      "User with risk.create"
+    ],
     "steps": [
       "POST /organizations/:orgId/risks with a minimal valid payload (name, category, riskType, projectId, likelihood, impact)",
       "GET /organizations/:orgId/risks?projectId=<same project> immediately after"
     ],
     "expectedResult": "POST returns 201 with a generated riskId (RISK-YYYY-NNNN); the follow-up GET includes the new risk without requiring a cache-clear or delay — confirms the write path and cache invalidation both survived the deploy.",
-    "tags": ["sanity", "post-deploy", "write-path"],
+    "tags": [
+      "sanity",
+      "post-deploy",
+      "write-path"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

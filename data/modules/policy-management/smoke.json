@@ -5,11 +5,21 @@
     "category": "smoke",
     "title": "Policy Management page loads the policy list without console errors",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["Log in as a seeded test org admin", "Navigate to /policy-management"],
+    "steps": [
+      "Log in as a seeded test org admin",
+      "Navigate to /policy-management"
+    ],
     "expectedResult": "Policy list renders with status badges, no unhandled console errors, no infinite loading skeleton.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -21,11 +31,20 @@
     "category": "smoke",
     "title": "Create Policy button opens the creation form",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "steps": ["Click 'Create Policy' on /policy-management"],
+    "steps": [
+      "Click 'Create Policy' on /policy-management"
+    ],
     "expectedResult": "Creation form/dialog opens with title, type, and framework mapping fields visible.",
-    "tags": ["smoke"],
+    "tags": [
+      "smoke"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

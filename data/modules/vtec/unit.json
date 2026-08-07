@@ -7,16 +7,24 @@
     "title": "Config validation rejects an adapter whose type isn't registered",
     "description": "coreconfig.Load()'s Validate() checks every configured adapter.Config.Type against adapter.IsRegistered() before the connector starts — a typo'd or unsupported type must fail fast at startup, not surface as a confusing runtime error later.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/core/config/config_test.go",
-    "preconditions": ["A config.yaml with one adapter entry whose type is not one of rest|ldap|sql|ssh|winrm"],
+    "preconditions": [
+      "A config.yaml with one adapter entry whose type is not one of rest|ldap|sql|ssh|winrm"
+    ],
     "steps": [
       "Call coreconfig.Load with the malformed config",
       "Inspect the returned error"
     ],
     "expectedResult": "Load returns a *ValidationError naming the unregistered type; the connector does not start.",
-    "tags": ["config", "fail-fast"],
+    "tags": [
+      "config",
+      "fail-fast"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -30,13 +38,23 @@
     "title": "Config validation reports every schema violation in one pass, not just the first",
     "description": "ValidationError.Errors collects all violations (missing tenant_id, unregistered adapter type, missing adapter name, ...) in a single Load() call so a misconfigured connector reports everything wrong at once rather than one round-trip per fix.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/core/config/config_test.go",
-    "preconditions": ["A config.yaml with 3 independent, unrelated validation problems"],
-    "steps": ["Call coreconfig.Load", "Inspect ValidationError.Errors"],
+    "preconditions": [
+      "A config.yaml with 3 independent, unrelated validation problems"
+    ],
+    "steps": [
+      "Call coreconfig.Load",
+      "Inspect ValidationError.Errors"
+    ],
     "expectedResult": "All 3 problems are present in Errors, not just the first one encountered.",
-    "tags": ["config"],
+    "tags": [
+      "config"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -50,16 +68,24 @@
     "title": "connectorIdentityFromCert requires a non-empty CommonName and OrganizationalUnit",
     "description": "The connector recovers connector_id (CN) and tenant_id (OU) from its own issued certificate rather than persisting a second, driftable copy. Both a missing CN and a missing/empty-string OU must be rejected explicitly.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/cmd/vtec/main_test.go",
-    "preconditions": ["A real, parseable self-signed certificate built via x509.CreateCertificate"],
+    "preconditions": [
+      "A real, parseable self-signed certificate built via x509.CreateCertificate"
+    ],
     "steps": [
       "Call connectorIdentityFromCert with CommonName set and OrganizationalUnit omitted",
       "Call connectorIdentityFromCert with CommonName set and OrganizationalUnit set to a single empty string"
     ],
     "expectedResult": "Both calls return a non-nil error naming the missing/empty OrganizationalUnit; neither silently accepts an empty tenant_id.",
-    "tags": ["mtls", "identity"],
+    "tags": [
+      "mtls",
+      "identity"
+    ],
     "linkedDefect": "VTEC-internal (found during Phase 8 live wiring, no external tracker ID)",
     "owner": "SDET",
     "status": "active",
@@ -73,17 +99,25 @@
     "subFeature": "Envelope Signing",
     "title": "Ed25519 envelope signature round-trips: sign then verify succeeds; a tampered payload fails",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/envelope/envelope_test.go",
-    "preconditions": ["A generated Ed25519 keypair via envelope.LoadOrCreateSigningKey"],
+    "preconditions": [
+      "A generated Ed25519 keypair via envelope.LoadOrCreateSigningKey"
+    ],
     "steps": [
       "Build an envelope and sign it with the private key",
       "Verify the signature with the matching public key",
       "Flip one byte of the signed payload and re-verify"
     ],
     "expectedResult": "The first verification succeeds; the second (tampered) verification fails.",
-    "tags": ["crypto", "envelope"],
+    "tags": [
+      "crypto",
+      "envelope"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -97,16 +131,25 @@
     "title": "SQL adapter checks the query allow-list before ever opening a database connection",
     "description": "RunQuery consults the shared AllowList before touching a.db — enforcement order is proven against both a real fixture and a deliberately unreachable port, so the check can't be bypassed by a target that never responds.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/adapter/sqladapter/sqladapter_test.go",
-    "preconditions": ["An adapter configured with allow_list not containing the query name under test"],
+    "preconditions": [
+      "An adapter configured with allow_list not containing the query name under test"
+    ],
     "steps": [
       "Call RunQuery with a query name absent from allow_list, target pointed at an unreachable port",
       "Observe whether any connection attempt was made"
     ],
     "expectedResult": "The call is rejected with an allow-list error before any dial attempt — no connection-refused error, only the allow-list rejection.",
-    "tags": ["sql", "allow-list", "no-free-form-sql"],
+    "tags": [
+      "sql",
+      "allow-list",
+      "no-free-form-sql"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -120,13 +163,24 @@
     "title": "Mask stage fails safe: a field absent from the allow-list is stripped, never passed through",
     "description": "mask.New(allowList) is deny-by-default — an unlisted field must never leak, since Mask is the last on-premises control before Encrypt/Queue/Upload.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/pipeline/mask/mask_test.go",
-    "preconditions": ["A Record with fields {\"username\": \"x\", \"ssn\": \"123-45-6789\"} and an allow-list of [\"username\"] only"],
-    "steps": ["Run the record through Mask.Process"],
+    "preconditions": [
+      "A Record with fields {\"username\": \"x\", \"ssn\": \"123-45-6789\"} and an allow-list of [\"username\"] only"
+    ],
+    "steps": [
+      "Run the record through Mask.Process"
+    ],
     "expectedResult": "The output Fields contains only \"username\" — \"ssn\" is absent, not empty-stringed or nulled (fully removed).",
-    "tags": ["masking", "pii", "fail-safe"],
+    "tags": [
+      "masking",
+      "pii",
+      "fail-safe"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -140,13 +194,24 @@
     "title": "Dedupe computes ContentHash over normalized+filtered Fields and drops an exact repeat",
     "description": "A second Collect() cycle producing byte-identical (post Normalize+Filter) content is intentionally dropped — Pipeline.Run returns (nil, nil) rather than an error, per the documented 'intentional drop, not a failure' contract.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/pipeline/dedupe/dedupe_test.go",
-    "preconditions": ["Two Records with identical Fields, run through the same Dedupe instance back to back"],
-    "steps": ["Run record A through Dedupe.Process", "Run record B (identical content) through Dedupe.Process"],
+    "preconditions": [
+      "Two Records with identical Fields, run through the same Dedupe instance back to back"
+    ],
+    "steps": [
+      "Run record A through Dedupe.Process",
+      "Run record B (identical content) through Dedupe.Process"
+    ],
     "expectedResult": "Record A passes through; record B returns (nil, nil) — an intentional drop, not an error.",
-    "tags": ["dedupe", "pipeline"],
+    "tags": [
+      "dedupe",
+      "pipeline"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -159,13 +224,24 @@
     "subFeature": "Pipeline — Compress Stage",
     "title": "Compress stage reports a genuine CompressionRatio, not a hardcoded constant",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/pipeline/compress/compress_test.go",
-    "preconditions": ["A Record with highly repetitive test content (compresses well) and one with high-entropy random content (compresses poorly)"],
-    "steps": ["Run both records through Compress.Process", "Compare the two resulting CompressionRatio values"],
+    "preconditions": [
+      "A Record with highly repetitive test content (compresses well) and one with high-entropy random content (compresses poorly)"
+    ],
+    "steps": [
+      "Run both records through Compress.Process",
+      "Compare the two resulting CompressionRatio values"
+    ],
     "expectedResult": "The repetitive content's ratio is meaningfully lower than the random content's — the value is computed as len(compressed)/len(plaintext), not a fixed number.",
-    "tags": ["compression", "zstd"],
+    "tags": [
+      "compression",
+      "zstd"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -178,10 +254,15 @@
     "subFeature": "WebSocket Client",
     "title": "Client.Connected() reflects the real live connection state, not just 'was constructed'",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/websocket/client_test.go",
-    "preconditions": ["A websocket.Client not yet Start()ed"],
+    "preconditions": [
+      "A websocket.Client not yet Start()ed"
+    ],
     "steps": [
       "Call Connected() before Start()",
       "Call Start() against a real test server and wait for the connection to establish",
@@ -189,7 +270,10 @@
       "Close the underlying connection and call Connected() a third time"
     ],
     "expectedResult": "Connected() returns false, then true, then false — tracking the actual TLS connection object, not client lifecycle alone.",
-    "tags": ["websocket", "connectivity"],
+    "tags": [
+      "websocket",
+      "connectivity"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -203,13 +287,24 @@
     "title": "relayKeyProvider base64-decodes the relay-resolved credential into raw AES-256 key bytes",
     "description": "The Vault-stored value is base64 of a raw 32-byte key; relayKeyProvider.Key() must decode it correctly and return exactly 32 bytes, or Encrypt.Process would silently use the wrong key length.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/cmd/vtec/pipeline_setup_test.go",
-    "preconditions": ["A fake relay.Client resolving a known base64-encoded 32-byte value for the encryption key ref"],
-    "steps": ["Call relayKeyProvider.Key(ctx)", "Inspect the returned byte slice's length and content"],
+    "preconditions": [
+      "A fake relay.Client resolving a known base64-encoded 32-byte value for the encryption key ref"
+    ],
+    "steps": [
+      "Call relayKeyProvider.Key(ctx)",
+      "Inspect the returned byte slice's length and content"
+    ],
     "expectedResult": "Returns exactly the 32 decoded bytes; a malformed (non-base64) resolved value returns an error, not a truncated/garbage key.",
-    "tags": ["encryption", "vault"],
+    "tags": [
+      "encryption",
+      "vault"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-07",

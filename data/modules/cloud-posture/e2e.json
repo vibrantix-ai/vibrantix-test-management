@@ -7,6 +7,9 @@
     "title": "AWS provider onboarding completes end-to-end from credential entry through a successful connection test",
     "description": "Covers the full path: submit credentials on /cloud-posture/configure, the backend stages them to Vault, calls Prowler's credential-validate endpoint (real AWS STS GetCallerIdentity, not simulated), and persists connectionHealth back onto the config.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -39,6 +42,10 @@
     "title": "Failed connection test surfaces a friendly error and leaves no orphaned Vault secret",
     "description": "config.controller.js stages raw credentials to a per-operation Vault path before calling Prowler's /internal/credentials/validate, then destroys the staged secret in a finally block regardless of outcome. Verifies the user-facing failure path and the secret-cleanup guarantee together.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -73,6 +80,9 @@
     "subFeature": "Scan Lifecycle",
     "title": "Manually triggered scan progresses queued to running to completed and findings become visible on the dashboard",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/cloud-posture.spec.ts",
@@ -102,6 +112,9 @@
     "title": "Cancelling a running scan moves it to 'cancelling' and Prowler acknowledgement finalizes it to 'cancelled'",
     "description": "controlScan (scan.controller.js) only accepts cancel from the active-transition set and flips status to 'cancelling' first; a 404 from Prowler's cancel call is only treated as final confirmation when the scan has none of execution.attemptId/environment/queueJobId/leaseExpiresAt set (legacy-scan safety check) — otherwise it stays 'cancelling' for the reconciler.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -131,6 +144,9 @@
     "title": "A completed scan's findings propagate to ISO 27001 control coverage on the compliance map within the same session",
     "description": "On scan completion, _fireCloudPostureComplianceSync (scan.controller.js) resolves each finding's checkId via findingCheckId(), joins to scanner_check_master.uclMappings, validates against ucl_master_v2, and calls client-compliance-sync.service's onCloudPostureScanCompleted to update ClientControl.scores.cloud. Sync is guarded by scan.metadata.complianceSyncFired so it only runs once per scan.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -162,6 +178,9 @@
     "subFeature": "Drill-Down Navigation",
     "title": "Navigating dashboard to provider view to service to a security check surfaces the finding's CIS/ISO reference and remediation text",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -192,6 +211,10 @@
     "title": "A recurring scan schedule actually fires at its next run time and updates lastRunStatus",
     "description": "scan-scheduler.job.js (started at vibrantix-backend/src/index.js:369) polls CloudPostureScan docs with status='scheduled_recurring' and schedule.nextRun <= now every 5s under a Redis distributed lock, claims via findOneAndUpdate, and calls prowlerService.triggerScan. Regression guard: an earlier internal audit incorrectly claimed schedules never execute — this case protects the fix.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -220,6 +243,9 @@
     "title": "Dashboard blends AWS and GCP compliance scores as an unweighted average across providers",
     "description": "getDashboardStats computes overallComplianceScore as avg(providers[].complianceScore) with no resource-count weighting. Documents current behavior end-to-end so a small GCP footprint doesn't silently get masked or over-weighted without anyone noticing the formula.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [

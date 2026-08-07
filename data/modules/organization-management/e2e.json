@@ -7,6 +7,9 @@
     "title": "Single-invite flow creates an invited user end-to-end and surfaces in the team list",
     "description": "Full path from UserInviteModal's Single Invite tab through POST /api/users (user.controller.js create()) to the user appearing in UserAccessPage/UserList with status 'invited'. Covers the Keycloak inviteToOrganization() happy path, not the SMTP-failure fallback (see ORGM-INT-009-adjacent fallback behavior for that).",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -19,7 +22,11 @@
       "Submit the form"
     ],
     "expectedResult": "Toast shows 'Invitation sent' with the target email. The new user appears in the team list with status 'Invited', no Keycloak UUID yet, and the selected role. No temporary password is shown to the admin (email-invite path, not direct-create).",
-    "tags": ["invite", "team-management", "keycloak"],
+    "tags": [
+      "invite",
+      "team-management",
+      "keycloak"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -33,6 +40,9 @@
     "title": "Assigning a new role via AssignRoleModal updates the user's effective permissions on their next request",
     "description": "AssignRoleModal calls PUT /api/users/:id/roles (requires user.admin), which runs validateRoleIds then invalidateUser() to bust the Redis permission cache. Verifies the invalidation actually takes effect, not just that the User document's roleIds field changed.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -45,7 +55,11 @@
       "As Bob (same session, no re-login), call GET /api/users/me/access again"
     ],
     "expectedResult": "The second /me/access call reflects 'policy.read' immediately — the Redis-cached permission set for Bob was invalidated by the role change, so Bob does not need to log out/in to see the new access.",
-    "tags": ["roles", "team-management", "cache-invalidation"],
+    "tags": [
+      "roles",
+      "team-management",
+      "cache-invalidation"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "QA",
     "status": "active",
@@ -60,6 +74,9 @@
     "title": "Inviting a user beyond the seat limit shows a quota-specific error in the Invite modal, not a generic failure toast",
     "description": "UserInviteModal.handleSingleInvite reads error.response?.data?.message — verifies the 402 QUOTA_EXCEEDED response from quota.consume (billing/errors.js mapping) actually carries a human-readable message field the toast can display, end-to-end through the real HTTP error path (axios interceptor included), not just the raw controller unit behavior already covered in ORGM-INT-004.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -70,7 +87,12 @@
       "Fill in a valid new email/name/role and submit"
     ],
     "expectedResult": "Toast shows an error status with a message clearly indicating the seat/user limit was reached (not a bare 'Failed to create user' fallback). No new row appears in the team list.",
-    "tags": ["seat-limit", "quota", "billing", "invite"],
+    "tags": [
+      "seat-limit",
+      "quota",
+      "billing",
+      "invite"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "QA",
     "status": "active",
@@ -85,6 +107,9 @@
     "title": "Creating a custom role via RoleFormModal is immediately assignable from the Invite modal's role dropdown",
     "description": "Verifies the full round trip: RolesTab 'Create Custom Role' -> RoleFormModal -> POST /api/roles (role.controller.js create(), grid-to-permissions conversion) -> role appears as a Custom Roles card -> the same role is available in UserInviteModal's roleOptions (loaded via roleService.getRoles()) without any manual refresh needed elsewhere in the app.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
@@ -97,7 +122,11 @@
       "Navigate to /organization/team, open 'Invite Team Members', open the Role dropdown"
     ],
     "expectedResult": "The new 'Evidence Reviewer' role appears as a Custom card on /organization/roles with the correct permission count, and is selectable in the invite modal's role dropdown on the very next page visit.",
-    "tags": ["roles", "custom-role", "team-management"],
+    "tags": [
+      "roles",
+      "custom-role",
+      "team-management"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "QA",
     "status": "active",
@@ -112,14 +141,23 @@
     "title": "Roles & Permissions page is inaccessible to organizations without the custom_roles entitlement",
     "description": "/organization/roles wraps RolesTab in TierGate feature='custom_roles' requiredTier='enterprise'. Confirms the gate actually blocks page content (not just hides the 'Create' button) for a lower-tier org, and that an enterprise-tier org sees the full page.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Org subscription tier does NOT include the custom_roles feature entitlement"],
+    "preconditions": [
+      "Org subscription tier does NOT include the custom_roles feature entitlement"
+    ],
     "steps": [
       "As an admin of a non-enterprise-tier org, navigate to /organization/roles"
     ],
     "expectedResult": "TierGate renders its upgrade/locked state instead of RolesTab — no role cards, permission data, or Create button are rendered. An enterprise-tier org visiting the same URL sees the full RolesTab UI.",
-    "tags": ["roles", "tier-gate", "billing"],
+    "tags": [
+      "roles",
+      "tier-gate",
+      "billing"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -133,16 +171,24 @@
     "title": "Editing organization details in Overview persists across a full page reload",
     "description": "Full round trip through FormWrapper -> orgService.updateMyOrg() -> PUT /api/organizations/me -> re-fetch on reload, exercising the same settings dot-notation merge as ORGM-INT-001 but from the actual Edit Details form rather than a raw API call.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as org admin with organization.update permission"],
+    "preconditions": [
+      "Logged in as org admin with organization.update permission"
+    ],
     "steps": [
       "Navigate to /organization, click 'Edit Details'",
       "Change Industry to 'Healthcare' and Organization Size to '51-100', set Contact Email, then Save",
       "Hard-refresh the browser (full reload, not client-side navigation)"
     ],
     "expectedResult": "After reload, the Organization Details card shows Industry 'Healthcare', Size badge '51-100', and the saved contact email — all values came from the server, confirming the PUT actually persisted rather than only updating local component state.",
-    "tags": ["organization-overview", "settings"],
+    "tags": [
+      "organization-overview",
+      "settings"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -156,6 +202,9 @@
     "title": "Security, Billing, Departments, and Audit sub-pages are feature-flagged off and redirect to their fallback route",
     "description": "As of this writing, four organization sub-pages are fully built (SecurityOverview, BillingOverview/InvoiceHistory/PlanSelector, DepartmentList, AuditLogViewer components all exist) but are gated behind hardcoded boolean flags that are currently false: security/page.jsx SECURITY_PAGE_ENABLED, billing/page.jsx BILLING_PAGE_ENABLED, departments/page.jsx DEPARTMENTS_PAGE_ENABLED, and audit/page.jsx AUDIT_PAGE_ENABLED — each useEffect calls router.replace() the moment the component mounts. This is current, deliberate (or at least shipped) behavior, not a hypothetical — worth a standing E2E guard so a future flag flip is a conscious decision, not an accidental regression discovered by a customer.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -165,7 +214,11 @@
       "Navigate directly to /organization/audit"
     ],
     "expectedResult": "All four routes immediately redirect: /organization/security and /organization/billing and /organization/audit redirect to /organization; /organization/departments redirects to /organization/team. No flash of the underlying (fully built) SecurityOverview/BillingOverview/DepartmentList/AuditLogViewer content is visible before the redirect fires.",
-    "tags": ["feature-flag", "navigation", "disabled-feature"],
+    "tags": [
+      "feature-flag",
+      "navigation",
+      "disabled-feature"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -178,16 +231,25 @@
     "subFeature": "Settings",
     "title": "Regional settings (timezone, date format) saved from the Settings tab persist and are reflected in date displays elsewhere",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as org admin"],
+    "preconditions": [
+      "Logged in as org admin"
+    ],
     "steps": [
       "Navigate to /organization/settings",
       "Change Timezone to 'Asia/Tokyo' and Date Format to 'YYYY-MM-DD', click 'Save Changes'",
       "Reload /organization/settings"
     ],
     "expectedResult": "'You have unsaved changes' banner disappears immediately after save. On reload, the Timezone select shows 'Tokyo (Japan)' and Date Format shows 'YYYY-MM-DD' — values were read back from org.settings via GET, not just retained in local component state.",
-    "tags": ["settings", "timezone", "date-format"],
+    "tags": [
+      "settings",
+      "timezone",
+      "date-format"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

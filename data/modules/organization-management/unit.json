@@ -7,16 +7,25 @@
     "title": "Seat quota consume() is inclusive of the limit and blocks only the (N+1)th user",
     "description": "entitlement/quota.service.js consume(orgId,'users',count) does an atomic findOneAndUpdate with $expr:{$lte:[{$add:[usage.users, count]}, limit]}. At usage.users===limit, adding 1 more must fail; reaching exactly limit must succeed.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Org quota fixture with usage.users=9, limit.users=10"],
+    "preconditions": [
+      "Org quota fixture with usage.users=9, limit.users=10"
+    ],
     "steps": [
       "Call quota.consume(orgId, 'users', 1) — expect success, usage.users becomes 10",
       "Call quota.consume(orgId, 'users', 1) again with usage.users now at 10",
       "Inspect the return value / thrown error"
     ],
     "expectedResult": "First call succeeds (10 <= 10). Second call throws QuotaExceededError since 10+1=11 > 10; no partial write occurs to usage.users on the failed attempt.",
-    "tags": ["seat-limit", "quota", "billing"],
+    "tags": [
+      "seat-limit",
+      "quota",
+      "billing"
+    ],
     "requirement": "ISO 27001 Annex A.8.2",
     "owner": "SDET",
     "status": "active",
@@ -31,6 +40,9 @@
     "title": "Seat quota check is skipped entirely when limit is -1 (unlimited) or org is project-billed",
     "description": "quota.service.js skips the $expr predicate when limit===-1. Separately, user.controller.js:372-381 only invokes quota.consume at all when isPricingV1Enabled(orgId) AND org.billingMode !== 'project' — project-billed orgs are fully exempt from org-level user quota.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -38,7 +50,11 @@
       "Call the invite-user creation path for an org with billingMode='project' when usage.users already exceeds any nominal org-level cap"
     ],
     "expectedResult": "Both calls succeed with no quota rejection — limit=-1 never triggers the predicate, and project-billed orgs never call quota.consume for users at all.",
-    "tags": ["seat-limit", "quota", "billing-mode"],
+    "tags": [
+      "seat-limit",
+      "quota",
+      "billing-mode"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,15 +68,24 @@
     "title": "Role pre('save') hook throws when an existing document has isSystem=true",
     "description": "role.model.js:44-49 pre('save') hook: if (!this.isNew && this.isSystem) throw a generic Error, independent of the controller-level 400 response. This is the last line of defense even if a controller path bypassed its own guard.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["An existing Role document with isSystem=true, systemRoleKey='SUPERADMIN'"],
+    "preconditions": [
+      "An existing Role document with isSystem=true, systemRoleKey='SUPERADMIN'"
+    ],
     "steps": [
       "Load the SUPERADMIN Role document (isNew will be false)",
       "Mutate a field (e.g. description) and call .save() directly on the Mongoose document, bypassing role.controller.js"
     ],
     "expectedResult": "The pre('save') hook throws before persistence; the document in the database is unchanged.",
-    "tags": ["system-role", "immutability", "model-hook"],
+    "tags": [
+      "system-role",
+      "immutability",
+      "model-hook"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "SDET",
     "status": "active",
@@ -75,15 +100,24 @@
     "title": "Resend-invite cooldown blocks a second call within 60 seconds of invitedAt",
     "description": "user.controller.js resendInvite (lines 738-781) computes RESEND_INVITE_COOLDOWN_MS=60000 against invitedAt. A call inside the window must return 409 without re-triggering the Keycloak invite email.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["A user with status='invited', keycloakUserId=null, invitedAt=Date.now()-30000 (30s ago)"],
+    "preconditions": [
+      "A user with status='invited', keycloakUserId=null, invitedAt=Date.now()-30000 (30s ago)"
+    ],
     "steps": [
       "Call resendInvite(userId) 30 seconds after the original invite",
       "Call resendInvite(userId) again 65 seconds after the original invite"
     ],
     "expectedResult": "First call is rejected with 409 'An invitation was just sent. Please wait a minute.' Second call (past the 60s window) succeeds and re-triggers the Keycloak invite.",
-    "tags": ["invite", "cooldown", "team-management"],
+    "tags": [
+      "invite",
+      "cooldown",
+      "team-management"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -97,6 +131,9 @@
     "title": "gridToPermissions() maps none/view/edit/full + approve to the correct flat permission strings",
     "description": "featureAccessMap.js gridToPermissions/permissionsToGrid convert the persisted accessGrid (Mixed) into flat Role.permissions strings and back. VALID_LEVELS supports none|view|edit|full plus a separate approve boolean, even though AccessGrid.jsx's UI currently only offers 3 buttons (none/view/full).",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "testData": "accessGrid = { evidence: { level: 'edit', approve: true } }",
@@ -105,7 +142,11 @@
       "Feed the resulting permissions array back into permissionsToGrid()"
     ],
     "expectedResult": "gridToPermissions returns ['evidence.read','evidence.update','evidence.approve'] (no 'evidence.delete'/'evidence.admin' since level is 'edit' not 'full'). Round-tripping through permissionsToGrid reproduces { evidence: { level:'edit', approve:true } } exactly — no lossy collapse to 'view' or 'full'.",
-    "tags": ["roles", "permission-grid", "access-control"],
+    "tags": [
+      "roles",
+      "permission-grid",
+      "access-control"
+    ],
     "requirement": "ISO 27001 Annex A.5.2",
     "owner": "SDET",
     "status": "active",
@@ -120,14 +161,23 @@
     "title": "assertGrantablePermissions rejects a grant that exceeds the caller's own held permissions",
     "description": "Used identically in both user.controller.js (extraPermissions/role assignment) and role.controller.js (custom role create/update) to prevent privilege escalation: a caller can only grant permissions they themselves already hold.",
     "priority": "P0",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Caller's own effective permissions = ['evidence.read','evidence.update']"],
+    "preconditions": [
+      "Caller's own effective permissions = ['evidence.read','evidence.update']"
+    ],
     "steps": [
       "Call assertGrantablePermissions(callerPermissions, ['evidence.read','organization.admin'])"
     ],
     "expectedResult": "Throws a 403 error listing 'organization.admin' as ungrantable; a structured log event 'authz.privilege_escalation.attempt' is emitted with the caller's id and the rejected permission.",
-    "tags": ["rbac", "privilege-escalation", "roles"],
+    "tags": [
+      "rbac",
+      "privilege-escalation",
+      "roles"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "Security",
     "status": "active",
@@ -142,14 +192,23 @@
     "title": "validateRoleIds rejects a roleId that belongs to a different organization and is not a system role",
     "description": "user.controller.js validateRoleIds (lines 110-152), called from assignRoles, checks each roleId either has organizationId matching the caller's org OR is a system role (organizationId=null). A cross-org custom roleId must be rejected before it ever reaches Role assignment.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["roleId belongs to Org B's custom role, caller operates in Org A"],
+    "preconditions": [
+      "roleId belongs to Org B's custom role, caller operates in Org A"
+    ],
     "steps": [
       "Call validateRoleIds(['<orgB-custom-role-id>'], 'orgA')"
     ],
     "expectedResult": "Function throws/returns invalid before any User.roleIds write occurs; no cross-org role reference is ever persisted.",
-    "tags": ["rbac", "multi-tenant", "roles"],
+    "tags": [
+      "rbac",
+      "multi-tenant",
+      "roles"
+    ],
     "requirement": "ISO 27001 Annex A.5.3",
     "owner": "SDET",
     "status": "active",

@@ -6,6 +6,9 @@
     "subFeature": "Question Catalog",
     "title": "GET /smart-compliance/questions/stats reflects an immediate archive of an active question",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
     "steps": [
@@ -14,7 +17,10 @@
       "Call GET /smart-compliance/questions/stats again"
     ],
     "expectedResult": "active count decreases by 1 and archived count increases by 1; total stays the same.",
-    "tags": ["sanity", "question-catalog"],
+    "tags": [
+      "sanity",
+      "question-catalog"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,13 +33,19 @@
     "subFeature": "Questionnaire Metadata",
     "title": "The assessment metadata step blocks 'Start Questions' until a Name is entered",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "Open the questionnaire modal and immediately click 'Start Questions' without entering a Name"
     ],
     "expectedResult": "A validation toast 'Please fill in the required Name field before proceeding' is shown and the step does not advance; the Name field is marked touched/invalid.",
-    "tags": ["sanity", "validation"],
+    "tags": [
+      "sanity",
+      "validation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,6 +59,9 @@
     "title": "A 'select' question rejects zero answers and rejects more than one answer",
     "description": "Quick boundary re-check of validateAnswers() for responseType='select' complementing SMCM-UNIT-001/003.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -54,7 +69,10 @@
       "Submit answers with two values for the same select-type question"
     ],
     "expectedResult": "Both submissions are rejected with 400 validation errors ('Answer array is required and must not be empty' and '\"...\" requires exactly one answer' respectively).",
-    "tags": ["sanity", "validation"],
+    "tags": [
+      "sanity",
+      "validation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,14 +86,23 @@
     "title": "'Submit Assessment' is hidden for a user without smart_compliance.create on the selected project",
     "description": "Quick reverification that PermissionHide permission='smart_compliance.create' allowProjectGrant still gates the final submit button in CFRSQuestionnaireModal after any permissions-related deploy.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has smart_compliance.read only, no smart_compliance.create at org or project level"],
+    "preconditions": [
+      "User has smart_compliance.read only, no smart_compliance.create at org or project level"
+    ],
     "steps": [
       "Open the questionnaire and advance to the last question"
     ],
     "expectedResult": "The 'Submit Assessment' button is not rendered (or is hidden) for this user; only the Previous button and progress bar are visible.",
-    "tags": ["sanity", "rbac"],
+    "tags": [
+      "sanity",
+      "rbac"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -89,14 +116,23 @@
     "title": "Reopening a draft after the question count changed resumes at a bounded, in-range step rather than an out-of-bounds index",
     "description": "loadQuestionnaires() clamps the restored draft's currentQuestionIndex via Math.min(draft.currentQuestionIndex, sortedQuestions.length - 1) in case questions were added/removed from the catalog since the draft was saved.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A draft was saved at question index 5 when the catalog had 6 questions; an admin has since archived questions down to 3 active"],
+    "preconditions": [
+      "A draft was saved at question index 5 when the catalog had 6 questions; an admin has since archived questions down to 3 active"
+    ],
     "steps": [
       "Reopen the questionnaire modal for the same project"
     ],
     "expectedResult": "The modal resumes at question index 2 (the last valid index for 3 questions), not index 5 — no blank/undefined question is shown.",
-    "tags": ["sanity", "draft", "edge-case"],
+    "tags": [
+      "sanity",
+      "draft",
+      "edge-case"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

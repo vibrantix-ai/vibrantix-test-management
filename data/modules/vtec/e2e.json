@@ -7,16 +7,26 @@
     "title": "A fresh connector registers end to end using a real single-use license key",
     "description": "Covers the full bootstrap chain: license key issuance -> CSR generation -> POST /register -> issued client cert -> connector_id/tenant_id recovered from the cert's own CN/OU, matching the identical extraction convention the server uses.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A live vtec-management-service with a real CA chain", "An Enterprise-tier tenant"],
+    "preconditions": [
+      "A live vtec-management-service with a real CA chain",
+      "An Enterprise-tier tenant"
+    ],
     "steps": [
       "Issue a license key via POST /license-keys for the test tenant",
       "Start a fresh connector binary configured with that license key and no cached certificate",
       "Observe the connector's startup logs and the resulting connector record"
     ],
     "expectedResult": "The connector logs 'mTLS identity established' with a real connector_id and tenant_id; GET /connectors shows the new connector with status 'active' after its first heartbeat.",
-    "tags": ["registration", "mtls", "cross-repo"],
+    "tags": [
+      "registration",
+      "mtls",
+      "cross-repo"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -30,16 +40,27 @@
     "title": "A real SQL collection cycle produces decrypted, correct evidence in vtec_evidence_uploads",
     "description": "Exercises every link at once: cron fire -> workflow runner -> SQL Collect() against a real Postgres fixture -> credential relayed over WS from Vault -> all 8 synchronous pipeline stages -> JetStream buffer -> Stage 9 upload -> signed envelope -> server-side signature verification -> Vault-resolved decryption key -> Mongo.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A registered connector with one SQL adapter targeting a real fixture Postgres instance", "The adapter's credential and the tenant encryption key seeded in Vault"],
+    "preconditions": [
+      "A registered connector with one SQL adapter targeting a real fixture Postgres instance",
+      "The adapter's credential and the tenant encryption key seeded in Vault"
+    ],
     "steps": [
       "Wait for (or trigger) one scheduled collection cycle",
       "Query vtec_evidence_uploads for the resulting document",
       "Decrypt the stored dataBase64 with the same key and decompress with the same zstd library the connector uses"
     ],
     "expectedResult": "The decrypted, decompressed content matches the real fixture row exactly; checksum verification passes; ucl_controls/masking_applied are set as configured.",
-    "tags": ["evidence", "sql", "encryption", "cross-repo"],
+    "tags": [
+      "evidence",
+      "sql",
+      "encryption",
+      "cross-repo"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -52,16 +73,25 @@
     "subFeature": "Credential Relay",
     "title": "An adapter's Connect() call successfully resolves its credential via the WS relay to Vault",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A credential written into Vault at the adapter's exact credential_ref path"],
+    "preconditions": [
+      "A credential written into Vault at the adapter's exact credential_ref path"
+    ],
     "steps": [
       "Start the connector with an adapter whose credential is not yet cached locally",
       "Observe the credential_request/credential_response envelope exchange over the WS connection",
       "Confirm the adapter's Connect() call succeeds against the real target"
     ],
     "expectedResult": "The connector never has the raw credential in its own config; it fetches it live via the relay and authenticates successfully to the target.",
-    "tags": ["credentials", "vault", "cross-repo"],
+    "tags": [
+      "credentials",
+      "vault",
+      "cross-repo"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -75,9 +105,15 @@
     "title": "Evidence buffered during a real management-service outage survives and drains fully on reconnect",
     "description": "Regression coverage for the Nak hot-loop bug: during the outage, zero Naks should occur (queue not consumed while disconnected); once connectivity returns, every buffered item drains, oldest first.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A running connector actively collecting on a short schedule"],
+    "preconditions": [
+      "A running connector actively collecting on a short schedule"
+    ],
     "steps": [
       "Stop vtec-management-service for ~50 seconds while the connector keeps collecting",
       "Observe the connector's logs for Nak attempts during the outage",
@@ -85,7 +121,11 @@
       "Confirm the full backlog drains"
     ],
     "expectedResult": "Zero Nak attempts occur while disconnected; every item collected during the outage is present in vtec_evidence_uploads after reconnect, with none dead-lettered.",
-    "tags": ["resilience", "offline-buffer", "regression"],
+    "tags": [
+      "resilience",
+      "offline-buffer",
+      "regression"
+    ],
     "linkedDefect": "VTEC-internal (Nak hot-loop, Task 8.1 live verification)",
     "owner": "SDET",
     "status": "active",
@@ -99,16 +139,24 @@
     "subFeature": "Certificate Rotation",
     "title": "Scheduled certificate rotation renews before expiry with zero evidence loss",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A connector with a short rotation interval configured for test purposes"],
+    "preconditions": [
+      "A connector with a short rotation interval configured for test purposes"
+    ],
     "steps": [
       "Let the connector run through at least one full rotation cycle",
       "Confirm the WebSocket client adopts the renewed certificate on its next reconnect",
       "Confirm evidence collection continues uninterrupted across the rotation"
     ],
     "expectedResult": "The renewed certificate is cached and used; no active connection is forcibly dropped by rotation; no evidence is lost or duplicated across the boundary.",
-    "tags": ["mtls", "rotation"],
+    "tags": [
+      "mtls",
+      "rotation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -121,12 +169,25 @@
     "subFeature": "Fleet Dashboard",
     "title": "Fleet dashboard shows a real registered connector's live status and metrics, not mock data",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.read", "At least one real, actively-heartbeating connector registered for the org"],
-    "steps": ["Navigate to /vtec/fleet", "Compare the displayed status/CPU/memory/queue-depth against the real GET /fleet/health response for the same connector"],
+    "preconditions": [
+      "Logged in as a user with vtec.read",
+      "At least one real, actively-heartbeating connector registered for the org"
+    ],
+    "steps": [
+      "Navigate to /vtec/fleet",
+      "Compare the displayed status/CPU/memory/queue-depth against the real GET /fleet/health response for the same connector"
+    ],
     "expectedResult": "Every displayed value matches the live API response exactly; no placeholder or hardcoded row is present.",
-    "tags": ["fleet-dashboard", "ui"],
+    "tags": [
+      "fleet-dashboard",
+      "ui"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -139,16 +200,25 @@
     "subFeature": "Register Connector UI",
     "title": "The Register Connector modal's issued key and compose snippet actually register a fresh container",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.create"],
+    "preconditions": [
+      "Logged in as a user with vtec.create"
+    ],
     "steps": [
       "Click 'Register Connector' on /vtec/fleet and issue a key",
       "Copy the displayed docker-compose env block into a fresh Site A compose file",
       "Bring the container up"
     ],
     "expectedResult": "The container registers successfully using exactly the copied snippet; the new connector appears on /vtec/fleet without a manual page refresh.",
-    "tags": ["registration", "ui", "cross-repo"],
+    "tags": [
+      "registration",
+      "ui",
+      "cross-repo"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -162,16 +232,27 @@
     "title": "A credential entered via the Credentials tab is fetched by the live connector and used successfully",
     "description": "Full round trip: enter via UI -> stored in Vault (PUT /connectors/{id}/credentials via the vibrantix-backend proxy) -> fetched by the connector via its mTLS relay -> used to complete a real Collect() call against a fixture target.",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.create", "A registered connector with an adapter whose credential is not yet cached"],
+    "preconditions": [
+      "Logged in as a user with vtec.create",
+      "A registered connector with an adapter whose credential is not yet cached"
+    ],
     "steps": [
       "Open /vtec/fleet/{connectorId}/credentials and submit a value for the adapter's credential_ref",
       "Trigger (or wait for) that adapter's next collection cycle",
       "Confirm the adapter successfully authenticates and collects"
     ],
     "expectedResult": "The adapter's Collect() call succeeds using the UI-submitted value; the submitted value never reappears in any subsequent page load or network response body — only a masked reference.",
-    "tags": ["credentials", "vault", "ui", "cross-repo"],
+    "tags": [
+      "credentials",
+      "vault",
+      "ui",
+      "cross-repo"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -184,12 +265,24 @@
     "subFeature": "Docker Deployment",
     "title": "A container restart reuses the cached certificate and survives with buffered evidence intact",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A running, hardened Site A docker-compose deployment (Task 8.1) with evidence buffered from a recent outage"],
-    "steps": ["Run docker compose restart on the connector service", "Observe the startup logs", "Confirm the offline buffer's contents"],
+    "preconditions": [
+      "A running, hardened Site A docker-compose deployment (Task 8.1) with evidence buffered from a recent outage"
+    ],
+    "steps": [
+      "Run docker compose restart on the connector service",
+      "Observe the startup logs",
+      "Confirm the offline buffer's contents"
+    ],
     "expectedResult": "The connector does NOT re-register (no new license key consumed); it reuses its cached certificate; buffered evidence from before the restart is still present and continues draining normally.",
-    "tags": ["docker", "persistence"],
+    "tags": [
+      "docker",
+      "persistence"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -202,16 +295,26 @@
     "subFeature": "Monitoring",
     "title": "A live Prometheus instance shows all 9 §16 series with real, changing values, and VTECConnectorOffline fires within 5 minutes of a killed connector",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A real Prometheus instance scraping a live, actively-collecting connector using configs/prometheus.yml and configs/prometheus-alerts.yml"],
+    "preconditions": [
+      "A real Prometheus instance scraping a live, actively-collecting connector using configs/prometheus.yml and configs/prometheus-alerts.yml"
+    ],
     "steps": [
       "Observe vtec_connector_up, vtec_evidence_collected_total, vtec_evidence_upload_bytes_total, vtec_compression_ratio, vtec_pipeline_stage_duration_seconds, vtec_queue_depth, vtec_queue_disk_bytes_used, vtec_adapter_connection_status, and vtec_cert_expiry_seconds over several collection cycles",
       "Kill the connector process outright",
       "Poll Prometheus's /api/v1/alerts every 15s for up to 6 minutes"
     ],
     "expectedResult": "All 9 series show real values that change across cycles (not static/mocked); VTECConnectorOffline transitions to state 'firing' at approximately the 5-minute mark after the kill.",
-    "tags": ["monitoring", "prometheus", "alerting"],
+    "tags": [
+      "monitoring",
+      "prometheus",
+      "alerting"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",

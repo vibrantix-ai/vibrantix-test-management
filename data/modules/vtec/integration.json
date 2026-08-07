@@ -7,13 +7,25 @@
     "title": "vtec_adapter_connection_status reports distinct, correct adapter and target labels",
     "description": "RegisterAdapter(name, target, adapter) stores the real network endpoint (e.g. ldap.corp.local:636) separately from the operator's instance name (e.g. corp-ad-01) — regression coverage for a Phase 1 bug where both labels collapsed to the same value.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/core/health/health_test.go",
-    "preconditions": ["Two fake adapters registered with distinct names and targets, one healthy and one not"],
-    "steps": ["Call RefreshAdapterHealth(ctx)", "Scrape the Prometheus registry"],
+    "preconditions": [
+      "Two fake adapters registered with distinct names and targets, one healthy and one not"
+    ],
+    "steps": [
+      "Call RefreshAdapterHealth(ctx)",
+      "Scrape the Prometheus registry"
+    ],
     "expectedResult": "vtec_adapter_connection_status{adapter=\"healthy-one\",target=\"ldap.corp.local:636\"} 1 and {adapter=\"unhealthy-one\",target=\"sql.corp.local:1433\"} 0 both appear with distinct target values.",
-    "tags": ["monitoring", "prometheus"],
+    "tags": [
+      "monitoring",
+      "prometheus"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -27,13 +39,25 @@
     "title": "Cached mTLS certificate and envelope signing key survive a process restart",
     "description": "cache.Open on the same BoltDB file across two process lifetimes must return the identical certificate/key material stored by the first — this is what lets a restarted connector skip re-registration.",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/secret/cache/cache_test.go",
-    "preconditions": ["A cache opened, populated with a cert + signing key, then closed"],
-    "steps": ["Re-open the same cache file", "Load the certificate and signing key"],
+    "preconditions": [
+      "A cache opened, populated with a cert + signing key, then closed"
+    ],
+    "steps": [
+      "Re-open the same cache file",
+      "Load the certificate and signing key"
+    ],
     "expectedResult": "Both values load back byte-identical to what was stored, with no re-registration triggered.",
-    "tags": ["cache", "persistence"],
+    "tags": [
+      "cache",
+      "persistence"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -47,13 +71,24 @@
     "title": "Rotator.OnRotate fires every registered subscriber, not just the first",
     "description": "OnRotate is a slice, not a single-slot field — a second subscriber (e.g. the cert-expiry metrics gauge) registered after websocket.Client.UpdateCertificate must still fire on every rotation.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/mtls/rotation_test.go",
-    "preconditions": ["A Rotator with two independent OnRotate callbacks registered against a real (test) renewal server"],
-    "steps": ["Call rotateOnce(ctx)"],
+    "preconditions": [
+      "A Rotator with two independent OnRotate callbacks registered against a real (test) renewal server"
+    ],
+    "steps": [
+      "Call rotateOnce(ctx)"
+    ],
     "expectedResult": "Both callbacks are invoked with the newly-issued certificate, in registration order.",
-    "tags": ["mtls", "rotation"],
+    "tags": [
+      "mtls",
+      "rotation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -66,13 +101,27 @@
     "subFeature": "Offline Buffer",
     "title": "Enqueue -> Next -> Ack permanently removes a message from the JetStream buffer",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/queue/queue_test.go",
-    "preconditions": ["An embedded NATS JetStream queue started against a temp store dir"],
-    "steps": ["Enqueue one payload", "Fetch it via Next()", "Call Ack() on the fetched message", "Call Next() again"],
+    "preconditions": [
+      "An embedded NATS JetStream queue started against a temp store dir"
+    ],
+    "steps": [
+      "Enqueue one payload",
+      "Fetch it via Next()",
+      "Call Ack() on the fetched message",
+      "Call Next() again"
+    ],
     "expectedResult": "The second Next() call times out with no message — the acked item is never redelivered.",
-    "tags": ["queue", "jetstream"],
+    "tags": [
+      "queue",
+      "jetstream"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -85,13 +134,25 @@
     "subFeature": "Offline Buffer",
     "title": "Nak triggers redelivery up to MaxDeliver, then the message is dead-lettered",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/queue/queue_test.go",
-    "preconditions": ["Queue configured with MaxDeliver=5"],
-    "steps": ["Fetch and Nak the same message 5 times in a row", "Attempt a 6th Next()"],
+    "preconditions": [
+      "Queue configured with MaxDeliver=5"
+    ],
+    "steps": [
+      "Fetch and Nak the same message 5 times in a row",
+      "Attempt a 6th Next()"
+    ],
     "expectedResult": "After the 5th Nak, the message moves to the dead-letter stream and is no longer returned by Next() on the primary consumer.",
-    "tags": ["queue", "dead-letter"],
+    "tags": [
+      "queue",
+      "dead-letter"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -104,16 +165,25 @@
     "subFeature": "Vault Broker",
     "title": "AppRole login + KV-v2 write/read round trip returns the exact stored credential value",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-management-service/src/services/vault-broker.service.test.ts",
-    "preconditions": ["A real (dev fixture) Vault instance with the vtec AppRole configured"],
+    "preconditions": [
+      "A real (dev fixture) Vault instance with the vtec AppRole configured"
+    ],
     "steps": [
       "Call writeCredential(tenantId, connectorId, ref, value)",
       "Call readCredential(tenantId, connectorId, ref)"
     ],
     "expectedResult": "The read returns exactly the written value; a read for a nonexistent ref returns null, not an error.",
-    "tags": ["vault", "credentials"],
+    "tags": [
+      "vault",
+      "credentials"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -127,13 +197,25 @@
     "title": "A WS heartbeat envelope writes cpu/memory/queue_depth into vtec_connector_metrics",
     "description": "HeartbeatService.recordHeartbeat persists every heartbeat sample (not just the latest onto ConnectorDoc) so GET /connectors/{id}/status can read a fresh, real value.",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-management-service/src/services/heartbeat.service.test.ts",
-    "preconditions": ["A registered test connector and a real heartbeat envelope payload"],
-    "steps": ["Send a heartbeat envelope over the mTLS WS connection", "Query vtec_connector_metrics for that connector"],
+    "preconditions": [
+      "A registered test connector and a real heartbeat envelope payload"
+    ],
+    "steps": [
+      "Send a heartbeat envelope over the mTLS WS connection",
+      "Query vtec_connector_metrics for that connector"
+    ],
     "expectedResult": "A new document appears with the exact cpu_percent/memory_mb/queue_depth values from the envelope and a fresh timestamp.",
-    "tags": ["heartbeat", "metrics"],
+    "tags": [
+      "heartbeat",
+      "metrics"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -146,13 +228,26 @@
     "subFeature": "Workflow Scheduler",
     "title": "Scheduler fires an adapter's configured cron schedule and reports a StepSucceeded result",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/workflow/scheduler/scheduler_test.go",
-    "preconditions": ["An adapter registered with schedule \"@every 1s\" against a runner that returns a successful collection"],
-    "steps": ["Register the adapter with the scheduler", "Wait for at least one tick", "Inspect the OnResult callback's WorkflowResult"],
+    "preconditions": [
+      "An adapter registered with schedule \"@every 1s\" against a runner that returns a successful collection"
+    ],
+    "steps": [
+      "Register the adapter with the scheduler",
+      "Wait for at least one tick",
+      "Inspect the OnResult callback's WorkflowResult"
+    ],
     "expectedResult": "OnResult fires with Steps containing one entry for the adapter, Status=StepSucceeded, and a non-nil Collection.",
-    "tags": ["scheduler", "cron"],
+    "tags": [
+      "scheduler",
+      "cron"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -165,13 +260,25 @@
     "subFeature": "Pipeline",
     "title": "Pipeline.Run executes all 8 synchronous stages in wiki §06 order and stops cleanly on an intentional drop",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/pipeline/pipeline_test.go",
-    "preconditions": ["A Pipeline built from real Normalize/Filter/Dedupe/Mask/Enrich/Compress/Encrypt/Queue stages"],
-    "steps": ["Run a fresh record through the pipeline", "Run the identical record through the same pipeline a second time"],
+    "preconditions": [
+      "A Pipeline built from real Normalize/Filter/Dedupe/Mask/Enrich/Compress/Encrypt/Queue stages"
+    ],
+    "steps": [
+      "Run a fresh record through the pipeline",
+      "Run the identical record through the same pipeline a second time"
+    ],
     "expectedResult": "The stages execute in the exact order Normalize->Filter->Dedupe->Mask->Enrich->Compress->Encrypt->Queue; the second run returns (nil, nil) at Dedupe with no error and no later stage executes.",
-    "tags": ["pipeline", "order"],
+    "tags": [
+      "pipeline",
+      "order"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -185,13 +292,24 @@
     "title": "First Snapshot() call after construction reports a sane CPU percentage, not a startup spike",
     "description": "ProcessMetricsSource takes a baseline sample at construction time specifically so the first real Snapshot() diffs against that baseline rather than zero, which would otherwise divide the process's entire cumulative CPU-seconds by a near-zero elapsed interval.",
     "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "automationRef": "vtec-connector/internal/comm/websocket/metrics_test.go",
-    "preconditions": ["A freshly constructed ProcessMetricsSource"],
-    "steps": ["Call Snapshot() immediately after construction"],
+    "preconditions": [
+      "A freshly constructed ProcessMetricsSource"
+    ],
+    "steps": [
+      "Call Snapshot() immediately after construction"
+    ],
     "expectedResult": "CPUPercent is a small, plausible value (not thousands of percent) on the very first call.",
-    "tags": ["metrics", "regression-guard"],
+    "tags": [
+      "metrics",
+      "regression-guard"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-07",

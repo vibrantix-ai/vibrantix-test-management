@@ -7,16 +7,24 @@
     "title": "archiveFromProject/archiveByFrameworkId must continue to match status:'license_revoked', not just 'active'",
     "description": "Regression guard: these two endpoints previously only matched status:'active', so a framework whose license was revoked (moved to 'license_revoked' by the org.controller.js license-revocation cascade) could never be archived/removed — it was stuck as an orphaned dead end forever. Both now match status:{$in:['active','license_revoked']}.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "GRC-license-revoked-archive",
-    "preconditions": ["A ClientFramework has status 'license_revoked'"],
+    "preconditions": [
+      "A ClientFramework has status 'license_revoked'"
+    ],
     "steps": [
       "DELETE /compliance-frameworks/projects/:projectId/frameworks/:id",
       "DELETE /compliance-frameworks/projects/:projectId/frameworks/by-framework/:frameworkId (separately, for a second license_revoked record)"
     ],
     "expectedResult": "Both requests succeed (not 404 'Client framework not found') and set status to 'archived'.",
-    "tags": ["regression", "licensing"],
+    "tags": [
+      "regression",
+      "licensing"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -30,16 +38,24 @@
     "title": "/grc-framework must not hang on the loading skeleton forever when no project is selected",
     "description": "Regression guard (2026-07-06 access-audit follow-up): loadData() previously returned early when !projectId without ever calling setLoading(false), so 'loading' (initialized true) was never cleared and the page stayed on its skeleton instead of showing the 'no project selected' info banner.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "GRC-no-project-loading-hang",
-    "preconditions": ["No project is currently selected in the project switcher"],
+    "preconditions": [
+      "No project is currently selected in the project switcher"
+    ],
     "steps": [
       "Log in with no project selected (or explicitly clear the selected project)",
       "Navigate to /grc-framework"
     ],
     "expectedResult": "The skeleton clears and the 'Select a project to view its frameworks.' info alert is shown — the page never stays on the loading skeleton indefinitely.",
-    "tags": ["regression", "loading-state"],
+    "tags": [
+      "regression",
+      "loading-state"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -53,16 +69,24 @@
     "title": "A failed catalog fetch must render the catalogError banner, not an unflagged '0 Total'",
     "description": "Regression guard: because loadData uses Promise.allSettled (which never rejects), a failed getAvailableFrameworks call previously rendered identically to a genuine zero-framework tenant — both showed a plain '0 Total' with no indication anything went wrong. catalogError is now set explicitly from catalogRes.status !== 'fulfilled'.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "linkedDefect": "GRC-catalog-error-masking",
-    "preconditions": ["The available-frameworks endpoint is forced to fail (e.g. 500 or network error)"],
+    "preconditions": [
+      "The available-frameworks endpoint is forced to fail (e.g. 500 or network error)"
+    ],
     "steps": [
       "Force cfrsService.getAvailableFrameworks to reject/error",
       "Load /grc-framework"
     ],
     "expectedResult": "An error-status alert reads: \"Couldn't load the framework catalog. The \\\"0 Total\\\" below does not mean this project has no frameworks — try Refresh.\" — distinctly different from the plain empty-state a real zero-framework tenant sees.",
-    "tags": ["regression", "error-handling"],
+    "tags": [
+      "regression",
+      "error-handling"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -76,16 +100,25 @@
     "title": "Live-score-unavailable state must render '—' placeholders, not a false 0% coverage reading",
     "description": "Regression guard for the renamed liveScoresUnavailable flag (formerly PCL-legacy pclNotSynced, unrelated to the retired PCL pipeline). When the live coverage-score fetch fails, FrameworksManager must show a gray '—' CircularProgress instead of a colored 0%, which would misrepresent a fetch failure as a genuine zero-coverage framework.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "linkedDefect": "GRC-pcl-legacy-naming",
-    "preconditions": ["complianceService.getProjectFrameworkList is forced to fail for this load"],
+    "preconditions": [
+      "complianceService.getProjectFrameworkList is forced to fail for this load"
+    ],
     "steps": [
       "Force the live-score fetch to fail",
       "Load /grc-framework and inspect an active framework tile's coverage ring"
     ],
     "expectedResult": "The tile shows a gray '—' inside the CircularProgress ring, not a green/red ring reading '0%'. No UI copy anywhere on the page references 'PCL' or 'pclNotSynced'.",
-    "tags": ["regression", "pcl", "ui-copy"],
+    "tags": [
+      "regression",
+      "pcl",
+      "ui-copy"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -99,14 +132,23 @@
     "title": "Selecting 'No Assets' while status filter is 'Covered' must auto-clear the status filter",
     "description": "Regression guard for an unreachable filter combination: 'Covered' status and 'No Assets' asset-type are mutually exclusive (a covered control by definition has assets). The 'Covered' option is disabled in the Select while assetFilter==='no_assets', and choosing 'no_assets' while statusFilter is already 'covered' must reset statusFilter to 'all' rather than leaving it pointed at a now-disabled, permanently-empty-result option.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["statusFilter is currently 'covered'"],
+    "preconditions": [
+      "statusFilter is currently 'covered'"
+    ],
     "steps": [
       "On the compliance map filter bar, with Status = 'Covered', change Asset Type to 'No Assets'"
     ],
     "expectedResult": "statusFilter resets to 'all' automatically; the Status dropdown's 'Covered' option shows as disabled/'(n/a)' while No Assets is selected; the result list is never silently stuck at zero rows with no visible explanation.",
-    "tags": ["regression", "filters", "ux"],
+    "tags": [
+      "regression",
+      "filters",
+      "ux"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -6,12 +6,23 @@
     "subFeature": "Fleet Dashboard",
     "title": "Status badges are distinguishable without relying on color alone",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["The fleet dashboard with connectors in multiple statuses"],
-    "steps": ["View the page with a color-blindness simulation filter applied", "Confirm each status badge's text label is legible independent of its color"],
+    "preconditions": [
+      "The fleet dashboard with connectors in multiple statuses"
+    ],
+    "steps": [
+      "View the page with a color-blindness simulation filter applied",
+      "Confirm each status badge's text label is legible independent of its color"
+    ],
     "expectedResult": "Pending/Online/Offline/Revoked are each identifiable by their text label, not color alone.",
-    "tags": ["accessibility", "color-contrast"],
+    "tags": [
+      "accessibility",
+      "color-contrast"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -24,12 +35,24 @@
     "subFeature": "Register Connector Modal",
     "title": "The Register Connector modal is fully operable via keyboard only",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.create"],
-    "steps": ["Open the modal using only the keyboard (Tab/Enter)", "Tab to the TTL input, the Issue button, and the copy-to-clipboard button", "Activate each with Enter/Space"],
+    "preconditions": [
+      "Logged in as a user with vtec.create"
+    ],
+    "steps": [
+      "Open the modal using only the keyboard (Tab/Enter)",
+      "Tab to the TTL input, the Issue button, and the copy-to-clipboard button",
+      "Activate each with Enter/Space"
+    ],
     "expectedResult": "Every control is reachable and operable via keyboard alone, with a visible focus indicator at each step; the modal can be closed via keyboard (Escape) as well.",
-    "tags": ["accessibility", "keyboard-navigation"],
+    "tags": [
+      "accessibility",
+      "keyboard-navigation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -42,12 +65,24 @@
     "subFeature": "Credentials Tab",
     "title": "Credential form inputs have correct autocomplete/type attributes and accessible labels",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a user with vtec.create"],
-    "steps": ["Inspect the Value input's type and autocomplete attributes", "Confirm each FormControl's FormLabel is programmatically associated with its input"],
+    "preconditions": [
+      "Logged in as a user with vtec.create"
+    ],
+    "steps": [
+      "Inspect the Value input's type and autocomplete attributes",
+      "Confirm each FormControl's FormLabel is programmatically associated with its input"
+    ],
     "expectedResult": "The value field is type=\"password\" with autoComplete=\"new-password\" (never pre-filled or auto-suggested from browser history); a screen reader announces each field's label correctly.",
-    "tags": ["accessibility", "forms", "screen-reader"],
+    "tags": [
+      "accessibility",
+      "forms",
+      "screen-reader"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",
@@ -60,12 +95,22 @@
     "subFeature": "Connector Detail",
     "title": "The cert-expiry stat card exposes its urgency via text, not color alone",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A connector with a certificate expiring within 24 hours"],
-    "steps": ["View the connector detail page's Certificate Expiry card with a screen reader / color simulation"],
+    "preconditions": [
+      "A connector with a certificate expiring within 24 hours"
+    ],
+    "steps": [
+      "View the connector detail page's Certificate Expiry card with a screen reader / color simulation"
+    ],
     "expectedResult": "The card's text ('Xh remaining', 'Expired') conveys urgency on its own, independent of the red/orange/green color coding.",
-    "tags": ["accessibility", "color-contrast"],
+    "tags": [
+      "accessibility",
+      "color-contrast"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-08-07",

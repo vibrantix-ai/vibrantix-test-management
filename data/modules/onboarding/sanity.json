@@ -7,13 +7,18 @@
     "title": "Step-1 blocks submission when industry or size is left blank",
     "description": "step-1/page.jsx's next() handler checks '!form.industry || !form.size' and sets err='Please fill in both fields.' before calling completeStep.",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /onboarding/step-1, leave 'Company size' unselected and click Continue"
     ],
     "expectedResult": "The form does not submit; 'Please fill in both fields.' is shown in red and the user remains on step-1.",
-    "tags": ["validation"],
+    "tags": [
+      "validation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -27,13 +32,19 @@
     "title": "Step-4 rejects a malformed email address before adding it to the invite list",
     "description": "isValidEmail() in step-4/page.jsx uses /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/ to gate addEmail().",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /onboarding/step-4, type 'not-an-email' and press Enter"
     ],
     "expectedResult": "'Enter a valid email address.' is displayed; the malformed value is not added as a Tag.",
-    "tags": ["validation", "invite-team"],
+    "tags": [
+      "validation",
+      "invite-team"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -47,14 +58,22 @@
     "title": "Step-4 enforces the 19-invite maximum",
     "description": "MAX_INVITES = 19 in step-4/page.jsx (owner already counts as the 20th seat toward the Growth-tier cap).",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["19 valid, unique emails already added to the invite list"],
+    "preconditions": [
+      "19 valid, unique emails already added to the invite list"
+    ],
     "steps": [
       "Attempt to add a 20th valid email"
     ],
     "expectedResult": "'Maximum 19 invites.' is shown and the 20th email is not added to the Tag list.",
-    "tags": ["validation", "invite-team"],
+    "tags": [
+      "validation",
+      "invite-team"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -68,13 +87,19 @@
     "title": "Step-2 framework picker allows continuing with zero frameworks selected",
     "description": "Unlike step-1, Step2Page's next() handler has no guard on selected.length — it calls completeStep('step-2', { frameworks: [] }) even if nothing was checked.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /onboarding/step-2, select no frameworks and click Continue"
     ],
     "expectedResult": "The step completes and the wizard advances to /onboarding/step-3 with no client-side validation error, confirming framework selection is optional at this step.",
-    "tags": ["conditional-display", "validation-gap"],
+    "tags": [
+      "conditional-display",
+      "validation-gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -87,6 +112,9 @@
     "subFeature": "Step Completion API",
     "title": "Completing with an invalid step key leaves completedSteps untouched",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
@@ -94,7 +122,10 @@
       "GET /api/v1/onboarding/state"
     ],
     "expectedResult": "The complete call returns 400 INVALID_STEP; GET /state shows completedSteps identical to before the call.",
-    "tags": ["api", "validation"],
+    "tags": [
+      "api",
+      "validation"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -108,6 +139,9 @@
     "title": "Both the Connect and Skip actions on step-3 ultimately mark step-3 complete",
     "description": "step-3/page.jsx has two paths to completion: markComplete() (direct 'Skip for now') and connectAndContinue() (redirects to /cloud-posture?onboarding=true&returnTo=/onboarding/step-3/return, with the actual completeStep call happening on return). Both must result in step-3 being present in completedSteps.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -115,7 +149,9 @@
       "Path B (separate org): click 'Connect AWS / Azure / GCP', complete the redirect flow, and check completedSteps"
     ],
     "expectedResult": "In both paths, 'step-3' appears in completedSteps and the wizard proceeds to step-4 — skipping is not a dead end that leaves step-3 perpetually incomplete.",
-    "tags": ["skip-step"],
+    "tags": [
+      "skip-step"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

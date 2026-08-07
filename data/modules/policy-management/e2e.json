@@ -6,9 +6,14 @@
     "subFeature": "Lifecycle",
     "title": "Policy moves draft -> review -> approved -> active through the full UI workflow with correct badge at each step",
     "priority": "P0",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User has policy.create, policy.update, and policy.approve"],
+    "preconditions": [
+      "User has policy.create, policy.update, and policy.approve"
+    ],
     "steps": [
       "Create a new policy (status: draft)",
       "Transition it to 'review'",
@@ -17,7 +22,10 @@
       "Transition it to 'active'"
     ],
     "expectedResult": "Each transition updates the status badge correctly and is reflected in /:policyId/workflow-history with the correct actor and timestamp for every step.",
-    "tags": ["lifecycle", "workflow"],
+    "tags": [
+      "lifecycle",
+      "workflow"
+    ],
     "requirement": "ISO 27001 Clause 5.2",
     "owner": "QA",
     "status": "active",
@@ -31,6 +39,9 @@
     "subFeature": "Templates",
     "title": "Generating a policy from a template pre-fills content and framework mapping correctly",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
@@ -39,7 +50,9 @@
       "Open the resulting policy"
     ],
     "expectedResult": "New policy is created in draft status with the template's content pre-filled and any template-associated control mappings carried over.",
-    "tags": ["templates"],
+    "tags": [
+      "templates"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,15 +65,24 @@
     "subFeature": "Restore",
     "title": "Admin can restore a soft-deleted policy and it reappears in the active list with full version history intact",
     "priority": "P1",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["User holds policy.admin", "A policy was soft-deleted"],
+    "preconditions": [
+      "User holds policy.admin",
+      "A policy was soft-deleted"
+    ],
     "steps": [
       "POST /policies/:policyId/restore",
       "Navigate to the policy list and open the restored policy's version history"
     ],
     "expectedResult": "Policy reappears in the active list, and all prior versions/comments/workflow history are still present and unaffected by the delete/restore cycle.",
-    "tags": ["restore", "soft-delete"],
+    "tags": [
+      "restore",
+      "soft-delete"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

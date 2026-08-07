@@ -6,12 +6,24 @@
     "subFeature": "Organization Overview",
     "title": "GET /api/organizations/me returns 200 with the caller's org document",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JWT for any active org member"],
-    "steps": ["Call GET /api/organizations/me"],
+    "preconditions": [
+      "Valid JWT for any active org member"
+    ],
+    "steps": [
+      "Call GET /api/organizations/me"
+    ],
     "expectedResult": "200 with { success: true, data: { name, domain, settings, subscription, usage, ... } } for the caller's own organization.",
-    "tags": ["smoke", "organization-overview"],
+    "tags": [
+      "smoke",
+      "organization-overview"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -24,11 +36,22 @@
     "subFeature": "Organization Overview",
     "title": "/organization loads the Overview tab without error for a user holding organization.read",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "steps": ["Log in as an org member with organization.read", "Navigate to /organization"],
+    "steps": [
+      "Log in as an org member with organization.read",
+      "Navigate to /organization"
+    ],
     "expectedResult": "OrganizationOverviewTab renders: stats cards (Total Users, Active Users, Administrators, Member Since) and the Organization Details card, with no error boundary or console error.",
-    "tags": ["smoke", "organization-overview"],
+    "tags": [
+      "smoke",
+      "organization-overview"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -41,11 +64,21 @@
     "subFeature": "Team Management",
     "title": "/organization/team loads and lists existing org users",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "steps": ["Navigate to /organization/team"],
+    "steps": [
+      "Navigate to /organization/team"
+    ],
     "expectedResult": "UserAccessPage renders the user list populated from GET /api/users, with Invite/Add User actions visible to a permitted caller.",
-    "tags": ["smoke", "team-management"],
+    "tags": [
+      "smoke",
+      "team-management"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -58,11 +91,22 @@
     "subFeature": "Roles and Permissions",
     "title": "/organization/roles renders either the RolesTab grid (enterprise tier) or the TierGate locked state (lower tier) without erroring",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "steps": ["Navigate to /organization/roles as an org admin"],
+    "steps": [
+      "Navigate to /organization/roles as an org admin"
+    ],
     "expectedResult": "Page renders one of the two valid states — the System/Custom role card grid, or TierGate's upgrade prompt — with no blank page, no unhandled exception, and no infinite loading skeleton.",
-    "tags": ["smoke", "roles", "tier-gate"],
+    "tags": [
+      "smoke",
+      "roles",
+      "tier-gate"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -75,11 +119,21 @@
     "subFeature": "Settings",
     "title": "/organization/settings loads current regional and notification preferences",
     "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "steps": ["Navigate to /organization/settings"],
+    "steps": [
+      "Navigate to /organization/settings"
+    ],
     "expectedResult": "SettingsTab renders Regional Settings, Notification Preferences, and Display Settings sections with values loaded from the org (not stuck on the loading skeleton).",
-    "tags": ["smoke", "settings"],
+    "tags": [
+      "smoke",
+      "settings"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -92,12 +146,26 @@
     "subFeature": "Team Management",
     "title": "A valid single-invite submission returns 201 and creates an invited user",
     "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "preconditions": ["Caller holds user.create", "Org has at least 1 free seat"],
-    "steps": ["POST /api/users with a well-formed { email, firstName, lastName, roleId }"],
+    "preconditions": [
+      "Caller holds user.create",
+      "Org has at least 1 free seat"
+    ],
+    "steps": [
+      "POST /api/users with a well-formed { email, firstName, lastName, roleId }"
+    ],
     "expectedResult": "201 with { success: true, data: { status: 'invited', ... } } and message confirming the invitation email was sent.",
-    "tags": ["smoke", "invite", "team-management"],
+    "tags": [
+      "smoke",
+      "invite",
+      "team-management"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

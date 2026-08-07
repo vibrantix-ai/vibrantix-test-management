@@ -7,6 +7,9 @@
     "title": "normaliseAuditScopeItem maps assessmentStatus to the correct normalizedStatus bucket",
     "description": "tasks.normalise.js normaliseAuditScopeItem: DONE={'closed','not_applicable'}, IN_PROG={'in_progress','under_review','needs_revision'}, everything else (including 'not_started', 'assigned') falls through to 'pending'.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
@@ -16,7 +19,11 @@
       "Call it again with an unrecognised value, e.g. assessmentStatus='foo'"
     ],
     "expectedResult": "Returned normalizedStatus is 'done' for 'closed', 'in_progress' for 'under_review', and 'pending' for both 'not_started' and the unrecognised 'foo' value (safe default).",
-    "tags": ["normalisation", "audit", "status-mapping"],
+    "tags": [
+      "normalisation",
+      "audit",
+      "status-mapping"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -30,6 +37,9 @@
     "title": "normaliseAuditScopeItem derives navigateTo/sourceEntityName from a populated vs. raw auditId",
     "description": "auditId may arrive already populated ({_id, name}, from the .populate('auditId','name') query) or as a raw ObjectId (from the WorkflowEntry legacy fallback path, which does not populate). Both must resolve navigateTo to '/audit-assurance/{id}/configured'; only the populated form yields sourceEntityName.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
@@ -38,7 +48,11 @@
       "Call normaliseAuditScopeItem with auditId = null"
     ],
     "expectedResult": "Both non-null cases produce navigateTo='/audit-assurance/{id}/configured' and sourceEntityId={id}; only the populated case sets sourceEntityName='ISO 27001 Q3 Audit', the raw-ObjectId case leaves sourceEntityName undefined. The null case falls back to navigateTo='/audit-assurance' with sourceEntityId undefined.",
-    "tags": ["normalisation", "audit", "navigation"],
+    "tags": [
+      "normalisation",
+      "audit",
+      "navigation"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -52,6 +66,9 @@
     "title": "normaliseNonConformance surfaces requirementId from isoClauseRef",
     "description": "Regression guard for TK-011 (fixed): normaliseNonConformance previously returned no requirementId field at all, making 'audit' module tasks inconsistent (AuditScopeItem tasks show a requirement chip via TitleCell, CAR tasks did not). The fix sets requirementId: nc.isoClauseRef || null.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "linkedDefect": "TK-011",
@@ -60,7 +77,12 @@
       "Call normaliseNonConformance with isoClauseRef omitted"
     ],
     "expectedResult": "First call returns requirementId='A.5.3'. Second call returns requirementId=null (not undefined) — TitleCell's `task.requirementId &&` check safely omits the chip either way, but the field must always be present on the object.",
-    "tags": ["normalisation", "audit", "requirement-id", "regression"],
+    "tags": [
+      "normalisation",
+      "audit",
+      "requirement-id",
+      "regression"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -74,6 +96,9 @@
     "title": "normaliseWorkflowEntry hardcodes priority='medium' and branches navigateTo/entityType by sourceModule",
     "description": "WorkflowEntry documents (evidence and policy reviews) carry no priority field, so normaliseWorkflowEntry always returns priority: 'medium' regardless of the underlying entity's real priority. navigateTo and the human-readable entityType label ('Evidence'/'Policy') are derived purely from the sourceModule argument, not from any field on the entry itself.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
@@ -81,7 +106,12 @@
       "Call normaliseWorkflowEntry(entry, 'policy', 'policy') on the same shaped entry"
     ],
     "expectedResult": "Both calls return priority='medium' unconditionally. The evidence call returns entityType='Evidence' and navigateTo='/evidence-management/my-reviews/{entityId}'; the policy call returns entityType='Policy' and navigateTo='/policy-management/{entityId}'. Both map status='under_review' to normalizedStatus='in_progress'.",
-    "tags": ["normalisation", "evidence", "policy", "workflow"],
+    "tags": [
+      "normalisation",
+      "evidence",
+      "policy",
+      "workflow"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -95,13 +125,21 @@
     "title": "normaliseEvidenceRequest always returns dueDate=undefined and isOverdue=false",
     "description": "EvidenceRequest has no dueDate field in its schema (per the inline comment in tasks.normalise.js), so normaliseEvidenceRequest hardcodes isOverdue: false directly rather than calling the shared isOverdue() helper used by every other normaliser. This is a deliberate schema-driven gap, not a bug — but it means EvidenceRequest tasks can never appear in the 'Overdue' summary card or overdue filter no matter how old the request is.",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
       "Call normaliseEvidenceRequest on an EvidenceRequest doc created 90 days ago with status='open'"
     ],
     "expectedResult": "Returned task has dueDate=undefined and isOverdue=false, regardless of how old createdAt is — confirming EvidenceRequest tasks are structurally excluded from overdue detection.",
-    "tags": ["normalisation", "evidence", "overdue", "data-gap"],
+    "tags": [
+      "normalisation",
+      "evidence",
+      "overdue",
+      "data-gap"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -114,6 +152,9 @@
     "subFeature": "Normalisation",
     "title": "normaliseFinding defaults remediation.status to 'open' when the remediation sub-object is absent",
     "priority": "P2",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
@@ -122,7 +163,11 @@
       "Call normaliseFinding on a Finding doc with remediation.status='resolved'"
     ],
     "expectedResult": "Case 1 returns status='open', normalizedStatus='pending'. Case 2 returns normalizedStatus='in_progress'. Case 3 returns normalizedStatus='done'. No exception is thrown when 'remediation' is undefined.",
-    "tags": ["normalisation", "cloud-posture", "finding"],
+    "tags": [
+      "normalisation",
+      "cloud-posture",
+      "finding"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -136,6 +181,9 @@
     "title": "getMyTasks null-guards assignedTo before calling .toString() in the ManagementReview and ContinuousImprovement flat-maps",
     "description": "Regression guard for TK-014 and TK-018 (both fixed): the flatMap filters in tasks.service.js read `init.assignedTo && init.assignedTo.toString() === userIdStr` (and the equivalent for ManagementReview action items). Without the `init.assignedTo &&` short-circuit, an item with assignedTo=null/undefined throws a TypeError inside Array.prototype.flatMap, which is NOT caught by the outer internal try/catch (that only wraps the Promise.all, not the post-processing flatMap below it) and would crash the whole /api/tasks request for every user in the org.",
     "priority": "P1",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "linkedDefect": "TK-014",
@@ -148,7 +196,13 @@
       "Confirm the request completes successfully"
     ],
     "expectedResult": "No TypeError is thrown; the null-assignedTo action item and initiative are silently skipped (they don't match `item.assignedTo && ...`), while the properly-assigned items still appear correctly in the response.",
-    "tags": ["null-guard", "management-review", "continuous-improvement", "regression", "crash"],
+    "tags": [
+      "null-guard",
+      "management-review",
+      "continuous-improvement",
+      "regression",
+      "crash"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -162,6 +216,9 @@
     "title": "normalisePriority defaults unknown, missing, and mis-cased values to 'medium'",
     "description": "normalisePriority lower-cases the input and checks membership in {'low','medium','high','critical'}; anything else (including a value that only differs by casing, e.g. 'High') falls through to the 'medium' default since the raw value 'High' with its original casing is never in the VALID set — only the lower-cased form is checked for membership, and the ORIGINAL (not lower-cased) value is never returned, so case normalisation itself is not lossy, but any caller expecting 'High' to pass through untouched would be wrong.",
     "priority": "P3",
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "planned",
     "steps": [
@@ -171,7 +228,10 @@
       "Call normalisePriority('urgent')"
     ],
     "expectedResult": "'critical' -> 'critical'. 'High' -> 'high' (lower-cased then matched). undefined -> 'medium'. 'urgent' (not in the valid set even lower-cased) -> 'medium'.",
-    "tags": ["normalisation", "priority"],
+    "tags": [
+      "normalisation",
+      "priority"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",

@@ -5,14 +5,22 @@
     "category": "sanity",
     "title": "Changing only Last Name does not alter First Name",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a seeded user with known firstName/lastName"],
+    "preconditions": [
+      "Logged in as a seeded user with known firstName/lastName"
+    ],
     "steps": [
       "On /profile, change only Last Name and click 'Save Changes'"
     ],
     "expectedResult": "First Name remains exactly as it was before the save — no cross-field corruption from the partial update.",
-    "tags": ["sanity", "profile-form"],
+    "tags": [
+      "sanity",
+      "profile-form"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -24,13 +32,19 @@
     "category": "sanity",
     "title": "Notification switches toggle immediately in the UI before Save is pressed",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /profile, click the 'System Updates' switch without clicking 'Save Changes'"
     ],
     "expectedResult": "The switch visually flips state immediately (client-side state only) — this local toggle works correctly regardless of the known server-side persistence gap (PROF-INT-002).",
-    "tags": ["sanity", "notification-preferences"],
+    "tags": [
+      "sanity",
+      "notification-preferences"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -43,14 +57,22 @@
     "title": "'My Projects' lists the caller's own project memberships with the correct role badge",
     "description": "Sourced from GET /users/me/projects (exports.getMyProjects) — project.admin bypass users see every active org project with permissions:[], while regular members see only their ProjectMember rows with a resolved projectRoleName/isProjectRoleAdmin badge.",
     "priority": "P2",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["Logged in as a non-admin user who is a member of exactly one project with a named project role"],
+    "preconditions": [
+      "Logged in as a non-admin user who is a member of exactly one project with a named project role"
+    ],
     "steps": [
       "Open /profile and view the 'My Projects' card"
     ],
     "expectedResult": "Exactly one project row is shown, with a badge showing the project role name (not 'Project Admin') matching what GET /users/me/projects returns for projectRoleName/isProjectRoleAdmin.",
-    "tags": ["sanity", "my-projects"],
+    "tags": [
+      "sanity",
+      "my-projects"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -63,13 +85,20 @@
     "title": "'View Activity Log' button in Account Activity has no click handler and performs no action",
     "description": "profile/page.jsx renders the 'View Activity Log' Button with no onClick prop — clicking it is currently a dead control with no navigation, modal, or API call.",
     "priority": "P3",
+    "environment": [
+      "stage"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
       "On /profile, click 'View Activity Log' under Account Activity"
     ],
     "expectedResult": "Current behavior: nothing happens — no navigation, no drawer/modal opens, no network request fires. Flagged as an incomplete/placeholder control for follow-up rather than a functioning feature.",
-    "tags": ["sanity", "account-activity", "gap"],
+    "tags": [
+      "sanity",
+      "account-activity",
+      "gap"
+    ],
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",

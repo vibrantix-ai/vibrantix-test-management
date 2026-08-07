@@ -7,15 +7,25 @@
     "title": "PUT /users/me can only ever modify the caller's own record — there is no user-id parameter to redirect the write",
     "description": "exports.updateMe always targets req.userId (derived from the authenticated JWT via the authenticate middleware); the route has no :id segment, and no field in the request body can override the target user. This is structurally different from PUT /users/:id (which requires requirePermission('user.update') plus assertOrgAccess) — self-service update is IDOR-proof by construction rather than by an authorization check.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Two users A and B in the same organization, valid JWT for User A"],
+    "preconditions": [
+      "Two users A and B in the same organization, valid JWT for User A"
+    ],
     "steps": [
       "As User A, call PUT /users/me with body { firstName: 'Hacked', _id: '<User B's ObjectId>', userId: '<User B's ObjectId>' }",
       "Re-fetch User B's record via GET /users/:id (as an admin) to confirm it is untouched"
     ],
     "expectedResult": "Only User A's firstName changes to 'Hacked'. User B's record is completely unaffected — extraneous id-like fields in the body have no effect on which document is updated.",
-    "tags": ["idor", "self-service", "owasp-a01"],
+    "tags": [
+      "idor",
+      "self-service",
+      "owasp-a01"
+    ],
     "requirement": "ISO 27001 Annex A.5.15",
     "owner": "Security",
     "status": "active",
@@ -30,14 +40,24 @@
     "title": "Suspicious placeholder names ('test', 'admin', 'dummy', ...) are rejected only by client-side JS and are fully accepted by the API",
     "description": "The SUSPICIOUS_WORDS check lives entirely inside profile/page.jsx's handleSaveProfile(); exports.updateMe applies no equivalent filter. An authenticated user (or any script holding a valid bearer token) can call PUT /users/me directly and store any of the banned placeholder words as their real name, bypassing a control the UI implies is enforced end-to-end.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JWT for a seeded user, calling the API directly (not through the browser form)"],
+    "preconditions": [
+      "Valid JWT for a seeded user, calling the API directly (not through the browser form)"
+    ],
     "steps": [
       "Call PUT /users/me with body { firstName: 'test', lastName: 'admin' } directly via curl/Postman/API test client"
     ],
     "expectedResult": "Current behavior: the request succeeds (200) and both placeholder values are persisted — no server-side rejection occurs. Flagged as a validation-parity gap: the 'no dummy data' guard is UI-only and trivially bypassable.",
-    "tags": ["validation", "gap", "client-side-only"],
+    "tags": [
+      "validation",
+      "gap",
+      "client-side-only"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -51,14 +71,23 @@
     "title": "PUT /users/me/password rejects an incorrect current password and performs no change",
     "description": "exports.changeOwnPassword verifies oldPassword via verifyUserPassword() (a Keycloak ROPC grant against the account's own email) before calling setUserPassword(); a failed verification throws 400 'Current password is incorrect' and logs authz.password_change.invalid_current_password.",
     "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JWT for a seeded user linked to Keycloak"],
+    "preconditions": [
+      "Valid JWT for a seeded user linked to Keycloak"
+    ],
     "steps": [
       "Call PUT /users/me/password with { oldPassword: 'WrongPassword123!', newPassword: 'BrandNewPassw0rd!' }"
     ],
     "expectedResult": "Request is rejected with 400 'Current password is incorrect'; a security-type audit log entry (authz.password_change.invalid_current_password) is recorded, and the account's real password is unchanged (a subsequent login with the old password still works).",
-    "tags": ["password-change", "authentication"],
+    "tags": [
+      "password-change",
+      "authentication"
+    ],
     "requirement": "ISO 27001 Annex A.5.17",
     "owner": "Security",
     "status": "active",
@@ -73,9 +102,15 @@
     "title": "No frontend code path ever calls POST /users/me/password-changed — a directly-created user's mustChangePassword flag can remain true indefinitely",
     "description": "user.controller.js's create() sets mustChangePassword:true for direct-create users (isDirectCreate) so Keycloak forces an UPDATE_PASSWORD action on first login, and clearPasswordFlag (POST /users/me/password-changed) exists specifically to clear that flag afterward. A full-text search of vibrantix-client-panel/src for 'password-changed', 'clearPasswordFlag', 'mustChangePassword', and 'UPDATE_PASSWORD' turns up no caller of this endpoint anywhere in the app (auth callback, login page, or profile page) — only two unrelated code comments reference the concept. Any consumer relying on mustChangePassword/status to gate access (e.g. a forced password-change redirect) cannot assume it ever flips to false through normal product usage today.",
     "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "preconditions": ["A user created via direct-create (Add User modal, direct:true) completes the Keycloak-hosted UPDATE_PASSWORD screen and lands back in the app"],
+    "preconditions": [
+      "A user created via direct-create (Add User modal, direct:true) completes the Keycloak-hosted UPDATE_PASSWORD screen and lands back in the app"
+    ],
     "steps": [
       "Create a user directly (Add User, not invite) so mustChangePassword=true and status='invited'",
       "Log in as that user, complete Keycloak's forced password-change screen",
@@ -83,7 +118,11 @@
       "Search the client-panel bundle/network log for any call to POST /users/me/password-changed during this flow"
     ],
     "expectedResult": "Current behavior: mustChangePassword remains true and status remains 'invited' after completing the Keycloak flow, because nothing in the client panel invokes POST /users/me/password-changed. This is a real integration gap between a working backend endpoint and an unwired frontend flow — flag for remediation (wire the auth callback to call this endpoint after a detected forced password change) rather than treat as passing.",
-    "tags": ["must-change-password", "gap", "integration"],
+    "tags": [
+      "must-change-password",
+      "gap",
+      "integration"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -97,15 +136,25 @@
     "title": "PUT /users/me accepts unbounded-length and control-character-laden firstName/lastName values",
     "description": "Unlike PUT /users/:id and POST / (both wrapped in validate([...nameValidators]) enforcing isLength({max:100}) and a NO_CONTROL_CHARS /^[^\\x00-\\x1F\\x7F]*$/ pattern), PUT /me has zero express-validator middleware. A caller can submit an arbitrarily long name or one containing \\r\\n/other control bytes and have it persisted verbatim.",
     "priority": "P2",
+    "environment": [
+      "stage",
+      "prod"
+    ],
     "type": "both",
     "automationStatus": "not_automated",
-    "preconditions": ["Valid JWT for a seeded user"],
+    "preconditions": [
+      "Valid JWT for a seeded user"
+    ],
     "steps": [
       "Call PUT /users/me with firstName set to a 5,000-character string of repeated 'A's",
       "Call PUT /users/me with firstName set to \"Line1\\r\\nFAKE-LOG-ENTRY: admin granted\""
     ],
     "expectedResult": "Both requests currently succeed and persist the value as-is with no length cap or control-character stripping — a gap relative to the admin-edit path's defenses against oversized payloads and log/audit-trail forging via embedded control bytes.",
-    "tags": ["validation", "gap", "input-sanitization"],
+    "tags": [
+      "validation",
+      "gap",
+      "input-sanitization"
+    ],
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
