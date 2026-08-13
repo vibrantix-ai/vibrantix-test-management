@@ -44,7 +44,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User's role has no vciso.* permissions"
     ],
@@ -61,7 +61,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SEC-003",
@@ -76,7 +76,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "An existing conversation owned by the test user"
     ],
@@ -95,7 +95,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SEC-004",
@@ -203,7 +203,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User's role grants vciso.create but explicitly not vciso.update"
     ],
@@ -218,6 +218,6 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   }
 ]

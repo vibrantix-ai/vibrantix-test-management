@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/grc-framework-plac.test.ts",
     "preconditions": [
       "User held ProjectMember row on project P, now removed",
@@ -36,7 +36,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SEC-002",
@@ -50,7 +50,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User belongs to org A",
       "organizationId in the request path belongs to org B"
@@ -67,7 +67,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SEC-003",
@@ -82,7 +82,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework X is not in the org's licensed set"
     ],
@@ -97,7 +97,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SEC-004",
@@ -112,7 +112,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework F1 is active for project P",
       "A valid, active leaf requirement ID R2 belongs to an unrelated framework F2"
@@ -129,7 +129,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SEC-005",
@@ -175,7 +175,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User has framework.read and framework.update but NOT framework.admin"
     ],
@@ -191,7 +191,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SEC-007",

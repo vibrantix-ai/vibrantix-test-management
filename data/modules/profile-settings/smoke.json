@@ -11,7 +11,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/profile-settings/profile-settings-smoke.test.ts::test 1",
     "steps": [
       "Log in as a seeded user",
       "Navigate to /profile"
@@ -23,7 +24,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROF-SMK-002",

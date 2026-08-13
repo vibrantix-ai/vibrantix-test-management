@@ -13,7 +13,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
+    "automationRef": "test-automation/tests/trust/trust-vault/trust-vault-cert-smoke.test.ts::tests 1-2",
     "preconditions": [
       "Logged in as a user with trust_vault.read"
     ],
@@ -28,7 +28,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SMK-002",
@@ -43,7 +43,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
     "steps": [
       "Click 'Upload Certification' / 'New Certification'",
@@ -58,7 +58,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SMK-003",
@@ -73,7 +73,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
     "preconditions": [
       "A freshly onboarded org/project with zero certifications, reports, and incidents"
@@ -90,7 +90,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SMK-004",
@@ -106,7 +106,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
+    "automationRef": "test-automation/tests/trust/trust-vault/trust-vault-expiry-smoke.test.ts::test 4",
     "steps": [
       "Open the Expiry sub-tab of Trust Vault",
       "Click the 'Reports' pill, then click 'Certs' again"
@@ -119,7 +119,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SMK-005",
@@ -134,7 +134,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/trust-vault.spec.ts",
     "preconditions": [
       "The logged-in user has no certifications or reports currently assigned to them for review"
@@ -151,6 +151,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

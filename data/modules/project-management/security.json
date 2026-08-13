@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
     "preconditions": [
       "Two orgs (A, B) each with at least one project",
@@ -30,7 +30,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SEC-002",
@@ -45,7 +45,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
     "preconditions": [
       "User has no ProjectMember row for Project X",
@@ -64,7 +64,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SEC-003",
@@ -79,7 +79,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
     "preconditions": [
       "User holds a Custom role with the global 'project.update' permission but no ProjectMember row for Project X",
@@ -98,7 +98,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SEC-004",
@@ -112,7 +112,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User authenticated but has no 'project.create' permission and is not a per-project admin"
     ],
@@ -127,7 +127,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SEC-005",
@@ -142,7 +142,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User is a ProjectMember of Project X with the system PROJECT_MEMBER role (non-admin)"
     ],
@@ -159,7 +159,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SEC-006",

@@ -13,7 +13,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "automationRef": "test-automation/tests/audit/audit-assurance/audit-assurance-3.test.ts::test 1",
     "preconditions": [
       "Logged in as a user with audit.read permission"
     ],
@@ -27,7 +27,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-SMK-002",
@@ -42,7 +42,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
     "preconditions": [
       "An open finding exists on an active audit"
@@ -59,7 +59,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-SMK-003",
@@ -75,7 +75,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
+    "automationRef": "test-automation/tests/audit/audit-assurance/audit-assurance-3.test.ts::test 9",
     "preconditions": [
       "Audit has at least one finding"
     ],
@@ -90,7 +90,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-SMK-004",
@@ -105,7 +105,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/audit-assurance.spec.ts",
     "preconditions": [
       "An audit is in progress"
@@ -121,6 +121,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

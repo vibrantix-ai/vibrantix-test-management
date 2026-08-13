@@ -12,7 +12,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/billing/dashboard-smoke.test.ts::tests 1-2",
     "preconditions": [
       "Logged in as SUPERADMIN",
       "Org has pricing_v1 enabled"
@@ -29,7 +30,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "BILL-SMK-002",

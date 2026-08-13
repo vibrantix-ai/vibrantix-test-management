@@ -10,7 +10,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Hashing utility function is imported in isolation, no DB/S3 dependency"
     ],
@@ -26,7 +26,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-UNIT-002",
@@ -39,7 +39,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Coverage calculation function under test with a fixture set containing active and deprecated evidence"
     ],
@@ -55,7 +55,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-UNIT-003",
@@ -68,6 +68,7 @@
       "dev"
     ],
     "type": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Call the retention calculator with uploadDate=2026-01-01 and policy=365 days"
     ],
@@ -78,7 +79,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-UNIT-004",
@@ -92,7 +93,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "hasTriggerFieldChange tested in isolation with plain updateData objects"
     ],
@@ -109,7 +110,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-UNIT-005",
@@ -123,7 +124,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "buildOrgScope() tested with mock req objects, no DB/HTTP dependency"
     ],
@@ -141,6 +142,6 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

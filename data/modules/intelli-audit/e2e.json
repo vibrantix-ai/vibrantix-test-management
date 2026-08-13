@@ -11,7 +11,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/audit/intelli-audit/intelli-audit.test.ts::tests 1-2",
     "preconditions": [
       "Logged in as a user with pre_audit.read and audit.create",
       "A project is selected in the project switcher",
@@ -33,7 +34,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTA-E2E-002",
@@ -80,7 +81,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/audit/intelli-audit/intelli-audit.test.ts::test 11",
     "preconditions": [
       "Phase 2 recommendationGeneration.status is 'ready' with at least 2 AI-suggested controls",
       "Logged in as a user with audit.update"
@@ -99,7 +101,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTA-E2E-004",

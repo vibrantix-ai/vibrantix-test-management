@@ -11,7 +11,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:17",
     "steps": [
       "Construct a CloudPostureScan document with status='running' (and each other status in the active set) and call isActive()",
@@ -25,7 +25,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-UNIT-002",
@@ -64,7 +64,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:28",
     "steps": [
       "Call nextRun(new Date('2026-07-22T00:00:00Z'), 'hourly')",
@@ -80,7 +80,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-UNIT-004",
@@ -207,7 +207,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/cloud-posture-scan-lifecycle.test.js:37",
     "preconditions": [
       "process.env.ENVIRONMENT set to 'development'"
@@ -223,6 +223,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

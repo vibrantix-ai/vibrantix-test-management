@@ -12,7 +12,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::test 1",
     "preconditions": [
       "Logged in as a user with integration.read permission"
     ],
@@ -28,7 +29,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTG-SMK-002",
@@ -75,7 +76,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::tests 7, 9",
     "steps": [
       "On /integrations, click 'Connect' on any OAuth-based connector card (e.g. GitHub)",
       "Observe the browser navigation"
@@ -88,7 +90,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTG-SMK-004",
@@ -103,7 +105,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::test 2",
     "steps": [
       "Call GET /connectors with a valid org-scoped JWT"
     ],
@@ -115,7 +118,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTG-SMK-005",
@@ -130,7 +133,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/integration/integration-categories.test.ts::tests 1-20",
     "steps": [
       "On /integrations, click a category in the sidebar (e.g. 'Identity & IAM')",
       "Observe the rendered cards and badge counts"
@@ -143,7 +147,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTG-SMK-006",
@@ -158,7 +162,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::tests 2-3, 7, 9",
     "preconditions": [
       "An active, connected integration"
     ],
@@ -174,6 +179,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

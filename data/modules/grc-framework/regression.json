@@ -11,8 +11,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
-    "linkedDefect": "GRC-license-revoked-archive",
+    "automationStatus": "not_automated",
     "preconditions": [
       "A ClientFramework has status 'license_revoked'"
     ],
@@ -25,10 +24,11 @@
       "regression",
       "licensing"
     ],
+    "linkedDefect": "GRC-license-revoked-archive",
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-REG-002",
@@ -42,8 +42,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
-    "linkedDefect": "GRC-no-project-loading-hang",
+    "automationStatus": "not_automated",
     "preconditions": [
       "No project is currently selected in the project switcher"
     ],
@@ -56,10 +55,11 @@
       "regression",
       "loading-state"
     ],
+    "linkedDefect": "GRC-no-project-loading-hang",
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-REG-003",
@@ -73,8 +73,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
-    "linkedDefect": "GRC-catalog-error-masking",
+    "automationStatus": "not_automated",
     "preconditions": [
       "The available-frameworks endpoint is forced to fail (e.g. 500 or network error)"
     ],
@@ -87,10 +86,11 @@
       "regression",
       "error-handling"
     ],
+    "linkedDefect": "GRC-catalog-error-masking",
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-REG-004",
@@ -105,7 +105,6 @@
     ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "linkedDefect": "GRC-pcl-legacy-naming",
     "preconditions": [
       "complianceService.getProjectFrameworkList is forced to fail for this load"
     ],
@@ -119,6 +118,7 @@
       "pcl",
       "ui-copy"
     ],
+    "linkedDefect": "GRC-pcl-legacy-naming",
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -136,7 +136,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "statusFilter is currently 'covered'"
     ],
@@ -152,6 +152,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

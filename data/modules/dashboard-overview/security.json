@@ -76,7 +76,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Two distinct orgs A and B; caller belongs to org A only, no organization.admin"
     ],
@@ -92,7 +92,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "DASH-SEC-004",

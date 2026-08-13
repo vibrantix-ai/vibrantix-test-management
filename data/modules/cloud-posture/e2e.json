@@ -11,7 +11,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/cloud-posture/cloud-posture-smoke.test.ts::tests 11-13",
     "preconditions": [
       "Logged in as org admin",
       "A project exists with no cloud provider configured yet"
@@ -32,7 +33,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-E2E-002",
@@ -84,8 +85,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
-    "automationRef": "test-framework/tests/e2e/cloud-posture.spec.ts",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/cloud-posture/cloud-posture-smoke.test.ts::tests 11-13",
     "preconditions": [
       "A project has a configured and verified AWS provider"
     ],
@@ -102,7 +103,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-E2E-004",

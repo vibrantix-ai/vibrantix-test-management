@@ -11,7 +11,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/trust-vault-lifecycle.spec.ts",
     "preconditions": [
       "Logged in as org admin with trust_vault.create/approve",
@@ -38,7 +38,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-E2E-002",
@@ -52,7 +52,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/trust-vault-lifecycle.spec.ts",
     "preconditions": [
       "A certification is in 'under_review' status"
@@ -74,7 +74,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-E2E-003",
@@ -121,7 +121,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/trust-vault-share-links.spec.ts",
     "preconditions": [
       "An active certification exists",
@@ -145,7 +145,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-E2E-005",

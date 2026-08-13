@@ -86,7 +86,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/workflow-authz.test.ts",
     "preconditions": [
       "Certification is in 'assigned' status with assignedTo = User B",
@@ -106,7 +106,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-004",
@@ -121,7 +121,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/share-link-rate-limit.test.ts",
     "preconditions": [
       "A password-protected share link exists",
@@ -141,7 +141,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-005",
@@ -156,7 +156,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/share-link-expiry.test.ts",
     "preconditions": [
       "A share link exists with expiresAt in the past"
@@ -172,7 +172,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-006",
@@ -187,7 +187,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/share-link-domain-allowlist.test.ts",
     "preconditions": [
       "A share link exists with allowedDomains: ['acme.com']"
@@ -206,7 +206,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-007",
@@ -221,7 +221,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/share-link-revoke.test.ts",
     "preconditions": [
       "A share link was created with a 7-day expiry and then revoked on day 1"
@@ -238,7 +238,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-008",
@@ -253,7 +253,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/security/trust-vault-idor.test.ts",
     "preconditions": [
       "Org A and Org B each have at least one certification",
@@ -273,7 +273,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-SEC-009",

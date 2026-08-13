@@ -37,7 +37,8 @@
       "stage"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::tests 5-11",
     "steps": [
       "Click each of the 6 board cards in turn, returning to Overview between each"
     ],
@@ -49,7 +50,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "DASH-SAN-003",

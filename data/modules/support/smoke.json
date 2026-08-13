@@ -12,7 +12,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::test 1",
     "steps": [
       "Log in and navigate to /support"
     ],
@@ -23,7 +24,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SMK-002",
@@ -38,7 +39,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::test 7",
     "preconditions": [
       "A project is selected"
     ],
@@ -55,7 +57,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SMK-003",
@@ -131,7 +133,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::tests 7, 10",
     "preconditions": [
       "An existing ticket, synced or unsynced"
     ],
@@ -146,6 +149,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

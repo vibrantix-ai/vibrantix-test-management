@@ -11,7 +11,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-response.test.js:12",
     "steps": [
       "Call isSuccessfulAIExtraction({ success: true, extracted_metadata: [] })",
@@ -25,7 +25,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-002",
@@ -38,7 +38,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-response.test.js:34",
     "preconditions": [
       "Simulated Promise.allSettled 'rejected' results with varying shapes"
@@ -57,7 +57,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-003",
@@ -71,7 +71,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/s3-file-storage.test.js:8",
     "steps": [
       "Call computeChecksum(Buffer.from('evidence-content')) twice with the same input",
@@ -87,7 +87,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-004",
@@ -100,7 +100,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/s3-file-storage.test.js:21",
     "steps": [
       "Call generateKey(orgId, evidenceId, 'Report (final) v2 #3.pdf')"
@@ -114,7 +114,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-005",
@@ -128,7 +128,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/evidence_classification_service.test.py:15",
     "steps": [
       "Feed two combined scores with a gap of 0.05 (e.g. 0.82 and 0.77) into the confidence formula",
@@ -143,7 +143,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-006",
@@ -156,7 +156,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/evidence_classification_service.test.py:29",
     "steps": [
       "Provide candidate A: category_sim=0.9, subcategory_sim=0.5 (combined = 0.40*0.9 + 0.60*0.5 = 0.66)",
@@ -171,7 +171,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-007",
@@ -185,7 +185,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/evidence-ai-billing.test.js:10",
     "preconditions": [
       "Org has no explicit aiUploadPerYear override on its plan config"
@@ -203,7 +203,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-UNIT-008",
@@ -217,7 +217,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/unit/workflow-transition-service.test.js:44",
     "steps": [
       "Call WorkflowTransitionService.transition('evidence', id, 'needs_revision', { comment: undefined }) from state 'under_review'"
@@ -230,6 +230,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

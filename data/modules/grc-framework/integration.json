@@ -12,7 +12,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework is active in the catalog and licensed for the org"
     ],
@@ -28,7 +28,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-002",
@@ -42,7 +42,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework exists and is status 'active' in the catalog, but is not in the org's licensed set"
     ],
@@ -57,7 +57,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-003",
@@ -105,7 +105,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "A ClientFramework record has status 'license_revoked' (set by a prior license-revocation cascade)"
     ],
@@ -120,7 +120,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-005",
@@ -166,7 +166,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "PATCH /compliance-frameworks/projects/:projectId/frameworks/:id/excluded-controls with excludedRequirementIds containing 2 valid leaf requirement IDs of this framework and 1 invalid/foreign ID",
       "Inspect the response body"
@@ -179,7 +179,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-007",
@@ -225,7 +225,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User has the compliance.read permission at the org/role level",
       "User is NOT a member of projectId (no ProjectMember row) and is not an org-level project.admin"
@@ -243,7 +243,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-009",
@@ -258,7 +258,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "GET /compliance-frameworks/projects/:projectId/client-requirements?limit=0 for a framework with 300 requirements"
     ],
@@ -270,7 +270,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-INT-010",
@@ -285,7 +285,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Requirement R has one directly-attached policy P1",
       "R maps to UCL U1, and a ClientControl for U1 has vendor V1 and (also) P1 attached"
@@ -301,6 +301,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

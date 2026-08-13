@@ -10,7 +10,8 @@
       "stage"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::tests 2, 4-8",
     "steps": [
       "On /assistant, change the role Select from 'Compliance' to 'CISO'",
       "Observe the Quick Actions list change (e.g. 'Threat Landscape', 'Risk Metrics' appear)",
@@ -24,7 +25,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-SAN-002",

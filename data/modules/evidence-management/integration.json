@@ -12,7 +12,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/evidence-upload-pipeline.test.ts",
     "preconditions": [
       "BullMQ 'file-upload' queue and worker running against a test Redis instance",
@@ -33,7 +33,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-002",
@@ -48,7 +48,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Evidence item at v1 has 2 active control mappings",
       "No carryForwardMappings field sent in the update body"
@@ -67,7 +67,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-003",
@@ -82,7 +82,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Evidence item has 2 versions; v2 (current) has 1 active control mapping"
     ],
@@ -99,7 +99,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-004",
@@ -114,7 +114,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "A vulnerability_report evidence item exists with a parsed VulnReport (isActive: true) and at least one VulnFinding"
     ],
@@ -132,7 +132,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-005",
@@ -147,7 +147,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "isPricingV1Enabled is true for the test org",
       "The org's storage quota is already at or near its limit"
@@ -165,7 +165,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-006",
@@ -180,7 +180,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "NOTEBOOK_AI_SERVICE_URL points to a service that will return a 500/timeout for this test"
     ],
@@ -197,7 +197,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-007",
@@ -212,7 +212,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "An open EvidenceRequest exists",
       "An Evidence item exists in 'draft' status with an empty files[] array"
@@ -230,7 +230,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-INT-008",
@@ -245,7 +245,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Org has Project A and Project B, each with evidence",
       "Test user is a member of Project A only"
@@ -263,6 +263,6 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

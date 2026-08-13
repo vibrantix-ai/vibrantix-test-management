@@ -145,7 +145,8 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/risk-register/all-risks/all-risks.test.ts::tests 2-3",
     "preconditions": [
       "Deploy just completed",
       "User with risk.create"
@@ -163,6 +164,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

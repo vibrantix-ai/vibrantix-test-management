@@ -11,7 +11,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/utils/validation.ts:592",
     "steps": [
       "Call calculateRiskLevel(20) and calculateRiskLevel(19)",
@@ -28,7 +28,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-002",
@@ -42,7 +42,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Parse RiskScoreSchema with { likelihood: 5, impact: 5, score: 1, level: 'info' }"
     ],
@@ -56,7 +56,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-003",
@@ -99,7 +99,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:716",
     "preconditions": [
       "Risk currently in phase 'identification'"
@@ -116,7 +116,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-005",
@@ -129,7 +129,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Risk currently in phase 'closure'"
     ],
@@ -145,7 +145,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-006",
@@ -159,7 +159,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/utils/validation.ts:442",
     "steps": [
       "Parse AcceptanceRequestSchema with justification='Too short', validUntil=<future date>, approverIds=[<valid ObjectId>]"
@@ -173,7 +173,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-007",
@@ -186,7 +186,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Parse AcceptanceRequestSchema with approverIds=[] (empty array)",
       "Parse AcceptanceRequestSchema with 11 distinct valid ObjectId strings in approverIds"
@@ -199,7 +199,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-008",
@@ -213,7 +213,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Parse EscalateRiskRequestSchema omitting 'level' with a valid reason of 10+ characters",
       "Parse EscalateRiskRequestSchema with level=4"
@@ -227,7 +227,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-009",
@@ -241,7 +241,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/utils/riskCode.ts:16",
     "steps": [
       "Call generateRiskCode(db, undefined, organizationId)"
@@ -254,7 +254,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-UNIT-010",
@@ -268,7 +268,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/jobs/review-scheduler.job.ts:66",
     "steps": [
       "Call notificationWindowMs('Monthly'), ('Quarterly'), ('Semi-Annual'), ('Annual'), and an unrecognized string"
@@ -282,6 +282,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

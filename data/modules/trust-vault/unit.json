@@ -11,7 +11,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/WorkflowTransitionService.test.ts",
     "preconditions": [
       "WorkflowTransitionService instantiated with a test Db handle"
@@ -31,7 +31,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-002",
@@ -44,7 +44,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/WorkflowTransitionService.test.ts",
     "steps": [
       "Call service.transition('certification', draftCertId, 'active', userId) directly from 'draft' status",
@@ -59,7 +59,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-003",
@@ -73,7 +73,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/tests/unit/trust-vault/RevisionModal.test.jsx",
     "preconditions": [
       "RevisionModal rendered with targetState='active' (isClose=true)"
@@ -95,7 +95,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-004",
@@ -109,7 +109,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/VaultHealthService.test.ts",
     "steps": [
       "Call computeCertScore({ total:0, active:0, expiringSoon:0, expired:0, shared:0, distinct_frameworks:0 })",
@@ -124,7 +124,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-005",
@@ -137,7 +137,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/VaultHealthService.test.ts",
     "steps": [
       "Call toGrade(90), toGrade(89), toGrade(80), toGrade(79), toGrade(70), toGrade(69), toGrade(60), toGrade(59)"
@@ -151,7 +151,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-006",
@@ -165,7 +165,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/ExpiryAlertService.test.ts",
     "steps": [
       "Construct certifications with expiryDate exactly 7, 8, 30, 31, 60, and 61 days from now",
@@ -179,7 +179,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-007",
@@ -193,7 +193,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/unit/ShareLinkService.test.ts",
     "steps": [
       "Call anonymizeIp('203.0.113.42')",
@@ -210,7 +210,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-UNIT-008",
@@ -224,7 +224,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-client-panel/tests/unit/trust-vault/ShareLinkModal.test.jsx",
     "steps": [
       "Call getPasswordStrength('pass1') (5 chars, has digit — fails length rule)",
@@ -241,6 +241,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

@@ -11,7 +11,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::test 9",
     "preconditions": [
       "Logged in with a project selected in the Redux project store",
       "Jira integration configured and reachable"
@@ -31,7 +32,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-E2E-002",
@@ -105,7 +106,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::test 8",
     "preconditions": [
       "An Open ticket with a valid jiraKey exists"
     ],
@@ -122,7 +124,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-E2E-005",
@@ -167,7 +169,8 @@
       "stage"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/support/support-smoke.test.ts::tests 3-4",
     "preconditions": [
       "At least 3 tickets exist with different ticket numbers, descriptions, and statuses"
     ],
@@ -185,7 +188,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-E2E-007",

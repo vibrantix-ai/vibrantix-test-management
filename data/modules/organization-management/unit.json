@@ -136,11 +136,11 @@
     ],
     "type": "automated",
     "automationStatus": "not_automated",
-    "testData": "accessGrid = { evidence: { level: 'edit', approve: true } }",
     "steps": [
       "Call gridToPermissions({ evidence: { level: 'edit', approve: true } })",
       "Feed the resulting permissions array back into permissionsToGrid()"
     ],
+    "testData": "accessGrid = { evidence: { level: 'edit', approve: true } }",
     "expectedResult": "gridToPermissions returns ['evidence.read','evidence.update','evidence.approve'] (no 'evidence.delete'/'evidence.admin' since level is 'edit' not 'full'). Round-tripping through permissionsToGrid reproduces { evidence: { level:'edit', approve:true } } exactly — no lossy collapse to 'view' or 'full'.",
     "tags": [
       "roles",
@@ -165,7 +165,7 @@
       "dev"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Caller's own effective permissions = ['evidence.read','evidence.update']"
     ],
@@ -182,7 +182,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "ORGM-UNIT-007",

@@ -12,6 +12,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/evidence-mgt/evidence-mgt.test.ts::tests 1, 8",
     "steps": [
       "Log in as a seeded test org admin",
       "Navigate to /evidence-management"
@@ -23,7 +24,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-SMK-002",
@@ -38,6 +39,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/evidence-mgt/evidence-repository/uploadDocuments.test.ts::test 1",
     "steps": [
       "Click 'Upload Evidence' on /evidence-management"
     ],
@@ -48,6 +50,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

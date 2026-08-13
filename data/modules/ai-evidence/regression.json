@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/regression/ai-evidence-permissions.test.ts:5",
     "preconditions": [
       "A user with no evidence.* permission and no project grant"
@@ -30,7 +30,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-REG-002",

@@ -11,7 +11,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:22",
     "preconditions": [
       "Logged in as a user with evidence.create and evidence.read",
@@ -35,7 +35,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-E2E-002",
@@ -78,7 +78,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:60",
     "preconditions": [
       "An evidence draft exists at the review step with AI suggestions for title and category"
@@ -97,7 +97,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-E2E-004",
@@ -143,7 +143,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-framework/tests/e2e/ai-evidence.spec.ts:95",
+    "automationRef": "test-automation/tests/trust/evidence-mgt/evidence-repository/ai-assistedUIpload.test.ts::test 1",
     "steps": [
       "Complete an AI-assisted upload and 'Send for Review' with a title, category, and confidentiality level set",
       "Navigate to /evidence-management and locate the same item by title"
@@ -158,7 +158,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-E2E-006",
