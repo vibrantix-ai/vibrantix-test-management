@@ -46,6 +46,14 @@ const MODULES = [
   // vibrantix-backend's /api/vtec proxy and vibrantix-client-panel's /vtec module — tests
   // here span all four rather than being scoped to one route the way most Modules entries are.
   { slug: 'vtec', name: 'VTEC (Vibrantix Trust Edge Connector)', routes: ['/vtec'], qaAgent: null, scope: 'feature', description: 'On-premises edge connector fleet (Go binary + vtec-management-service) for OT/air-gapped evidence collection: mTLS bootstrap/rotation, credential relay via Vault, 9-stage edge pipeline (mask/compress/encrypt before anything leaves the network), offline buffering, Prometheus monitoring, and the client-panel fleet/workflow/credentials UI. See Architecture/VTEC/VTEC_IT_LAN_P1_ADAPTERS_IMPLEMENTATION_PLAN.md.' },
+  // No dedicated QA agent exists yet for MSSP (same situation as VTEC above) — qaAgent is
+  // null rather than guessed. Newly discovered (2026-08-14) via code analysis: was previously
+  // untracked in this registry, with only a handful of portal-boundary test cases misfiled
+  // under rbac-security. Spans vibrantix-backend's src/modules/mssp/ (provider/client models,
+  // tenant provisioning, portal-boundary middleware), vibrantix-client-panel's (mssp) route
+  // group, the standalone vibrantix-partner-portal app (productionized MSSP portal), and
+  // vibrantix-admin-panel's /tenant-management/mssps provider management UI.
+  { slug: 'mssp', name: 'MSSP (Managed Security Service Provider)', routes: ['/mssp'], qaAgent: null, scope: 'feature', description: 'Provider organizations managing multiple client tenant orgs under a delegated-access model: client provisioning (tenant-provisioning.service.js), cross-org dashboard/usage/billing consolidation, subscription-change request workflow, compliance-framework licensing, provider team & invitations, ownership detach/transfer, append-only audit trail, and hard portal/tenant boundary isolation (portalBoundary.js + client-panel middleware.js) so MSSP and customer users can never cross into each other\'s routes. Spans vibrantix-backend, vibrantix-client-panel, the standalone vibrantix-partner-portal app, and vibrantix-admin-panel.' },
 ];
 
 const root = path.join(__dirname, '..', 'data');

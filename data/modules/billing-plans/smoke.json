@@ -16,7 +16,7 @@
     "automationRef": "test-automation/tests/billing/dashboard-smoke.test.ts::tests 1-2",
     "preconditions": [
       "Logged in as SUPERADMIN",
-      "Org has pricing_v1 enabled"
+      "Org has a configured SubscriptionInstance (V2 ledger)"
     ],
     "steps": [
       "Navigate to /billing-plans",
@@ -30,14 +30,14 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-SMK-002",
     "module": "billing-plans",
     "category": "smoke",
     "subFeature": "API Health",
-    "title": "GET /v1/billing/plan returns 200 for an active org",
+    "title": "GET /api/v1/subscriptions/current returns 200 (or a clean 404) for an active org",
     "priority": "P0",
     "environment": [
       "dev",
@@ -47,12 +47,12 @@
     "type": "automated",
     "automationStatus": "not_automated",
     "preconditions": [
-      "Org has pricing_v1 enabled and an active subscription"
+      "Org has an active SubscriptionInstance"
     ],
     "steps": [
-      "Call GET /v1/billing/plan with a valid billing.read JWT"
+      "Call GET /api/v1/subscriptions/current with a valid billing.read JWT"
     ],
-    "expectedResult": "200 response with the org's current plan/tier fields populated.",
+    "expectedResult": "200 response with the org's current plan/tier/entitlements fields populated (or 404 SUBSCRIPTION_NOT_CONFIGURED for a brand-new org, which is also a healthy non-500 response).",
     "tags": [
       "smoke",
       "api-health"
@@ -60,7 +60,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-SMK-003",
@@ -85,9 +85,10 @@
       "invoices"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — GET /v1/billing/invoices no longer exists; there is no invoice-history endpoint anywhere in the current codebase to smoke-test."
   },
   {
     "id": "BILL-SMK-004",
@@ -112,16 +113,17 @@
       "webhook"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — POST /webhooks/stripe no longer exists; there is no webhook route to smoke-test."
   },
   {
     "id": "BILL-SMK-005",
     "module": "billing-plans",
     "category": "smoke",
     "subFeature": "Plans Catalog",
-    "title": "Plans catalog endpoint returns at least one public plan",
+    "title": "Public subscription-plans endpoint returns at least one public plan",
     "priority": "P1",
     "environment": [
       "dev",
@@ -131,9 +133,9 @@
     "type": "automated",
     "automationStatus": "not_automated",
     "steps": [
-      "Call GET /v1/billing/plans-catalog"
+      "Call GET /api/public/subscription-plans"
     ],
-    "expectedResult": "200 response listing one or more plans with isPublic=true, each with label/pricePerFrameworkAnnualCents/limits populated — the Plans tab has data to render.",
+    "expectedResult": "200 response listing one or more plans with isPublic=true, each with tierCode/label/pricePerFrameworkAnnualCents/limits/entitlements populated (customer.controller.js's PUBLIC_PLAN_FIELDS projection) — the Plans tab and vibrantix-website have data to render.",
     "tags": [
       "smoke",
       "plans-catalog"
@@ -141,6 +143,65 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-SMK-006",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "Public Plans Catalog",
+    "title": "GET /api/public/subscription-plans is reachable without auth and returns at least one plan",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /api/public/subscription-plans with no Authorization header and no CORS-restricted origin"
+    ],
+    "expectedResult": "200 { plans:[...] } with at least one entry where isPublic=true and scope='organization' — the vibrantix-website plan comparison page and any unauthenticated plan browsing has data to render.",
+    "tags": [
+      "smoke",
+      "public-plans",
+      "api-health"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-SMK-007",
+    "module": "billing-plans",
+    "category": "smoke",
+    "subFeature": "API Health",
+    "title": "GET /api/v1/subscriptions/current never 500s — returns 200 with a plan, or a clean 404 SUBSCRIPTION_NOT_CONFIGURED",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Valid billing.read JWT for any org, configured or not"
+    ],
+    "steps": [
+      "Call GET /api/v1/subscriptions/current"
+    ],
+    "expectedResult": "Either 200 with populated plan/entitlements fields, or 404 { error:{code:'SUBSCRIPTION_NOT_CONFIGURED'} } for a brand-new org — never a 5xx.",
+    "tags": [
+      "smoke",
+      "api-health",
+      "subscriptions"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

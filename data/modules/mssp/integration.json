@@ -1,0 +1,492 @@
+[
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-001",
+    "category": "integration",
+    "subFeature": "Admin Provisioning",
+    "title": "onboardMssp provisions the MSSP organization and its framework pool without an owner when ownerMode resolves to \"none\"",
+    "description": "admin.controller.js onboardMssp: legacy inviteOwner:false maps to ownerMode 'none' (line 348); MsspProvider is created with status:'provisioning' and stays there since no ownerAccess is produced (line 402); MsspFrameworkLicense rows are inserted active regardless of owner state.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-admin-provisioning.test.js:115-136",
+    "preconditions": [
+      "ComplianceFramework \"iso27001\" exists and is active"
+    ],
+    "steps": [
+      "POST /admin/tenant-management/mssps with organization + frameworks:[\"iso27001\"] and inviteOwner:false"
+    ],
+    "expectedResult": "Response is 201 with status:\"provisioning\", ownerInvitationId:null, frameworkCount:1; provisioning.inviteOrgUser is never called; exactly one active MsspProvider (status=\"provisioning\") and one active MsspFrameworkLicense exist.",
+    "tags": [
+      "mssp",
+      "admin-portal",
+      "provisioning"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-002",
+    "category": "integration",
+    "subFeature": "Admin Provisioning",
+    "title": "onboardMssp with ownerMode=\"invite\" creates an active provider and an mssp_owner invitation in one call",
+    "description": "admin.controller.js onboardMssp invite branch (lines 382-392): provisioning.inviteOrgUser is called with roleKey=MSSP_OWNER, type=mssp_owner; provider.status flips to \"active\" once ownerAccess exists (line 402-403).",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-admin-provisioning.test.js:138-169",
+    "preconditions": [],
+    "steps": [
+      "POST /admin/tenant-management/mssps with organization, owner, frameworks, ownerMode:\"invite\""
+    ],
+    "expectedResult": "Response status:\"active\", ownerMode:\"invite\", ownerUserId and ownerInvitationId populated; MsspProvider.status is \"active\" in the database.",
+    "tags": [
+      "mssp",
+      "admin-portal",
+      "provisioning",
+      "invitations"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-003",
+    "category": "integration",
+    "subFeature": "Admin Provisioning",
+    "title": "onboardMssp with ownerMode=\"add\" creates an active provider and a Keycloak owner with a one-time temporary password",
+    "description": "admin.controller.js onboardMssp add branch (lines 393-401) calls createOrgUserWithTemporaryPassword with roleKey=MSSP_OWNER; response includes temporaryPassword once, persisted operation/audit records do not.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-admin-provisioning.test.js:171-208",
+    "preconditions": [],
+    "steps": [
+      "POST /admin/tenant-management/mssps with organization, owner, frameworks, ownerMode:\"add\""
+    ],
+    "expectedResult": "Response status:\"active\", ownerMode:\"add\", temporaryPassword present in the HTTP body only; ProvisioningOperation.result.temporaryPassword and MsspAuditEvent \"mssp.onboarded\".after.temporaryPassword are both undefined.",
+    "tags": [
+      "mssp",
+      "admin-portal",
+      "provisioning",
+      "secrets"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-004",
+    "category": "integration",
+    "subFeature": "Admin Provisioning",
+    "title": "provisionMsspOwner activates a provision-only MSSP by adding its first owner later",
+    "description": "admin.controller.js provisionMsspOwner: if provider.status==='provisioning' it flips to 'active' once the owner is created/invited (lines 547-551) — completing the deferred-owner path started by onboardMssp with ownerMode 'none'.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-admin-provisioning.test.js:210-247",
+    "preconditions": [
+      "An MsspProvider exists with status \"provisioning\" and no owner yet"
+    ],
+    "steps": [
+      "POST /admin/tenant-management/mssps/:providerId/owners with owner + ownerMode:\"invite\""
+    ],
+    "expectedResult": "Response 201 with providerStatus:\"active\" and the new invitationId; the MsspProvider document's status is now \"active\".",
+    "tags": [
+      "mssp",
+      "admin-portal",
+      "provisioning",
+      "invitations"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-005",
+    "category": "integration",
+    "subFeature": "Client Provisioning",
+    "title": "createClient (ownerMode=\"invite\") activates the relationship and records a \"mssp.client.created\" audit event with the correct payload",
+    "description": "mssp.controller.js createClient: relationship starts \"provisioning\" (line 152) and is flipped to \"active\" after all projects are created (line 199); MsspAuditEvent \"mssp.client.created\" (lines 217-221) records after:{projectCount, ownerMode} and correlationId equal to the ProvisioningOperation id.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-client-owner-mode.test.js:98-128",
+    "preconditions": [
+      "Active MSSP provider"
+    ],
+    "steps": [
+      "POST /mssp/clients with ownerMode:\"invite\" and one project"
+    ],
+    "expectedResult": "MsspClientRelationship.status is \"active\"; exactly one MsspAuditEvent with action \"mssp.client.created\" exists, with after.ownerMode===\"invite\" and after.projectCount===1, and correlationId equal to the ProvisioningOperation's _id.",
+    "tags": [
+      "mssp",
+      "provisioning",
+      "audit-trail"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-006",
+    "category": "integration",
+    "subFeature": "Client Provisioning",
+    "title": "createClient (ownerMode=\"add\") never persists the plaintext temporary password to the operation or audit record",
+    "description": "mssp.controller.js createClient add branch; verified end to end against real MongoDB documents.",
+    "priority": "P0",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-client-owner-mode.test.js:130-163",
+    "preconditions": [
+      "Active MSSP provider"
+    ],
+    "steps": [
+      "POST /mssp/clients with ownerMode:\"add\" and one project"
+    ],
+    "expectedResult": "Response includes temporaryPassword once; the persisted ProvisioningOperation(\"mssp_client_onboarding\").result.temporaryPassword is undefined, and MsspAuditEvent(\"mssp.client.created\").after.temporaryPassword is undefined while after.ownerMode is \"add\".",
+    "tags": [
+      "mssp",
+      "provisioning",
+      "secrets"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-007",
+    "category": "integration",
+    "subFeature": "Client Relationship Model",
+    "title": "createClient (ownerMode=\"provider_managed\") sets accessModel=provider_managed and creates no duplicate client-side user",
+    "description": "mssp.controller.js createClient: ownerAccess is null for provider_managed (line 159); MsspClientRelationship.accessModel is set from ownerMode at creation (line 153); createPendingProject receives ownerUserId:null.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-client-owner-mode.test.js:165-190",
+    "preconditions": [
+      "Active MSSP provider"
+    ],
+    "steps": [
+      "POST /mssp/clients with ownerMode:\"provider_managed\", owner.email reused from the provider's own auditor"
+    ],
+    "expectedResult": "Response has ownerUserId:null, ownerInvitationId:null, temporaryPassword:null, credentialDelivery:\"mssp_relationship\"; inviteOrgUser and createOrgUserWithTemporaryPassword are never called; the persisted MsspClientRelationship has accessModel=\"provider_managed\" and status=\"active\".",
+    "tags": [
+      "mssp",
+      "access-model",
+      "provisioning"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-008",
+    "category": "integration",
+    "subFeature": "Client User Management",
+    "title": "inviteClientUser rejects a projectIds list containing a project that does not belong to the target client organization",
+    "description": "mssp.controller.js inviteClientUser (lines 306-309): when projectIds is non-empty, it counts matching Project documents scoped to org._id and compares against the requested set size, throwing AppError.badRequest(\"One or more projects do not belong to this client\") on any mismatch.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Managed client A with project P1; a different organization's project P2 exists"
+    ],
+    "steps": [
+      "POST /mssp/clients/A/users with projectIds:[P1, P2]"
+    ],
+    "expectedResult": "The call is rejected with 400 \"One or more projects do not belong to this client\"; no user, invitation, or ProjectMember row is created.",
+    "tags": [
+      "mssp",
+      "client-management",
+      "validation"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-009",
+    "category": "integration",
+    "subFeature": "Client User Management",
+    "title": "inviteClientUser adds a managed-client user in \"add\" mode with a one-time temporary password and correct audit action",
+    "description": "mssp.controller.js inviteClientUser add branch and MsspAuditEvent \"mssp.client_user.added\".",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-client-owner-mode.test.js:192-231",
+    "preconditions": [
+      "Active managed client relationship"
+    ],
+    "steps": [
+      "POST /mssp/clients/:clientOrgId/users with roleKey:\"NORMAL_USER\", ownerMode:\"add\""
+    ],
+    "expectedResult": "Response includes temporaryPassword and credentialDelivery=\"keycloak_first_login_prompt\", invitation:null; the MsspAuditEvent \"mssp.client_user.added\".after.temporaryPassword is undefined.",
+    "tags": [
+      "mssp",
+      "client-management",
+      "secrets"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-010",
+    "category": "integration",
+    "subFeature": "Provider Team Management",
+    "title": "inviteTeamMember rejects any roleKey outside the four MSSP provider roles",
+    "description": "mssp.controller.js inviteTeamMember (lines 434-436): roleKey must be one of MSSP_OWNER/MSSP_OPERATOR/MSSP_BILLING_VIEWER/MSSP_USER_ADMIN or the call is rejected with 400 'Invalid MSSP role' — this stops a provider from granting a customer-side or platform role to its own team.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Active MSSP provider"
+    ],
+    "steps": [
+      "POST /mssp/team/invitations with roleKey:\"SUPERADMIN\""
+    ],
+    "expectedResult": "The call is rejected with 400 \"Invalid MSSP role\"; no user or invitation is created.",
+    "tags": [
+      "mssp",
+      "team-management",
+      "rbac"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-011",
+    "category": "integration",
+    "subFeature": "Project Provisioning",
+    "title": "createPendingProject rejects a framework selection that exceeds the chosen plan's configured framework limit",
+    "description": "tenant-provisioning.service.js createPendingProject (lines 452-462) calls frameworkEntitlement.assertFrameworkLimit with the plan's frameworkLimitForPlan(); a project requesting more distinct frameworks than the plan allows must be rejected server-side even if the client-panel's own pre-submit check (clients/new/page.jsx setProjectFrameworks) were somehow bypassed.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A project-scoped plan with frameworkLimit=1"
+    ],
+    "steps": [
+      "Call createPendingProject (or POST /mssp/clients/:id/projects) with 2 frameworks against a plan whose frameworkLimit is 1"
+    ],
+    "expectedResult": "The call throws/returns a framework-limit error and no Project, SubscriptionInstance, or ClientFramework row is created.",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "validation"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-012",
+    "category": "integration",
+    "subFeature": "Project Provisioning",
+    "title": "createPendingProject activates every selected paid-plan framework immediately, independent of payment/billing state",
+    "description": "tenant-provisioning.service.js createPendingProject + activateProjectFrameworks: for an mssp_client org on a project-scoped plan, every selected framework becomes an active ClientFramework row and the SubscriptionInstance is 'active' with no legacy plan cap or payment gate blocking activation.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-project-plan-limit.test.js:48-70",
+    "preconditions": [
+      "mssp_client org, project-scoped plan with frameworkLimit=-1, two active ComplianceFrameworks"
+    ],
+    "steps": [
+      "Call createPendingProject with both frameworks selected"
+    ],
+    "expectedResult": "The resulting SubscriptionInstance.status is \"active\" and exactly 2 ClientFramework rows exist with status \"active\" for that project.",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "provisioning"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-013",
+    "category": "integration",
+    "subFeature": "Framework Licensing",
+    "title": "replaceFrameworkCatalog (admin) upserts newly desired frameworks as active and revokes ones removed from the desired set",
+    "description": "admin.controller.js replaceFrameworkCatalog (lines 574-603): frameworks present in req.body.frameworks are upserted to status \"active\"; existing MsspFrameworkLicense rows whose frameworkId is not in the desired set are updated to status \"revoked\" with revocationEffectiveAt, never deleted — preserving the historical record for already-provisioned client data.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Provider currently licensed for ISO 27001 and SOC 2"
+    ],
+    "steps": [
+      "PUT /admin/tenant-management/mssps/:providerId/frameworks with frameworks:[\"iso27001\", \"hipaa\"]"
+    ],
+    "expectedResult": "ISO 27001 remains active; SOC 2's license row now has status \"revoked\" and a revocationEffectiveAt timestamp (its document is not deleted); HIPAA now has an active license row; a \"mssp.framework_catalog.replaced\" audit event records the before/after code lists.",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "admin-portal"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-014",
+    "category": "integration",
+    "subFeature": "Ownership Detach",
+    "title": "detachClient requires a non-empty reason and cannot be replayed against an already-detached relationship",
+    "description": "admin.controller.js detachClient (line 632): blank/missing reason -> 400. The lookup filter status:{$ne:'detached'} (line 633) means a second detach call against the same clientOrgId after the first succeeded finds no matching relationship and returns 404, rather than silently reprocessing or double-writing the OwnershipTransfer/audit trail.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Active managed client relationship"
+    ],
+    "steps": [
+      "POST /admin/tenant-management/clients/:clientOrgId/detach with an empty reason string",
+      "POST the same endpoint with a valid reason and succeed",
+      "POST the identical detach call again"
+    ],
+    "expectedResult": "Call 1 returns 400. Call 2 succeeds and returns transferId/status:\"complete\". Call 3 returns 404 \"Managed client relationship not found\" — detach is not idempotently reprocessed, and only one OwnershipTransfer/audit event exists for this client.",
+    "tags": [
+      "mssp",
+      "ownership-transfer",
+      "idempotency"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-015",
+    "category": "integration",
+    "subFeature": "Ownership Detach",
+    "title": "detachAllClients converts every non-detached client in one batch and stamps the provider status \"deowned\" with a single audit event",
+    "description": "admin.controller.js detachAllClients (lines 667-686): bulk MsspClientRelationship.updateMany + Organization.updateMany + a single MsspProvider status update, then one \"mssp.deowned\" MsspAuditEvent carrying after.detachedClientCount.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Provider with 3 active managed clients and 1 already-detached client"
+    ],
+    "steps": [
+      "POST /admin/tenant-management/mssps/:providerId/detach-all with a reason"
+    ],
+    "expectedResult": "detachedClientCount is 3 (the already-detached one is excluded); all 3 relationships are now \"detached\" with matching detachedBy/detachReason; all 3 organizations now have kind=\"direct_customer\"; MsspProvider.status is \"deowned\"; exactly one \"mssp.deowned\" audit event exists with after.detachedClientCount===3.",
+    "tags": [
+      "mssp",
+      "ownership-transfer",
+      "admin-portal"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-INT-016",
+    "category": "integration",
+    "subFeature": "Subscription Request Routing",
+    "title": "routeFor() assigns a managed client's request to the platform admin queue when the relationship's requestRoutingPolicy is admin_only",
+    "description": "request.service.js routeFor() (lines 41-58): route defaults to 'mssp' for an active relationship, but is forced to 'admin' whenever relationship.requestRoutingPolicy==='admin_only' or customerSelfRequestEnabled===false — this is the MSSP relationship-config field directly controlling which queue (/mssp/requests vs the platform admin queue) a request lands in.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "MsspClientRelationship.requestRoutingPolicy='admin_only' for client C"
+    ],
+    "steps": [
+      "Submit a framework-add request for client C via POST /mssp/clients/C/requests, acting as the MSSP"
+    ],
+    "expectedResult": "The created SubscriptionRequest has route=\"admin\" and assignedApproverType=\"admin\"; it does NOT appear in that provider's GET /mssp/requests results filtered to reviewable items (see MSSP-SEC-013), even though the provider is the one who submitted it.",
+    "tags": [
+      "mssp",
+      "approval-workflow",
+      "request-routing"
+    ]
+  }
+]

@@ -5,7 +5,7 @@
     "category": "regression",
     "subFeature": "Cancellation",
     "title": "customer.subscription.deleted webhook writes 'cancelled' to both Organization.subscription.status and SubscriptionOrg.status",
-    "description": "The handler's own code comment notes this dual-write 'fixes a real prior bug' where only one of the two status fields was updated, leaving the two records disagreeing about whether the org was cancelled. Regression guard to ensure a future refactor doesn't reintroduce the single-write bug.",
+    "description": "The handler's own code comment notes this dual-write 'fixes a real prior bug' where only one of the two status fields was updated, leaving the two records disagreeing about whether the org was cancelled. Regression guard to ensure a future refactor doesn't reintroduce the single-write bug. Superseded by the 2026-08-04 billing rewrite — there is no customer.subscription.deleted webhook, no Organization.subscription.status field usage, and no SubscriptionOrg model in the live code path (SubscriptionOrg is read-only in the one-time migration script only).",
     "priority": "P0",
     "environment": [
       "stage"
@@ -27,9 +27,9 @@
       "data-integrity"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-REG-002",
@@ -37,7 +37,7 @@
     "category": "regression",
     "subFeature": "Downgrade Flow",
     "title": "Cancelling a pending downgrade with none scheduled stays a silent client no-op, not a surfaced error toast",
-    "description": "billingService.cancelPendingChange() is called defensively in a few UI paths; the server's NO_PENDING_CHANGE code must keep being treated as success by the client so an org with nothing pending doesn't see a spurious error toast.",
+    "description": "billingService.cancelPendingChange() is called defensively in a few UI paths; the server's NO_PENDING_CHANGE code must keep being treated as success by the client so an org with nothing pending doesn't see a spurious error toast. Superseded by the 2026-08-04 billing rewrite — the server-side NO_PENDING_CHANGE response no longer exists (DELETE /v1/billing/plan/pending-change is gone); PendingDowngradeBanner.jsx still defensively checks for this dead error code client-side. See BILL-SAN-007.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -57,9 +57,9 @@
       "ui-error-handling"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-REG-003",
@@ -67,7 +67,7 @@
     "category": "regression",
     "subFeature": "Stripe Webhook Security",
     "title": "Unhandled/unknown Stripe event types are acknowledged 200 rather than causing a 500 that triggers Stripe retry storms",
-    "description": "Any event type without a registered handler (e.g. payment_intent.succeeded, which has no handler in this codebase) must still return 200 { received:true, ignored: event.type } so Stripe doesn't interpret it as a delivery failure and retry indefinitely.",
+    "description": "Any event type without a registered handler (e.g. payment_intent.succeeded, which has no handler in this codebase) must still return 200 { received:true, ignored: event.type } so Stripe doesn't interpret it as a delivery failure and retry indefinitely. Superseded by the 2026-08-04 billing rewrite — there is no Stripe webhook endpoint or event types to acknowledge/ignore.",
     "priority": "P1",
     "environment": [
       "stage",
@@ -88,8 +88,108 @@
       "resilience"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-REG-004",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Admin Plan Catalog",
+    "title": "Immediate plan grandfathering must never zero an org's already-consumed ai.credits usage (2026-08-07 production incident)",
+    "description": "Direct regression guard named in admin.controller.js's own code comment: a race between syncInstance()'s $setOnInsert carry and balance-row creation zeroed 3 orgs' visible ai.credits usage in production on 2026-08-07 despite real usage remaining intact underneath. The fix makes the carry an explicit unconditional $set.",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "linkedDefect": "2026-08-07-grandfathering-usage-zeroing",
+    "preconditions": [
+      "An org with non-zero usedValue/reservedValue on its current plan's EntitlementBalance rows",
+      "Admin performs a PATCH to that plan with grandfatheringMode='immediate'"
+    ],
+    "steps": [
+      "Concurrently trigger the plan update's grandfathering pass and a normal balance-row creation race (or otherwise force the internal $setOnInsert path to run before the controller's explicit carry)",
+      "Read the affected org's post-grandfathering EntitlementBalance rows"
+    ],
+    "expectedResult": "usedValue and reservedValue on every carried entitlement match their pre-grandfathering values exactly, regardless of internal timing — the explicit $set carry in _applyGrandfatheringImmediate() must win over any $setOnInsert race, never leaving a zeroed balance.",
+    "tags": [
+      "regression",
+      "grandfathering",
+      "ai-credits",
+      "data-integrity"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-REG-005",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Entitlement Ledger",
+    "title": "Stale AI-credit reservations older than ENTITLEMENT_RESERVATION_TIMEOUT_MS are auto-cancelled by the term worker, except for sourceService b:storage and b:intelli-report",
+    "description": "subscription-term.worker.js's tick() calls balance.service.expireStaleReservations(now - reservationTimeoutMs) every SUBSCRIPTION_TERM_INTERVAL_MS (default 60s), with a hard floor of 60s on the configured timeout. The two excluded sourceServices are deliberately long-lived reservations (storage holds, report generation) that must not be auto-cancelled by this sweep.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A 'reserve' EntitlementUsageEvent with no commit/cancel, older than ENTITLEMENT_RESERVATION_TIMEOUT_MS, sourceService='b:smart-compliance'",
+      "A second identically-stale reservation with sourceService='b:storage'"
+    ],
+    "steps": [
+      "Run (or wait for) the subscription-term worker's tick()",
+      "Check both reservations' finalization state afterward"
+    ],
+    "expectedResult": "The 'b:smart-compliance' reservation is auto-cancelled (a 'cancel' EntitlementUsageEvent is created and reservedValue is released). The 'b:storage' reservation is left untouched by this sweep, confirming the sourceService exclusion list is honored.",
+    "tags": [
+      "regression",
+      "entitlement-ledger",
+      "reservation-expiry",
+      "worker"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-REG-006",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "Term Renewal",
+    "title": "The term worker skips auto-renewing a SubscriptionInstance whose term has ended if a term-end change is already due for the same subject",
+    "description": "subscription-term.worker.js's tick() checks for an approved/applying/failed SubscriptionRequest with desiredEffectiveAt<=now for the same subject before calling instances.renewCurrent() — preventing the worker from renewing the old plan in the same tick it should instead be replaced by an already-approved plan_change/downgrade/cancellation.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A SubscriptionInstance with termEnd<=now, status='active'",
+      "An approved 'downgrade' SubscriptionRequest for the same subject with desiredEffectiveAt<=now, not yet applied"
+    ],
+    "steps": [
+      "Run the term worker's tick()",
+      "Inspect whether renewCurrent() or apply() (or both) executed for this subject, and in what order"
+    ],
+    "expectedResult": "The due SubscriptionRequest is applied (via the dueRequests loop, which runs first in tick()) and the instance is not separately auto-renewed on its old plan in the same or a later tick for the same expired term — renewedInstances is not incremented for this subject once its pending change has applied.",
+    "tags": [
+      "regression",
+      "term-worker",
+      "renewal",
+      "downgrade"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

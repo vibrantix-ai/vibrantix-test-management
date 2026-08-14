@@ -1,0 +1,460 @@
+[
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-001",
+    "category": "security",
+    "subFeature": "Portal Boundary",
+    "title": "MSSP_ALLOWED_PREFIXES uses startsWith, not an exact segment match — verify no non-MSSP route can collide with the /api/mssp prefix",
+    "description": "portalBoundary.js:5-10 defines MSSP_ALLOWED_PREFIXES=['/api/auth/','/api/mssp','/api/bug-reports','/api/contact'] and enforcePortalBoundary (line 39) checks path.startsWith(prefix). Because '/api/mssp' has no trailing slash, any future route literally named e.g. '/api/mssp-legacy' or '/api/msspish' would incorrectly satisfy startsWith('/api/mssp') and be treated as in-bounds for an mssp_provider session. This case is a guardrail against that footgun being introduced later, not a currently-failing assertion.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Full Express route table for vibrantix-backend is enumerable in the test"
+    ],
+    "steps": [
+      "Enumerate every mounted backend route path",
+      "Filter for any route whose path starts with the literal string \"/api/mssp\" but is not \"/api/mssp\" itself or a sub-path of it (e.g. would not also start with \"/api/mssp/\")",
+      "Assert the filtered set is empty"
+    ],
+    "expectedResult": "No route exists whose path merely shares the \"/api/mssp\" string prefix without being an actual MSSP module route, so enforcePortalBoundary's startsWith check cannot be tricked into admitting an mssp_provider session to a non-MSSP endpoint.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "portal-boundary",
+      "prefix-matching"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-002",
+    "category": "security",
+    "subFeature": "Portal Boundary",
+    "title": "Both direct_customer and mssp_client organization kinds are denied on every /api/mssp route",
+    "description": "portalBoundary.js:45-47 denies any request whose path starts with '/api/mssp' unless organizationKind === 'mssp_provider' (handled separately above). Verified in portal-boundary.test.js 'keeps direct and managed customers out of MSSP APIs'. This differs from the existing RBAC-security case RBAC-INT-007, which only exercises the reverse direction (a provider hitting a customer route) — this case is the customer_on_mssp_route reason path.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/portal-boundary.test.js:41-47",
+    "preconditions": [
+      "One organization with kind=direct_customer, one with kind=mssp_client, each with a valid authenticated session"
+    ],
+    "steps": [
+      "As the direct_customer user, call GET /api/mssp/dashboard",
+      "As the mssp_client user, call GET /api/mssp/dashboard"
+    ],
+    "expectedResult": "Both calls are rejected with HTTP 403 and body { success:false, error:{ code:\"PORTAL_BOUNDARY_DENIED\" } }, logged with reason \"customer_on_mssp_route\" — regardless of whether either user happens to hold an mssp_* permission string.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "portal-boundary",
+      "multi-tenant"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-003",
+    "category": "security",
+    "subFeature": "Provider Activation Gate",
+    "title": "An mssp_provider organization whose MsspProvider.status is not \"active\" is denied even inside the MSSP-allowed path prefixes",
+    "description": "loadPermissions.js:163-167 runs a second, independent check after enforcePortalBoundary: for organizationKind==='mssp_provider' it loads the MsspProvider doc and returns 403 'MSSP provider account is not active' unless status==='active'. A provider stuck in 'provisioning' (owner not yet added — see admin.controller.js onboardMssp ownerMode:'none' path) or moved to 'suspended'/'deowned'/'provisioning_failed' must be blocked from /api/mssp/* itself, not just from customer routes.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "An Organization with kind=mssp_provider exists",
+      "Its MsspProvider document has status one of provisioning / suspended / deowned / provisioning_failed",
+      "A user in that organization holds a valid JWT and mssp_dashboard.read permission"
+    ],
+    "steps": [
+      "Call GET /api/mssp/dashboard as that user for each non-active MsspProvider status in turn"
+    ],
+    "expectedResult": "Every call is rejected with 403 \"MSSP provider account is not active\", independent of the user's own permission set — this is a status gate, not a permission gate, and it applies even though the path is within MSSP_ALLOWED_PREFIXES.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "multi-tenant"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-004",
+    "category": "security",
+    "subFeature": "Cross-Provider Isolation",
+    "title": "A provider cannot read another provider's managed client by guessing its clientOrgId (IDOR)",
+    "description": "mssp.controller.js relationshipFor() (lines 30-39) scopes every client lookup by { providerOrgId: req.orgId, clientOrgId, status: {$in:[...]} } and throws AppError.notFound when no match exists — it never falls back to an unscoped lookup by clientOrgId alone. getClient, getClientUsage, getClientBilling, createProject and inviteClientUser all route through it.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Provider A and Provider B each have at least one active managed client",
+      "Provider A user is authenticated"
+    ],
+    "steps": [
+      "As Provider A's user, call GET /api/mssp/clients/{provider B's real clientOrgId}",
+      "Repeat for GET /api/mssp/clients/{id}/usage and GET /api/mssp/clients/{id}/billing"
+    ],
+    "expectedResult": "All three calls return 404 \"Managed client not found\" for Provider A — Provider B's client data (users, projects, usage, billing) is never returned, even though the clientOrgId is a valid, existing ObjectId.",
+    "tags": [
+      "idor",
+      "mssp",
+      "multi-tenant"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-005",
+    "category": "security",
+    "subFeature": "Framework Licensing Enforcement",
+    "title": "A provider cannot provision a client project (or add a project framework) with a framework outside its own licensed catalog",
+    "description": "tenant-provisioning.service.js resolveLicensedFrameworks() (lines 290-318) only matches MsspFrameworkLicense rows with status:'active', effectiveFrom<=now and not-yet-expired for that providerOrgId; any requested code/id not found throws AppError.forbidden('Frameworks are outside the MSSP catalog: ...'). Called from mssp.controller.js createClient (line 136) and createProject (line 270).",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "planned",
+    "preconditions": [
+      "Provider is licensed for ISO 27001 only (single active MsspFrameworkLicense)"
+    ],
+    "steps": [
+      "POST /mssp/clients with a project whose frameworks array includes \"soc2\" (not licensed) alongside \"iso27001\"",
+      "Repeat against an existing client via POST /mssp/clients/:clientOrgId/projects"
+    ],
+    "expectedResult": "Both calls fail with 403 and a message identifying \"soc2\" as outside the MSSP catalog; no organization, relationship, or project is left behind (see MSSP-E2E-004 for the associated rollback behavior).",
+    "tags": [
+      "mssp",
+      "licensing",
+      "authorization"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-006",
+    "category": "security",
+    "subFeature": "Credential Handling",
+    "title": "A generated temporary password is never persisted to ProvisioningOperation.result or MsspAuditEvent.after, in any \"add\" flow",
+    "description": "Every ownerMode/'add' code path (mssp.controller.js createClient, inviteClientUser, inviteTeamMember; admin.controller.js onboardMssp, onboardDirect, provisionMsspOwner) destructures `const { temporaryPassword, ...persistedResult } = result` before writing to ProvisioningOperation and MsspAuditEvent, so the plaintext secret is returned in the HTTP response exactly once and never stored. Directly verified for 3 of these paths in mssp-admin-provisioning.test.js and mssp-client-owner-mode.test.js.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-admin-provisioning.test.js:171-208 and mssp-client-owner-mode.test.js:130-163,192-264",
+    "preconditions": [
+      "Idempotency-Key header prepared for each call"
+    ],
+    "steps": [
+      "Call each of: POST /mssp/clients (ownerMode=add), POST /mssp/clients/:id/users (ownerMode=add), POST /mssp/team/invitations (ownerMode=add), POST /admin/tenant-management/mssps (ownerMode=add), POST /admin/tenant-management/mssps/:id/owners (ownerMode=add)",
+      "Inspect the corresponding ProvisioningOperation.result document and the MsspAuditEvent.after payload created by each call"
+    ],
+    "expectedResult": "The HTTP response body contains temporaryPassword exactly once per call. Neither the persisted ProvisioningOperation.result nor the MsspAuditEvent.after field contains a temporaryPassword key in any of the five flows.",
+    "tags": [
+      "mssp",
+      "secrets",
+      "audit"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-007",
+    "category": "security",
+    "subFeature": "Idempotent Provisioning",
+    "title": "POST /mssp/clients rejects requests without an Idempotency-Key and rejects a concurrent retry of an in-flight key",
+    "description": "mssp.controller.js createClient (lines 113-121): missing Idempotency-Key header -> 400; an existing ProvisioningOperation with the derived key in status \"processing\" -> 409 conflict (\"This client onboarding is already processing\"); a \"complete\" op replays the original result without re-provisioning.",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Active MSSP provider"
+    ],
+    "steps": [
+      "POST /mssp/clients with no Idempotency-Key header",
+      "POST /mssp/clients with a fresh Idempotency-Key, then — before it resolves — POST again with the identical key and body",
+      "POST /mssp/clients a third time with the same key after the first call has completed"
+    ],
+    "expectedResult": "Call 1 returns 400. Call 2's second request returns 409 while the first is still \"processing\". Call 3 returns 200 with `replayed:true` and the original result payload, and no second client organization is created.",
+    "tags": [
+      "mssp",
+      "idempotency",
+      "provisioning"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-008",
+    "category": "security",
+    "subFeature": "Admin Scope Guard",
+    "title": "A platform-admin token scoped only to admin:customers cannot call any admin:mssp-gated MSSP provider endpoint",
+    "description": "admin-scope.guard.js requireScope('admin:mssp') is applied to POST/GET /admin/tenant-management/mssps, GET .../mssps/:id, POST .../owners, PUT .../frameworks, POST .../suspend (admin.routes.js:16-22). _extractScopes() maps the customer_admin role only to admin:customers — it is never granted admin:mssp implicitly.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Platform token with realm/client roles resolving to scopes=['admin:customers'] only, DEV_BYPASS disabled"
+    ],
+    "steps": [
+      "Call POST /admin/tenant-management/mssps (onboard MSSP)",
+      "Call PUT /admin/tenant-management/mssps/:providerId/frameworks"
+    ],
+    "expectedResult": "Both calls return 403 { error: { code:\"FORBIDDEN\", requiredScope:\"admin:mssp\" } }.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "admin-portal"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-009",
+    "category": "security",
+    "subFeature": "Admin Scope Guard",
+    "title": "admin:mssp scope alone does not grant access to ownership-transfer endpoints (admin:ownership is a distinct scope)",
+    "description": "admin.routes.js:23-25 gates detach-all, detach-preview and detach with requireScope('admin:ownership'), a scope the mssp_admin role does not map to (admin-scope.guard.js roleMap: mssp_admin -> ['admin:mssp'] only, ownership_admin -> ['admin:ownership']). This is a genuine separation-of-duties control between \"manage MSSP catalogs/owners\" and \"transfer client ownership\".",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Token with scopes=['admin:mssp'] only"
+    ],
+    "steps": [
+      "Call GET /admin/tenant-management/clients/:clientOrgId/detach-preview",
+      "Call POST /admin/tenant-management/clients/:clientOrgId/detach",
+      "Call POST /admin/tenant-management/mssps/:providerId/detach-all"
+    ],
+    "expectedResult": "All three calls return 403 { error:{ code:\"FORBIDDEN\", requiredScope:\"admin:ownership\" } } for an actor holding only admin:mssp.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "admin-portal",
+      "separation-of-duties"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-010",
+    "category": "security",
+    "subFeature": "Admin Scope Guard",
+    "title": "DEV_BYPASS grants every admin scope only outside production, and never leaks into a production NODE_ENV",
+    "description": "admin-scope.guard.js:80 computes DEV_BYPASS = process.env.DEV_BYPASS==='true' && process.env.NODE_ENV!=='production'. A misconfigured production deployment that still sets DEV_BYPASS=true in its environment must not silently grant ALL_ADMIN_SCOPES (including admin:mssp and admin:ownership) to an otherwise unscoped token.",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "NODE_ENV=production and DEV_BYPASS=true set simultaneously (misconfiguration scenario)",
+      "A token with no admin scopes at all"
+    ],
+    "steps": [
+      "Call POST /admin/tenant-management/mssps/:providerId/detach-all with the unscoped token under this environment combination"
+    ],
+    "expectedResult": "The call is rejected with 403 FORBIDDEN — DEV_BYPASS must be inert whenever NODE_ENV is production, regardless of the DEV_BYPASS variable's own value.",
+    "tags": [
+      "rbac",
+      "mssp",
+      "dev-bypass",
+      "admin-portal"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-011",
+    "category": "security",
+    "subFeature": "Subscription Request Authority",
+    "title": "An MSSP reviewer cannot approve, reject, or request-info on a subscription request they themselves submitted for a managed client",
+    "description": "request.service.js review() (lines 280-282) throws SELF_APPROVAL_NOT_ALLOWED (422) whenever request.requestedByType===actor.type && request.requestedBy===String(actor.id). Because MSSP operators both submit requests on a client's behalf (msspService.submitRequest) and review them (msspService.approveRequest/rejectRequest/requestInfo) from the same /mssp/requests screen, this two-person-rule check is the only thing stopping a single MSSP user from self-authorizing their own request.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "MSSP user U submits a framework-add request for a managed client via POST /mssp/clients/:clientOrgId/requests"
+    ],
+    "steps": [
+      "As the same user U, call POST /mssp/requests/:requestId/approve",
+      "As the same user U, call POST /mssp/requests/:requestId/reject"
+    ],
+    "expectedResult": "Both calls fail with HTTP 422 and errorCode SELF_APPROVAL_NOT_ALLOWED; the request status remains \"submitted\". A different MSSP user on the same provider can approve it successfully.",
+    "tags": [
+      "mssp",
+      "approval-workflow",
+      "self-approval"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-012",
+    "category": "security",
+    "subFeature": "Subscription Request Authority",
+    "title": "An MSSP approver cannot grant a request that exceeds the client relationship's approvalCeilings — it is auto-escalated to the platform admin instead",
+    "description": "request.service.js msspAuthority() (lines 189-213) checks the request against MsspClientRelationship.approvalCeilings (planCodes / addOnCodes / entitlementKeys) and the provider's active MsspFrameworkLicense set for framework requests. review() (line 287): if an MSSP actor decides 'approved' but msspAuthority() returns false, the decision is silently downgraded to 'escalated' rather than applied — an MSSP operator with mssp_request.approve permission cannot self-grant beyond their delegated ceiling.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "MsspClientRelationship.approvalCeilings.planCodes does NOT include the requested plan's planCode",
+      "A submitted plan_change request for that client, routed to the MSSP (route:\"mssp\")"
+    ],
+    "steps": [
+      "As an MSSP user holding mssp_request.approve, call POST /mssp/requests/:requestId/approve"
+    ],
+    "expectedResult": "The response reflects status \"escalated\" (not \"applied\"/\"approved\") and request.route becomes \"escalated\"; the plan change is NOT applied to the client's subscription. The request now requires an admin:mssp/admin actor to decide it.",
+    "tags": [
+      "mssp",
+      "approval-workflow",
+      "escalation",
+      "authorization"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-013",
+    "category": "security",
+    "subFeature": "Subscription Request Authority",
+    "title": "An MSSP cannot review a request whose route is \"admin\" (admin_only routing policy or customer self-request disabled)",
+    "description": "request.service.js review() (line 284): for actor.type==='mssp', if request.route !== 'mssp' the call is rejected with 403 'Request is assigned to the platform administrator'. routeFor() (lines 41-58) sets route to 'admin' whenever the MsspClientRelationship has requestRoutingPolicy==='admin_only' or customerSelfRequestEnabled===false, regardless of what the requesting MSSP later attempts.",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Client relationship has requestRoutingPolicy='admin_only'",
+      "A request exists for that client with route=\"admin\""
+    ],
+    "steps": [
+      "As an MSSP user with mssp_request.approve, call POST /mssp/requests/:requestId/approve"
+    ],
+    "expectedResult": "The call is rejected with 403 \"Request is assigned to the platform administrator\"; only an admin-type actor can decide it.",
+    "tags": [
+      "mssp",
+      "approval-workflow",
+      "authorization"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SEC-014",
+    "category": "security",
+    "subFeature": "Ownership Detach",
+    "title": "A detached client is immediately unreachable through every provider-facing MSSP endpoint, not just the client list",
+    "description": "admin.controller.js detachClient sets MsspClientRelationship.status='detached' and Organization.kind='direct_customer' in the same operation. mssp.controller.js relationshipFor() default statuses argument never includes 'detached', so getClient/getClientUsage/getClientBilling/createProject/inviteClientUser for that clientOrgId all now throw AppError.notFound for the former provider — combined with portalBoundary.js, the former client organization (now kind='direct_customer') is also no longer reachable via /api/mssp/* from its own side even if a stale session still resolves it as mssp_client-shaped.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Client was detached from its provider via POST /admin/tenant-management/clients/:clientOrgId/detach"
+    ],
+    "steps": [
+      "As the former provider, call GET /mssp/clients/:clientOrgId, GET /mssp/clients/:clientOrgId/usage, GET /mssp/clients/:clientOrgId/billing",
+      "As the former provider, call POST /mssp/clients/:clientOrgId/projects"
+    ],
+    "expectedResult": "Every call returns 404 \"Managed client not found\" for the former provider — detachment revokes data access immediately and completely, with no residual read path.",
+    "tags": [
+      "mssp",
+      "ownership-transfer",
+      "multi-tenant"
+    ]
+  }
+]

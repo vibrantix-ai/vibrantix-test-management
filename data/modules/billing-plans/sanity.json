@@ -19,7 +19,7 @@
       "Open /billing-plans Plans tab",
       "Confirm an upgrade CTA is present and clickable for at least one higher self-serve tier"
     ],
-    "expectedResult": "Upgrade CTA is visible and opens UpgradeModal; no regression hid the action after the last deploy.",
+    "expectedResult": "Upgrade CTA is visible and opens UpgradeModal, which submits a plan-change SubscriptionRequest (no immediate plan change) — no regression hid the action after the last deploy.",
     "tags": [
       "sanity",
       "upgrade"
@@ -27,7 +27,8 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Upgrade CTA on the Plans tab now submits a plan-change SubscriptionRequest via UpgradeModal rather than performing an immediate self-serve upgrade."
   },
   {
     "id": "BILL-SAN-002",
@@ -55,9 +56,10 @@
       "enterprise"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — there is no enterprise-tier downgrade block or csm@vibrantix.ai contact path in the current DowngradeModal.jsx; every tier's downgrade now submits an identical SubscriptionRequest regardless of current tier."
   },
   {
     "id": "BILL-SAN-003",
@@ -84,9 +86,10 @@
       "tier-gate"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — TierGate.jsx no longer names the required tier at all; its alert copy is now the generic 'This feature is not included in your current plan.' with a 'View plans' link. See BILL-SAN-006 for a case tracking this as a possible UX regression."
   },
   {
     "id": "BILL-SAN-004",
@@ -112,9 +115,10 @@
       "payment-setup"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — there is no 'Set up payment' CTA, pending_payment Stripe state, or payment-setup flow anywhere in the current BillingOverview.jsx/billingService.js."
   },
   {
     "id": "BILL-SAN-005",
@@ -141,8 +145,70 @@
       "renewal"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — plan changes are no longer instant (they are SubscriptionRequests pending admin/MSSP approval), so a 'Renews In N Days' recalculation 'immediately after a self-serve upgrade' cannot occur; the stat only changes once a request is actually applied."
+  },
+  {
+    "id": "BILL-SAN-006",
+    "module": "billing-plans",
+    "category": "sanity",
+    "subFeature": "Feature Gate Labels",
+    "title": "TierGate's generic 'not included in your current plan' copy no longer names the required tier — confirm this is accepted, not a shipped regression",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org on a plan lacking a boolean-gated feature (e.g. module.vciso.enabled=false)"
+    ],
+    "steps": [
+      "Navigate to a TierGate-wrapped feature",
+      "Read the alert copy"
+    ],
+    "expectedResult": "Current behavior: the alert reads 'Feature not included' / 'This feature is not included in your current plan.' with a generic 'View plans' button — it does not name which tier or plan actually includes the feature, unlike the pre-rewrite TierGate. Confirm with product whether this is an accepted simplification or an unintentional loss of self-serve guidance.",
+    "tags": [
+      "sanity",
+      "tier-gate",
+      "ux-gap"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-SAN-007",
+    "module": "billing-plans",
+    "category": "sanity",
+    "subFeature": "Downgrade Flow",
+    "title": "PendingDowngradeBanner.jsx is orphaned dead code post-rewrite — plan.pendingChange is never populated by GET /v1/subscriptions/current",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has a pending (submitted/approved) downgrade SubscriptionRequest"
+    ],
+    "steps": [
+      "Inspect the response body of GET /v1/subscriptions/current for the 'plan' object's fields",
+      "Confirm PendingDowngradeBanner is still imported and rendered in BillingPlans.jsx"
+    ],
+    "expectedResult": "The 'plan' object returned by GET /current has no 'pendingChange' key in the current codebase, so PendingDowngradeBanner's `if (!pendingChange || pendingChange.status !== 'scheduled') return null;` guard always short-circuits to null. Recommend either wiring plan.pendingChange from the org's open downgrade/cancel requests, or removing the now-dead component and its NO_PENDING_CHANGE handling (see BILL-REG-002's deprecation note) as part of this rewrite's cleanup.",
+    "tags": [
+      "sanity",
+      "downgrade",
+      "dead-code",
+      "ui-gap"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

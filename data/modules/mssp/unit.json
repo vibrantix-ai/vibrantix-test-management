@@ -1,0 +1,236 @@
+[
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-001",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "MsspProvider.status only accepts the 5 defined lifecycle values and organizationId is unique",
+    "description": "mssp-provider.model.js: status enum ['provisioning','active','suspended','deowned','provisioning_failed'], default 'provisioning'; organizationId is required+unique — an organization can never have two MsspProvider documents.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Attempt to save an MsspProvider with status=\"pending\" (not in the enum)",
+      "Attempt to save a second MsspProvider for an organizationId that already has one"
+    ],
+    "expectedResult": "Both attempts fail Mongoose validation/the unique index; only enum-listed statuses are ever persisted and only one MsspProvider can exist per organization.",
+    "tags": [
+      "mssp",
+      "schema",
+      "data-model"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-002",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "MsspClientRelationship.clientOrgId has a plain (non-partial) unique index — a detached client can never receive a second relationship document, by any provider",
+    "description": "mssp-client-relationship.model.js line 8: clientOrgId: { unique:true } with no partialFilterExpression, unlike TenantInvitation's targetOrgId+email index which is deliberately partial on status:'pending'. Because 'detached' relationships are never deleted, once a client organization has ANY relationship row (even a long-detached one) it structurally cannot be re-onboarded as a managed client again — not by the original provider, and not by a different one — since MsspClientRelationship.create() would violate the unique index. This is a real, verified structural limitation worth confirming is intentional.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A client organization has a MsspClientRelationship document with status=\"detached\""
+    ],
+    "steps": [
+      "Attempt POST /mssp/clients (or a raw MsspClientRelationship.create) for that same clientOrgId under a new or the same provider"
+    ],
+    "expectedResult": "The insert fails with a MongoDB duplicate-key error on the clientOrgId unique index — a formerly-managed, detached client organization can never become an MSSP-managed client again through the current data model. Flag this as a gap/limitation to confirm with product: there is no re-attach flow.",
+    "tags": [
+      "mssp",
+      "schema",
+      "data-model",
+      "ownership-transfer"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-003",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "MsspFrameworkLicense.frameworkCode is always normalized to lowercase/trimmed at the schema level",
+    "description": "mssp-framework-license.model.js line 9: frameworkCode: { type:String, required:true, trim:true, lowercase:true } — this normalization is what makes resolveLicensedFrameworks()'s case-insensitive code matching (tenant-provisioning.service.js lines 292,309) safe.",
+    "priority": "P3",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Save an MsspFrameworkLicense with frameworkCode=\" ISO27001 \" (mixed case, padded)"
+    ],
+    "expectedResult": "The persisted document's frameworkCode is exactly \"iso27001\".",
+    "tags": [
+      "mssp",
+      "schema",
+      "data-model"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-004",
+    "category": "unit",
+    "subFeature": "Audit Trail",
+    "title": "MsspAuditEvent is schema-enforced append-only: no updatedAt field exists, and actorType is restricted to 4 values",
+    "description": "mssp-audit-event.model.js line 20: timestamps:{createdAt:true, updatedAt:false} — there is no updatedAt path on the schema at all, so no application code path can silently 'edit' an existing audit event's timestamp. actorType enum is ['platform','mssp','customer','system']; actorType/actorId/action are required.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Inspect the compiled MsspAuditEvent schema paths for an updatedAt field",
+      "Attempt to save an MsspAuditEvent with actorType=\"support\" (not in the enum)"
+    ],
+    "expectedResult": "No updatedAt schema path exists on MsspAuditEvent. The actorType=\"support\" save fails validation.",
+    "tags": [
+      "mssp",
+      "schema",
+      "audit-trail"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-005",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "TenantInvitation.type only accepts the 5 defined invitation classifications",
+    "description": "invitation.model.js line 17: type enum ['direct_owner','mssp_owner','mssp_employee','mssp_client_user','customer_user']. A new invitation classification introduced without updating this enum would fail fast at save time instead of silently miscategorizing the invitation.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Attempt to save a TenantInvitation with type=\"mssp_admin\" (not defined)"
+    ],
+    "expectedResult": "The save is rejected by Mongoose enum validation.",
+    "tags": [
+      "mssp",
+      "schema",
+      "invitations"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-006",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "ProvisioningOperation.idempotencyKey is globally unique and type/status are restricted to their defined enums",
+    "description": "provisioning-operation.model.js: idempotencyKey required+unique (line 7); type enum ['direct_onboarding','mssp_onboarding','mssp_client_onboarding']; status enum ['processing','complete','failed','compensating'], default 'processing'.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Save two ProvisioningOperation documents with the same idempotencyKey",
+      "Save one with type=\"mssp_provider_onboarding\" (not defined)"
+    ],
+    "expectedResult": "The duplicate-key save fails on the unique index; the invalid-type save fails enum validation.",
+    "tags": [
+      "mssp",
+      "schema",
+      "idempotency"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-007",
+    "category": "unit",
+    "subFeature": "Data Model",
+    "title": "OwnershipTransfer requires reason and requestedBy, and status is restricted to its 4-value lifecycle",
+    "description": "ownership-transfer.model.js: reason and requestedBy are required (lines 10-11); status enum ['previewed','processing','complete','failed'], default 'previewed' — matching detachClient's create-then-update-to-complete/failed pattern (admin.controller.js lines 639-663).",
+    "priority": "P3",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Attempt to save an OwnershipTransfer with no reason field",
+      "Attempt to save one with status=\"cancelled\" (not defined)"
+    ],
+    "expectedResult": "Both saves fail Mongoose validation.",
+    "tags": [
+      "mssp",
+      "schema",
+      "ownership-transfer"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-UNIT-008",
+    "category": "unit",
+    "subFeature": "Framework Resolution",
+    "title": "resolveLicensedFrameworks() short-circuits to an empty array for an empty/undefined request and throws forbidden listing exact missing codes otherwise",
+    "description": "tenant-provisioning.service.js resolveLicensedFrameworks() (lines 290-318): line 291 returns [] immediately without a DB query when requested is empty/not an array; otherwise any requested value not resolvable to an active, in-date, licensed MsspFrameworkLicense throws AppError.forbidden naming every missing value.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Provider licensed only for \"iso27001\""
+    ],
+    "steps": [
+      "Call resolveLicensedFrameworks(providerOrgId, [])",
+      "Call resolveLicensedFrameworks(providerOrgId, [\"iso27001\", \"pci-dss\"])"
+    ],
+    "expectedResult": "Call 1 returns [] without touching MsspFrameworkLicense. Call 2 throws AppError.forbidden with a message that names \"pci-dss\" as outside the catalog (and does not falsely also name \"iso27001\").",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "unit"
+    ]
+  }
+]

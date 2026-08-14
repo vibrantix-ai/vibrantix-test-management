@@ -25,9 +25,10 @@
       "validation"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — POST /v1/billing/plan/upgrade no longer exists; plan changes are now submitted as SubscriptionRequest documents via POST /v1/subscriptions/requests. See BILL-INT-010."
   },
   {
     "id": "BILL-INT-002",
@@ -35,7 +36,7 @@
     "category": "integration",
     "subFeature": "Upgrade Flow",
     "title": "Upgrading to an enterprise/contact_sales tier returns requires_contact instead of processing a Stripe change",
-    "description": "Enterprise-tier or ctaType==='contact_sales' targets are not self-serve; the endpoint short-circuits to a CTA response rather than calling Stripe.",
+    "description": "Enterprise-tier or ctaType==='contact_sales' targets are not self-serve; the endpoint short-circuits to a CTA response rather than calling Stripe. Superseded by the 2026-08-04 billing rewrite — there is no requires_contact/Stripe branch in the new request-based flow; ctaType='contact_sales' on a SubscriptionPlan now only changes the displayed price label, and every plan change (including 'enterprise') is submitted as an identical SubscriptionRequest for admin/MSSP review.",
     "priority": "P1",
     "environment": [
       "dev",
@@ -57,9 +58,9 @@
       "contact-sales"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-INT-003",
@@ -87,9 +88,10 @@
       "pending-change"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — the pending-tier-change document and its 409 DOWNGRADE_PENDING response no longer exist; request.service.js's submit() has no check that blocks a new plan_change request while a downgrade request is pending. Flagged as an unverified gap — see BILL-INT-010."
   },
   {
     "id": "BILL-INT-004",
@@ -97,7 +99,7 @@
     "category": "integration",
     "subFeature": "Downgrade Flow",
     "title": "Downgrading from the enterprise tier is rejected and points to a different CSM email than the upgrade-to-enterprise path",
-    "description": "Enterprise downgrade requires talking to a CSM. Worth pinning: the downgrade-blocked email (csm@vibrantix.ai) differs from the upgrade-to-enterprise email (sales@vibrantix.ai) — verify this isn't an accidental inconsistency before it ships to more customers.",
+    "description": "Enterprise downgrade requires talking to a CSM. Worth pinning: the downgrade-blocked email (csm@vibrantix.ai) differs from the upgrade-to-enterprise email (sales@vibrantix.ai) — verify this isn't an accidental inconsistency before it ships to more customers. Superseded by the 2026-08-04 billing rewrite — there is no enterprise-tier downgrade block or CSM-contact branch anywhere in request.service.js; every tier's downgrade is now an identical SubscriptionRequest requiring admin/MSSP approval.",
     "priority": "P2",
     "environment": [
       "dev",
@@ -117,9 +119,9 @@
       "enterprise"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-INT-005",
@@ -147,9 +149,10 @@
       "over-cap"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — acknowledgeOverCap and the 422 OVER_CAP_NOT_ACKNOWLEDGED response no longer exist anywhere in the codebase; no equivalent usage-vs-target-limit check was found in the V2 downgrade request path. This was a P0 case pre-rewrite — see the gap-fill case BILL-INT-016."
   },
   {
     "id": "BILL-INT-006",
@@ -176,9 +179,10 @@
       "pending-change"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — DELETE /v1/billing/plan/pending-change and its NO_PENDING_CHANGE response no longer exist; the client's cancelPendingChange() now resolves the pending request client-side from GET /v1/subscriptions/requests before ever calling the server. See BILL-SAN-007 for the resulting dead-code finding in PendingDowngradeBanner.jsx."
   },
   {
     "id": "BILL-INT-007",
@@ -205,9 +209,10 @@
       "empty-state"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — GET /v1/billing/invoices and the entire invoice-history feature were deleted; there is no Stripe, no invoice collection, and no invoices endpoint anywhere in the current codebase (MSSP's getClientBilling hardcodes invoices: [])."
   },
   {
     "id": "BILL-INT-008",
@@ -215,7 +220,7 @@
     "category": "integration",
     "subFeature": "Feature Flag Gating",
     "title": "All customer-facing /v1/billing/* routes 404 when pricing_v1 is disabled for the org",
-    "description": "isPricingV1Enabled(orgId) gates the whole customer billing API (env PRICING_V1 or per-org PRICING_V1_ORG_ALLOWLIST). Public plans/tiers catalog and the Stripe webhook are exempt.",
+    "description": "isPricingV1Enabled(orgId) gates the whole customer billing API (env PRICING_V1 or per-org PRICING_V1_ORG_ALLOWLIST). Public plans/tiers catalog and the Stripe webhook are exempt. Superseded by the 2026-08-04 billing rewrite — the pricing_v1 feature flag and isPricingV1Enabled() no longer exist; the V2 subscriptions API has no equivalent per-org flag gating.",
     "priority": "P1",
     "environment": [
       "dev",
@@ -235,9 +240,9 @@
       "pricing_v1"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-INT-009",
@@ -245,7 +250,7 @@
     "category": "integration",
     "subFeature": "Project-Scoped Billing",
     "title": "billingProjectAccess middleware requires and validates projectId for project-billed organizations",
-    "description": "billing.routes.js (lines ~56-67) enforces projectId presence and project-org ownership for orgs on the project scope of billing.",
+    "description": "billing.routes.js (lines ~56-67) enforces projectId presence and project-org ownership for orgs on the project scope of billing. Superseded by the 2026-08-04 billing rewrite — billingProjectAccess middleware no longer exists; subscription.routes.js uses requireProjectMembership({required:false}) instead, and project-ownership validation now only happens inside request.service.js's validateSubject() for POST /requests, not on the GET read endpoints. See BILL-INT-015 and BILL-SEC-009 for re-verification under the new model.",
     "priority": "P2",
     "environment": [
       "dev",
@@ -267,8 +272,269 @@
       "validation"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-010",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Subscription Requests",
+    "title": "POST /api/v1/subscriptions/requests with type='plan_change' for a non-MSSP org always routes to route:'admin' and leaves entitlements untouched until approved",
+    "description": "Replaces the deleted instant self-serve upgrade: request.service.js's routeFor() sends every customer-submitted request to 'admin' unless an active MsspClientRelationship with customerSelfRequestEnabled exists. There is no more self-serve, immediate plan change of any kind.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has no active MsspClientRelationship",
+      "Valid JWT with billing.update permission",
+      "A valid target planId from /v1/subscriptions/catalog"
+    ],
+    "steps": [
+      "Call POST /api/v1/subscriptions/requests with { type:'plan_change', requestedItems:[{planId}], effectivePolicy:'immediate' } and an Idempotency-Key header",
+      "Inspect the created SubscriptionRequest's route/status fields",
+      "Call GET /api/v1/subscriptions/current and confirm the plan/entitlements are unchanged"
+    ],
+    "expectedResult": "201 response with route:'admin', status:'submitted'. GET /current still reflects the pre-request plan/entitlements — nothing is applied until an admin (or authorized MSSP) approves the request.",
+    "tags": [
+      "subscription-request",
+      "upgrade",
+      "routing"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-011",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Subscription Requests",
+    "title": "Submitting a subscription request without an Idempotency-Key header is rejected, and replaying the same key returns the original request unchanged",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Valid JWT with billing.update permission"
+    ],
+    "steps": [
+      "Call POST /api/v1/subscriptions/requests with a valid body but no Idempotency-Key header",
+      "Repeat the call with the same Idempotency-Key header and the same body twice in a row"
+    ],
+    "expectedResult": "First call: 400 'Idempotency-Key is required'. The two identical-key calls: the second returns the exact same SubscriptionRequest document (same requestNumber/_id) as the first — no duplicate SubscriptionRequest is created for orgId+idempotencyKey.",
+    "tags": [
+      "subscription-request",
+      "idempotency"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-012",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Subscription Requests",
+    "title": "An actor cannot approve, reject, or mark needs-info on their own submitted subscription request",
+    "description": "request.service.js's review() throws 422 SELF_APPROVAL_NOT_ALLOWED whenever requestedByType/requestedBy match the deciding actor's type/id — this applies uniformly to admin, mssp, and (structurally) any future customer-decision path.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An admin user submitted a SubscriptionRequest on behalf of an org (requestedByType='admin', requestedBy=<adminId>)"
+    ],
+    "steps": [
+      "As that same admin user, call POST /api/admin/subscription-requests/:requestId/approve"
+    ],
+    "expectedResult": "422 { errorCode:'SELF_APPROVAL_NOT_ALLOWED' }; the request's status remains 'submitted' and no entitlement changes are applied.",
+    "tags": [
+      "subscription-request",
+      "self-approval",
+      "rbac"
+    ],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-013",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Subscription Requests",
+    "title": "Approving a term_end-effective request leaves status='approved' without applying it until desiredEffectiveAt has passed",
+    "description": "review()'s apply() call is only triggered immediately when `!request.desiredEffectiveAt || request.desiredEffectiveAt <= new Date()`. A term_end downgrade/framework-removal approved today with a desiredEffectiveAt next year must NOT touch the SubscriptionInstance until the subscription-term.worker picks it up at the right time.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A submitted 'downgrade' request with effectivePolicy='term_end' and desiredEffectiveAt = current term's termEnd (in the future)"
+    ],
+    "steps": [
+      "Approve the request via POST /api/admin/subscription-requests/:requestId/approve",
+      "Immediately call GET /api/v1/subscriptions/current for the org",
+      "Fast-forward (or wait for) the subscription-term worker's tick past desiredEffectiveAt and re-check"
+    ],
+    "expectedResult": "Immediately after approval: request.status='approved', appliedInstanceId is still null, and GET /current still shows the pre-downgrade plan. After the term worker's tick past desiredEffectiveAt: request.status='applied', appliedAt is set, and GET /current reflects the new (downgraded) plan and entitlements.",
+    "tags": [
+      "subscription-request",
+      "term-worker",
+      "downgrade"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-014",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Subscription Requests",
+    "title": "GET /api/v1/subscriptions/current returns 404 SUBSCRIPTION_NOT_CONFIGURED for an org with no SubscriptionInstance yet",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A freshly created org with no initial_subscription request ever applied"
+    ],
+    "steps": [
+      "Call GET /api/v1/subscriptions/current for the new org"
+    ],
+    "expectedResult": "404 { error:{ code:'SUBSCRIPTION_NOT_CONFIGURED' } } — not a 500 or an empty-but-200 shape. The client's SubscriptionRequests.jsx treats exactly this status+code pair as the 'needs an initial_subscription request' state.",
+    "tags": [
+      "subscription-request",
+      "empty-state",
+      "onboarding"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-015",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Project-Scoped Subscriptions",
+    "title": "Submitting a subscription request with a projectId belonging to a different organization is rejected 404",
+    "description": "request.service.js's validateSubject() checks Project.exists({_id:projectId, organizationId:orgId, isActive:true}) before anything else in submit(). Direct successor to the deleted billingProjectAccess middleware, but now scoped only to the write path (POST /requests), not the GET reads.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Two orgs A and B, each with at least one active project",
+      "Valid JWT for an org-A billing.update user"
+    ],
+    "steps": [
+      "As the org-A user, call POST /api/v1/subscriptions/requests with projectId set to an org-B-owned project's _id"
+    ],
+    "expectedResult": "404 'Project not found'. No SubscriptionRequest document is created.",
+    "tags": [
+      "multi-tenant",
+      "idor",
+      "project-billing"
+    ],
+    "requirement": "ISO 27001 Annex A.5.3",
+    "owner": "Security",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-016",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Downgrade Flow",
+    "title": "A downgrade request is accepted and applied even when current usage exceeds the target plan's entitlement limits — no over-cap acknowledgement gate was found",
+    "description": "The pre-rewrite acknowledgeOverCap/422 OVER_CAP_NOT_ACKNOWLEDGED safeguard (previously P0, BILL-INT-005) has no equivalent anywhere in request.service.js's validateItems()/review()/apply() for type='downgrade'. This case documents current behavior as a real gap pending confirmation from product/eng, in the same spirit as BILL-UNIT-007's tierCode gap.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org's current usage: 12 active users; target plan's 'users.active' entitlement = 10"
+    ],
+    "steps": [
+      "Submit a 'downgrade' SubscriptionRequest targeting the lower-capacity plan",
+      "Approve and let it apply at term end (or force-apply for the test)",
+      "Inspect the resulting EntitlementBalance for 'users.active' and the org's actual active-user count post-apply"
+    ],
+    "expectedResult": "Current behavior: the request applies successfully with no 422/warning of any kind — the new EntitlementBalance.limitValue is set below the org's actual usage (12 users against a limit of 10), silently putting the org over its own new cap with no acknowledged-overage flow and no read-only/lockout mechanism observed to follow automatically. Flag as a gap versus the deleted V1 safeguard rather than assuming a defect until confirmed with the over-limit copy in components/billing/OverLimitBanner.jsx, which implies an over-limit state is expected to exist somewhere but its trigger condition was not found in this request path.",
+    "tags": [
+      "downgrade",
+      "over-cap",
+      "gap",
+      "data-integrity"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-INT-017",
+    "module": "billing-plans",
+    "category": "integration",
+    "subFeature": "Admin Plan Catalog",
+    "title": "Immediate grandfathering (PATCH .../plans/:id with grandfatheringMode='immediate') carries forward already-consumed ai.credits usage onto the new plan version without zeroing it",
+    "description": "Regression guard for the incident admin.controller.js's _applyGrandfatheringImmediate() comments describe as confirmed in production on 2026-08-07 — a race let $setOnInsert lose the carried usedValue for 3 orgs. The fix makes the carry an explicit unconditional $set after syncInstance() runs.",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "linkedDefect": "2026-08-07-grandfathering-usage-zeroing",
+    "preconditions": [
+      "An org on plan version 1 with EntitlementBalance 'ai.credits' usedValue=3400 for the current term",
+      "Admin updates that plan with grandfatheringMode='immediate'"
+    ],
+    "steps": [
+      "PATCH /api/admin/billing/plans/:id with a benign field change and grandfatheringMode='immediate'",
+      "Immediately read the affected org's EntitlementBalance for 'ai.credits' on its new (version 2) SubscriptionInstance"
+    ],
+    "expectedResult": "The new instance's 'ai.credits' EntitlementBalance shows usedValue=3400 (and the same reservedValue as before), never reset to 0 — regardless of any race between syncInstance()'s $setOnInsert carry and the controller's explicit follow-up $set.",
+    "tags": [
+      "regression",
+      "grandfathering",
+      "ai-credits",
+      "data-integrity"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

@@ -1,0 +1,253 @@
+[
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-001",
+    "category": "regression",
+    "subFeature": "Cross-Service Drift",
+    "title": "vibrantix-partner-portal's framework add/remove UI calls backend endpoints that do not exist, unlike the equivalent client-panel action",
+    "description": "vibrantix-partner-portal/src/services/msspService.js addProjectFramework/removeProjectFramework call POST /mssp/clients/:id/projects/:projectId/frameworks and DELETE .../frameworks/:code. vibrantix-backend/src/modules/mssp/mssp.routes.js defines no such routes anywhere — the only server-side path for changing a project's framework allocation is POST /mssp/clients/:clientOrgId/requests (the subscription-request workflow), which is exactly what vibrantix-client-panel's msspService.js addProjectFramework/removeProjectFramework correctly calls via submitRequest(). This is a genuine, verified cross-service drift bug: the Partner Portal implementation predates or diverged from the request-workflow refactor and will 404 in production.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A managed client with an active project",
+      "Partner Portal build pointed at the real vibrantix-backend"
+    ],
+    "steps": [
+      "In the Partner Portal, open a client's project and attempt to add a licensed framework",
+      "Attempt to remove an already-allocated framework from a project",
+      "Compare against the same action performed from vibrantix-client-panel's /mssp/clients/:id page"
+    ],
+    "expectedResult": "BUG (regression guard): both Partner Portal actions currently 404 against vibrantix-backend since no matching route exists; the client-panel equivalent succeeds by submitting a subscription request instead. This case should fail until Partner Portal's msspService is updated to call POST /mssp/clients/:clientOrgId/requests with type:\"framework\" like the client-panel does.",
+    "tags": [
+      "mssp",
+      "partner-portal",
+      "drift",
+      "api-contract"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-002",
+    "category": "regression",
+    "subFeature": "Idempotent Provisioning",
+    "title": "Replaying POST /mssp/clients with a completed Idempotency-Key never creates a second client organization",
+    "description": "mssp.controller.js createClient (lines 116-117): existingOp?.status===\"complete\" short-circuits to `res.json({ success:true, replayed:true, data: existingOp.result })` before any provisioning logic runs.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A prior successful POST /mssp/clients call with idempotency key K"
+    ],
+    "steps": [
+      "Repeat the identical POST /mssp/clients call with the same Idempotency-Key: K and the same body"
+    ],
+    "expectedResult": "Response has replayed:true and the original result payload (with no temporaryPassword, per MSSP-SEC-006); exactly one client Organization/MsspClientRelationship exists for that idempotency key, confirmed by re-listing /mssp/clients.",
+    "tags": [
+      "mssp",
+      "idempotency",
+      "regression"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-003",
+    "category": "regression",
+    "subFeature": "Portal Routing",
+    "title": "MSSP provider organizations and their owner invitations are always routed to MSSP_PORTAL_URL, never CLIENT_URL",
+    "description": "tenant-provisioning.service.js portalUrlForOrganizationKind() and createOrganizationWithKeycloak/inviteOrgUser: kind='mssp_provider' must always resolve redirectUrl to MSSP_PORTAL_URL; kind='mssp_client'/'direct_customer' must always resolve to CLIENT_URL. A regression here would silently invite an MSSP owner to log into the wrong portal.",
+    "priority": "P0",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/mssp-owner-add.test.js:51-93",
+    "preconditions": [
+      "CLIENT_URL and MSSP_PORTAL_URL configured to distinct values"
+    ],
+    "steps": [
+      "Create an organization with kind=\"mssp_provider\" and invite its owner",
+      "Create an organization with kind=\"mssp_client\""
+    ],
+    "expectedResult": "createKeycloakOrg and inviteToOrganization are called with redirectUrl===MSSP_PORTAL_URL for the mssp_provider case, and redirectUrl===CLIENT_URL for the mssp_client case.",
+    "tags": [
+      "mssp",
+      "provisioning",
+      "portal-boundary"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-004",
+    "category": "regression",
+    "subFeature": "Provider Team & Invitations",
+    "title": "Resending a previously-expired invitation resets its status to \"pending\" and pushes expiresAt out by 7 days, on both the provider and platform-admin resend endpoints",
+    "description": "mssp.controller.js resendInvitation (lines 483-516) and admin.controller.js resendInvitation (lines 136-177) share the same behavior: status is reset to \"pending\", expiresAt = now+7days, resendCount incremented, and a 60-second cooldown (lastSentAt) is enforced on both endpoints identically.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An invitation whose status has flipped to \"expired\" (past its expiresAt)"
+    ],
+    "steps": [
+      "POST /mssp/invitations/:id/resend for a provider-facing expired invitation",
+      "POST /admin/tenant-management/invitations/:id/resend for a platform-admin-facing expired invitation",
+      "Immediately retry each resend a second time"
+    ],
+    "expectedResult": "Both first calls succeed, flipping status back to \"pending\" with a new 7-day expiresAt and resendCount+1. Both immediate second calls are rejected with a 60-second cooldown conflict.",
+    "tags": [
+      "mssp",
+      "invitations",
+      "regression"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-005",
+    "category": "regression",
+    "subFeature": "Provider Team & Invitations",
+    "title": "A second invitation to the same email at the same target org is blocked while the first is still pending, but allowed once it is revoked",
+    "description": "invitation.model.js's partial unique index { targetOrgId, email } with partialFilterExpression status:'pending' (lines 37-40) enforces exactly one live pending invite per (org,email) pair at the database layer, independent of any application-level duplicate check.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A pending TenantInvitation for user@example.com at client org C"
+    ],
+    "steps": [
+      "Attempt to invite user@example.com to client org C again while the first invitation is still pending",
+      "Revoke the first invitation, then invite user@example.com to client org C once more"
+    ],
+    "expectedResult": "The first re-invite attempt fails (duplicate-key/conflict). After revocation, the second invite attempt succeeds and creates a new pending TenantInvitation.",
+    "tags": [
+      "mssp",
+      "invitations",
+      "data-integrity"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-006",
+    "category": "regression",
+    "subFeature": "Framework Licensing",
+    "title": "Revoking a framework from a provider's licensed catalog does not retroactively touch any client project that already activated it",
+    "description": "admin.controller.js replaceFrameworkCatalog only updates MsspFrameworkLicense rows (status->'revoked'); it never touches ClientFramework documents on already-provisioned client projects. The admin-panel UI itself documents this intent ('Changes restrict future allocation; existing paid client data remains preserved' — mssps/[providerId]/page.jsx). Regression risk: a future reconciliation job could incorrectly cascade a license revocation into client-level framework deactivation.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Client project already has an active ClientFramework for SOC 2, provisioned while the provider was licensed for it"
+    ],
+    "steps": [
+      "Admin revokes SOC 2 from the provider's licensed catalog via replaceFrameworkCatalog",
+      "Reload that client project's framework list"
+    ],
+    "expectedResult": "The client project's existing SOC 2 ClientFramework record remains status=\"active\" and fully functional; only new allocation attempts (resolveLicensedFrameworks) are blocked from selecting SOC 2 going forward.",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "regression"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-007",
+    "category": "regression",
+    "subFeature": "Provider Team & Invitations",
+    "title": "Revoking an invitation that already granted project access releases the consumed user-seat quota for every affected project",
+    "description": "tenant-provisioning.service.js removeInvitedUserProjectAccess() (lines 320-328) is called from both mssp.controller.js revokeInvitation and admin.controller.js revokeInvitation: it deletes the invited user's ProjectMember rows and releases the \"users\" quota consumed by inviteOrgUser for each of those projects — preventing a phantom seat that stays consumed forever.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An invited-but-not-yet-accepted client user has ProjectMember rows on 2 projects, each consuming one \"users\" quota unit"
+    ],
+    "steps": [
+      "Revoke that pending invitation via DELETE /mssp/invitations/:id",
+      "Re-check each project's remaining users quota"
+    ],
+    "expectedResult": "Both projects' consumed \"users\" quota decreases by 1 (returning to its pre-invite level); the ProjectMember rows for the revoked user are deleted; the user's status becomes \"removed\".",
+    "tags": [
+      "mssp",
+      "invitations",
+      "quota",
+      "regression"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-REG-008",
+    "category": "regression",
+    "subFeature": "Framework Licensing",
+    "title": "A provider can never hold two active MsspFrameworkLicense rows for the same framework, even under concurrent catalog updates",
+    "description": "mssp-framework-license.model.js: two compound unique indexes, { providerOrgId, frameworkId } and { providerOrgId, frameworkCode } (lines 23-24), guard against duplicate license rows regardless of application-level upsert logic in replaceFrameworkCatalog.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [],
+    "steps": [
+      "Fire two concurrent PUT /admin/tenant-management/mssps/:providerId/frameworks requests that both include the same new framework code"
+    ],
+    "expectedResult": "Exactly one MsspFrameworkLicense document exists for that (providerOrgId, frameworkId) pair afterward; the database unique index prevents a duplicate even if the upsert race were lost.",
+    "tags": [
+      "mssp",
+      "framework-licensing",
+      "data-integrity"
+    ]
+  }
+]

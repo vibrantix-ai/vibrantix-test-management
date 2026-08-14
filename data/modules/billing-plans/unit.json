@@ -5,7 +5,7 @@
     "category": "unit",
     "subFeature": "Trial Period",
     "title": "Trial expiry is computed as trialStartedAt + plan.trialDays",
-    "description": "subscription.service.js (~lines 459-485) sets trialStartedAt=now and accessExpiresAt=trialExpiresAt only when status==='trial' and plan.trialDays is set. Verifies the pure calculation in isolation from Stripe.",
+    "description": "subscription.service.js (~lines 459-485) sets trialStartedAt=now and accessExpiresAt=trialExpiresAt only when status==='trial' and plan.trialDays is set. Verifies the pure calculation in isolation from Stripe. Superseded by the 2026-08-04 billing rewrite — the SubscriptionOrg model and its trialStartedAt/trialExpiresAt/accessExpiresAt fields were deleted entirely; trial state is now tracked via SubscriptionInstance.status='trial' and termStart/termEnd in the V2 entitlement ledger.",
     "priority": "P1",
     "environment": [
       "dev"
@@ -25,9 +25,9 @@
       "subscription-service"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-UNIT-002",
@@ -35,7 +35,7 @@
     "category": "unit",
     "subFeature": "Feature Gate Enforcement",
     "title": "requireFeature() denies a request when the key is absent from req.entitlements.features",
-    "description": "middleware/requireEntitlement.js requireFeature(key) checks req.entitlements.features.includes(key). This is the actual server-side enforcement that TierGate.jsx's client-side alert is only cosmetic for.",
+    "description": "middleware/requireEntitlement.js requireFeature(key) checks req.entitlements.features.includes(key). This is the actual server-side enforcement that TierGate.jsx's client-side alert is only cosmetic for. Superseded by the 2026-08-04 billing rewrite — requireFeature() was deleted entirely from middleware/requireEntitlement.js; replaced by requireEntitlement(key), which reads req.entitlements.entitlements and returns errorCode ENTITLEMENT_NOT_AVAILABLE, not FEATURE_NOT_AVAILABLE. See BILL-UNIT-009.",
     "priority": "P0",
     "environment": [
       "dev"
@@ -56,9 +56,9 @@
       "entitlements"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-UNIT-003",
@@ -66,7 +66,7 @@
     "category": "unit",
     "subFeature": "Feature Gate Enforcement",
     "title": "requireFeature(key, {strict:true}) denies when entitlements have not resolved yet",
-    "description": "Distinguishes the strict-mode failure (ENTITLEMENTS_UNAVAILABLE) from the normal feature-absent failure (FEATURE_NOT_AVAILABLE) so callers can tell 'plan doesn't have it' from 'we don't know yet'.",
+    "description": "Distinguishes the strict-mode failure (ENTITLEMENTS_UNAVAILABLE) from the normal feature-absent failure (FEATURE_NOT_AVAILABLE) so callers can tell 'plan doesn't have it' from 'we don't know yet'. Superseded by the 2026-08-04 billing rewrite — requireFeature() and its strict:true option were deleted entirely; requireEntitlement() has no strict-mode equivalent and always fails closed (503 ENTITLEMENTS_UNAVAILABLE) when entitlements haven't resolved. See BILL-UNIT-010.",
     "priority": "P2",
     "environment": [
       "dev"
@@ -86,9 +86,9 @@
       "entitlements"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-UNIT-004",
@@ -96,7 +96,7 @@
     "category": "unit",
     "subFeature": "Downgrade Over-Cap Check",
     "title": "Over-cap comparison flags every usage dimension exceeding the target tier's limits",
-    "description": "customer.controller.js downgrade over-cap logic compares current usage (users, projects, storageGB, cloudAssets, vendors) against the target tier's limits object and builds the details.overCap breakdown returned in the 422 OVER_CAP_NOT_ACKNOWLEDGED response.",
+    "description": "customer.controller.js downgrade over-cap logic compares current usage (users, projects, storageGB, cloudAssets, vendors) against the target tier's limits object and builds the details.overCap breakdown returned in the 422 OVER_CAP_NOT_ACKNOWLEDGED response. Superseded by the 2026-08-04 billing rewrite — customer.controller.js's downgrade over-cap comparison logic was deleted entirely; customer.controller.js now exports only getPublicPlans, and the V2 downgrade request flow has no verified over-cap check. See BILL-INT-016.",
     "priority": "P1",
     "environment": [
       "dev"
@@ -114,9 +114,9 @@
       "subscription-service"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-UNIT-005",
@@ -143,9 +143,10 @@
       "module-config"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — requireModuleConfig() was deleted entirely from middleware/requireEntitlement.js; the surviving exports are requireEntitlement and requireScanFrequency only."
   },
   {
     "id": "BILL-UNIT-006",
@@ -153,7 +154,7 @@
     "category": "unit",
     "subFeature": "Stripe Webhook Idempotency",
     "title": "A stripe_events record already marked status='processed' short-circuits re-processing of a duplicate webhook delivery",
-    "description": "Stripe redelivers webhooks on timeout/ack failure; stripe.webhook.controller.js dedups via the stripe-event.model.js collection keyed by event.id before running any handler.",
+    "description": "Stripe redelivers webhooks on timeout/ack failure; stripe.webhook.controller.js dedups via the stripe-event.model.js collection keyed by event.id before running any handler. Superseded by the 2026-08-04 billing rewrite — the Stripe integration, its webhook route, and the stripe_events collection were deleted entirely; no Stripe dependency remains anywhere in vibrantix-backend.",
     "priority": "P1",
     "environment": [
       "dev"
@@ -173,9 +174,9 @@
       "idempotency"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-UNIT-007",
@@ -218,7 +219,7 @@
     "type": "automated",
     "automationStatus": "not_automated",
     "preconditions": [
-      "Org's plan.moduleDefaults.cloudPosture.allowedScanFrequencies = ['weekly','monthly'] (no 'hourly')"
+      "Org's resolved req.entitlements.entitlements['cloud.scan.allowed_frequencies'] = ['weekly','monthly'] (no 'hourly'), sourced from the V2 entitlement ledger, not the deleted plan.moduleDefaults.cloudPosture field"
     ],
     "steps": [
       "Invoke requireScanFrequency() as middleware on a request whose body/query requests frequency='hourly'"
@@ -232,6 +233,252 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "middleware/requireEntitlement.js's requireScanFrequency() itself is unchanged post-rewrite, but its input source moved from the deleted plan.moduleDefaults.cloudPosture.allowedScanFrequencies to the entitlement key 'cloud.scan.allowed_frequencies' resolved onto req.entitlements.entitlements by the V2 composition/resolver pipeline."
+  },
+  {
+    "id": "BILL-UNIT-009",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Gate Enforcement",
+    "title": "requireEntitlement(key) denies a request when req.entitlements.entitlements[key] is not true",
+    "description": "middleware/requireEntitlement.js requireEntitlement(key) reads req.entitlements.entitlements[key] and compares against the expected value (default true). This is the sole surviving server-side feature-gate middleware after requireFeature()/requireModuleConfig() were deleted in the 2026-08-04 rewrite.",
+    "priority": "P0",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "req.entitlements.entitlements resolved with 'module.vciso.enabled': false (or key absent)"
+    ],
+    "steps": [
+      "Invoke requireEntitlement('module.vciso.enabled') as middleware on a mock request whose req.entitlements.entitlements['module.vciso.enabled'] is false",
+      "Inspect the response"
+    ],
+    "expectedResult": "Middleware short-circuits with 403 { success:false, errorCode:'ENTITLEMENT_NOT_AVAILABLE', message:'Entitlement \"module.vciso.enabled\" is not enabled.', details:{ entitlement:'module.vciso.enabled' } }; next() is not called.",
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "entitlements"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-010",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Gate Enforcement",
+    "title": "requireEntitlement() returns 503 ENTITLEMENTS_UNAVAILABLE (fail closed) when req.entitlements has not resolved, with no strict-mode opt-out",
+    "description": "Unlike the deleted requireFeature(key, {strict:true}), requireEntitlement() has no strict-mode parameter — it always fails closed with 503 when req.entitlements.entitlements is falsy, whether or not entitlements resolution has genuinely failed upstream.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "req.entitlements is undefined/null on the request"
+    ],
+    "steps": [
+      "Invoke requireEntitlement('org.custom_roles.enabled') with req.entitlements unset"
+    ],
+    "expectedResult": "503 { success:false, errorCode:'ENTITLEMENTS_UNAVAILABLE', message:'Subscription entitlements could not be resolved.' }. Confirms there is no equivalent to the old fail-open default behavior — the new middleware always denies when entitlements are unresolved.",
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "entitlements",
+      "gap"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-011",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Gate Enforcement",
+    "title": "requireEntitlement() bypasses the check entirely for req.userId==='service-account'; requireScanFrequency() has no matching bypass",
+    "description": "middleware/requireEntitlement.js opens requireEntitlement's guard with `if (req.userId === 'service-account') return next();` to let internal microservice calls skip entitlement checks. requireScanFrequency() has no such bypass — verify this asymmetry and that the bypass cannot be triggered by an external/customer-facing JWT.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A request authenticated via the internal service-account path (req.userId==='service-account')",
+      "A second request with a normal customer JWT that has somehow set req.userId to the literal string 'service-account'"
+    ],
+    "steps": [
+      "Invoke requireEntitlement('module.vciso.enabled') with req.userId==='service-account' and no req.entitlements at all",
+      "Confirm next() is called without inspecting entitlements",
+      "Invoke requireScanFrequency() under the same req.userId==='service-account' condition and confirm whether it also bypasses or still requires req.entitlements.entitlements"
+    ],
+    "expectedResult": "requireEntitlement() calls next() unconditionally when req.userId==='service-account', regardless of req.entitlements. requireScanFrequency() has no matching bypass in the current code and will still 503 ENTITLEMENT_NOT_CONFIGURED if entitlements are missing — confirm this asymmetry is intentional. req.userId itself must only ever be derivable from the verified internal auth path, never from a client-suppliable claim.",
+    "tags": [
+      "feature-gate",
+      "middleware",
+      "service-account",
+      "gap"
+    ],
+    "owner": "Security",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-012",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Ledger",
+    "title": "balance.service.reserve() rejects a reservation that would push usedValue+reservedValue over limitValue with 402 QUOTA_EXCEEDED",
+    "description": "reserve() uses an atomic Mongo $expr guard ({ $lte: [{ $add: ['$usedValue','$reservedValue', amount] }, '$limitValue'] }) on the findOneAndUpdate filter so a race between two concurrent reservations can't both succeed past the limit.",
+    "priority": "P0",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "An EntitlementBalance row for entitlementKey='ai.credits' with limitValue=1000, usedValue=950, reservedValue=0"
+    ],
+    "steps": [
+      "Call balance.service.reserve() requesting 100 ai.credits with a fresh reservationId"
+    ],
+    "expectedResult": "Throws a QuotaExceededError (statusCode 402, errorCode 'QUOTA_EXCEEDED', details:{resource:'ai.credits', current:950, limit:1000}); reservedValue on the balance document is left unchanged at 0.",
+    "tags": [
+      "entitlement-ledger",
+      "balance-service",
+      "quota"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-013",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Ledger",
+    "title": "finishReservation('commit') cannot report actual usage greater than the original reservation amount",
+    "description": "commit() rejects requestedActual > reservation.amount with 409 USAGE_EXCEEDS_RESERVATION, preventing a caller from reserving a small amount and then committing a larger one.",
+    "priority": "P0",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A live 'reserve' EntitlementUsageEvent for reservationId='res-1', entitlementKey='ai.credits', amount=50"
+    ],
+    "steps": [
+      "Call balance.service.commit('res-1', { actual: { 'ai.credits': 75 } })"
+    ],
+    "expectedResult": "409 error with errorCode 'USAGE_EXCEEDS_RESERVATION'; the balance's reservedValue/usedValue are left unchanged (the commit is fully rejected, not partially applied).",
+    "tags": [
+      "entitlement-ledger",
+      "balance-service",
+      "reservation"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-014",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Ledger",
+    "title": "finishReservation('cancel') releases reservedValue back to zero without incrementing usedValue",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A live 'reserve' EntitlementUsageEvent for reservationId='res-2', entitlementKey='ai.credits', amount=200, with the balance's reservedValue=200"
+    ],
+    "steps": [
+      "Call balance.service.cancel('res-2')"
+    ],
+    "expectedResult": "Balance's reservedValue decreases by 200 back to 0; usedValue is unchanged (the amount applied to usedValue is forced to 0 for the cancel path). A new EntitlementUsageEvent with operation='cancel' and amount=200 (the original reservation amount, not 0) is recorded.",
+    "tags": [
+      "entitlement-ledger",
+      "balance-service",
+      "reservation"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-015",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Ledger",
+    "title": "reserve()/commit()/cancel() are idempotent by reservationId — a replayed call never double-counts a balance",
+    "description": "Each operation first checks for an existing EntitlementUsageEvent with the same reservationId+operation (or, for commit/cancel, any prior finalizing event) and returns { idempotent:true } without re-applying the balance mutation. Protects against duplicate retries from calling microservices (assistant-service, vciso-service, etc.) that don't get a clean response the first time.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A completed reserve+commit pair already recorded for reservationId='res-3'"
+    ],
+    "steps": [
+      "Re-call balance.service.reserve() with the same reservationId='res-3' and the same items",
+      "Re-call balance.service.commit('res-3', ...) a second time"
+    ],
+    "expectedResult": "Both replayed calls return { reservationId:'res-3', ..., idempotent:true } and neither mutates usedValue/reservedValue a second time. Calling finishReservation('res-3','cancel') after it was already committed instead throws 409 RESERVATION_ALREADY_FINALIZED, since the two operations disagree.",
+    "tags": [
+      "entitlement-ledger",
+      "balance-service",
+      "idempotency"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-UNIT-016",
+    "module": "billing-plans",
+    "category": "unit",
+    "subFeature": "Entitlement Catalog",
+    "title": "Every DEFINITIONS entry with meterType term_quota or consumable gets resetPolicy='term'; every other meterType gets 'never'",
+    "description": "entitlement-catalog.js derives resetPolicy purely from meterType via .map() at module load: ['term_quota','consumable'].includes(meterType) ? 'term' : 'never'. A future definition added with the wrong meterType would silently get the wrong reset behavior with no validation catching it at add-time (admin-catalog.controller.js's validateDefinition() checks meterType is a valid enum value but never cross-checks resetPolicy consistency).",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Load entitlement-catalog.js's DEFINITIONS export",
+      "Assert every entry with meterType in ['term_quota','consumable'] has resetPolicy==='term'",
+      "Assert every entry with any other meterType has resetPolicy==='never'"
+    ],
+    "expectedResult": "All DEFINITIONS entries satisfy the mapping with no exceptions. Flagged as a data-integrity gap: admin-created custom EntitlementDefinition rows via POST /api/admin/subscription-catalog/definitions set resetPolicy directly from the request body/default ('never') with no equivalent enforced coupling to meterType, so an admin could create a term_quota definition that never resets.",
+    "tags": [
+      "entitlement-catalog",
+      "data-integrity",
+      "gap"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

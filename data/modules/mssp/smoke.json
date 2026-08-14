@@ -1,0 +1,128 @@
+[
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SMK-001",
+    "category": "smoke",
+    "subFeature": "API Availability",
+    "title": "GET /mssp/dashboard returns the expected top-level shape for an active MSSP provider",
+    "description": "mssp.controller.js dashboard() (lines 47-73) always returns data.clients/data.projects/data.frameworkCatalog/data.pendingInvitations/data.usage.",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Active MSSP provider with mssp_dashboard.read permission"
+    ],
+    "steps": [
+      "GET /mssp/dashboard"
+    ],
+    "expectedResult": "HTTP 200 with success:true and data containing clients, projects, frameworkCatalog, pendingInvitations, and usage keys.",
+    "tags": [
+      "mssp",
+      "smoke"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SMK-002",
+    "category": "smoke",
+    "subFeature": "Fresh Tenant Zero-State",
+    "title": "A freshly provisioned MSSP provider with zero managed clients renders /mssp/dashboard without error",
+    "description": "Both the client-panel (mssp)/dashboard page and the Partner Portal's equivalent /dashboard page must handle relationships:[] / projects:[] gracefully.",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "A brand-new MSSP provider owner logs in for the first time, before onboarding any client"
+    ],
+    "steps": [
+      "Log in as the new MSSP owner and land on /mssp/dashboard",
+      "Repeat against the Partner Portal build"
+    ],
+    "expectedResult": "Both dashboards render an empty/zero state (no clients, zero usage) with no console errors or crashed widgets.",
+    "tags": [
+      "mssp",
+      "smoke",
+      "zero-state"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SMK-003",
+    "category": "smoke",
+    "subFeature": "Admin Panel",
+    "title": "The admin panel's \"MSSP Partners\" sidebar entry loads the provider list without error",
+    "description": "vibrantix-admin-panel Sidebar.jsx links to /tenant-management/mssps, backed by adminTenantService.mssps() -> GET /admin/tenant-management/mssps (admin.controller.js listMssps).",
+    "priority": "P2",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Platform admin session with admin:mssp scope"
+    ],
+    "steps": [
+      "Click \"MSSP Partners\" in the admin panel sidebar"
+    ],
+    "expectedResult": "/tenant-management/mssps loads and lists every onboarded MSSP provider with its client/framework counts, with no error toast.",
+    "tags": [
+      "mssp",
+      "smoke",
+      "admin-panel"
+    ]
+  },
+  {
+    "module": "mssp",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14",
+    "id": "MSSP-SMK-004",
+    "category": "smoke",
+    "subFeature": "Client Panel Route Group",
+    "title": "Every page in the client-panel (mssp) route group mounts without a runtime error for a full-permission MSSP_OWNER",
+    "description": "Covers all 9 pages under vibrantix-client-panel/src/app/(mssp)/mssp/: dashboard, clients, clients/new, clients/[clientOrgId], frameworks, team, invitations, requests, audit.",
+    "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Logged in as MSSP_OWNER (holds every mssp_* permission)",
+      "At least one managed client exists so clients/[clientOrgId] has a valid id to open"
+    ],
+    "steps": [
+      "Visit /mssp/dashboard, /mssp/clients, /mssp/clients/new, /mssp/clients/:id, /mssp/frameworks, /mssp/team, /mssp/invitations, /mssp/requests, /mssp/audit in turn"
+    ],
+    "expectedResult": "Every page renders its primary content (or an explicit, non-crashing loading/empty state) with no unhandled exception or blank white screen.",
+    "tags": [
+      "mssp",
+      "smoke"
+    ]
+  }
+]

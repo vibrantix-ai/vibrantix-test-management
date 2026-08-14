@@ -1,0 +1,10 @@
+{
+  "slug": "mssp",
+  "name": "MSSP (Managed Security Service Provider)",
+  "scope": "feature",
+  "routes": [
+    "/mssp"
+  ],
+  "qaAgent": null,
+  "description": "Provider organizations managing multiple client tenant orgs under a delegated-access model: client provisioning (tenant-provisioning.service.js), cross-org dashboard/usage/billing consolidation, subscription-change request workflow, compliance-framework licensing, provider team & invitations, ownership detach/transfer, append-only audit trail, and hard portal/tenant boundary isolation (portalBoundary.js + client-panel middleware.js) so MSSP and customer users can never cross into each other's routes. Spans vibrantix-backend, vibrantix-client-panel, the standalone vibrantix-partner-portal app, and vibrantix-admin-panel."
+}

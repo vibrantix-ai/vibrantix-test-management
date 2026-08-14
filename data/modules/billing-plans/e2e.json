@@ -5,7 +5,7 @@
     "category": "e2e",
     "subFeature": "Payment Setup",
     "title": "Org owner adds a payment method via Stripe-hosted Checkout (setup mode), then the checkout.session.completed webhook records it",
-    "description": "There is no embedded Stripe Elements/card form anywhere in the client — 'add card' is a full-page redirect to a Stripe Checkout Session created in mode:'setup'. Verifies the real end-to-end path, not a fabricated in-app card form.",
+    "description": "There is no embedded Stripe Elements/card form anywhere in the client — 'add card' is a full-page redirect to a Stripe Checkout Session created in mode:'setup'. Verifies the real end-to-end path, not a fabricated in-app card form. Superseded by the 2026-08-04 billing rewrite — Stripe Checkout, checkout-session, and the 'Set up payment' CTA were deleted entirely; there is no payment-method setup flow of any kind in the current codebase.",
     "priority": "P0",
     "environment": [
       "stage"
@@ -30,9 +30,9 @@
       "payment-method"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-002",
@@ -62,9 +62,10 @@
       "plans-page"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14",
+    "description": "Superseded by the 2026-08-04 billing rewrite — selecting a plan on the Plans tab no longer upgrades anything directly; it submits a SubscriptionRequest that requires admin/MSSP approval before any entitlement changes. See BILL-E2E-009."
   },
   {
     "id": "BILL-E2E-003",
@@ -72,7 +73,7 @@
     "category": "e2e",
     "subFeature": "Downgrade Flow",
     "title": "Downgrade is scheduled for the next renewal date, plan access is unchanged until then, and the scheduled change can be cancelled",
-    "description": "Downgrades are never immediate — they are stored as a pending-tier-change applied at renewsAt. PendingDowngradeBanner surfaces the scheduled date and a Cancel action.",
+    "description": "Downgrades are never immediate — they are stored as a pending-tier-change applied at renewsAt. PendingDowngradeBanner surfaces the scheduled date and a Cancel action. Superseded by the 2026-08-04 billing rewrite — the pending-tier-change document and PendingDowngradeBanner's data source (plan.pendingChange) no longer exist; subscription.controller.js's getCurrent() never populates pendingChange, so the banner is now dead code. See BILL-E2E-012 and BILL-SAN-007.",
     "priority": "P0",
     "environment": [
       "stage"
@@ -97,9 +98,9 @@
       "grace-period"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-004",
@@ -107,7 +108,7 @@
     "category": "e2e",
     "subFeature": "Feature Gate Parity",
     "title": "A TierGate-wrapped premium feature shows the upgrade alert on a lower tier and unlocks after a real upgrade",
-    "description": "TierGate.jsx is documented as cosmetic-only and 'fails open' if entitlements haven't resolved; real enforcement is the backend requireFeature middleware. This case verifies the two actually agree end-to-end, since a UI-only gate with no backend check would be a security gap.",
+    "description": "TierGate.jsx is now a thin wrapper checking entitlements?.entitlementValues?.[feature]===true, with a generic 'Feature not included' alert (no longer naming the required tier — see BILL-SAN-006). Real enforcement is the backend requireEntitlement middleware, returning errorCode ENTITLEMENT_NOT_AVAILABLE. This case verifies the two still agree end-to-end, since a UI-only gate with no backend check would be a security gap. Note: since plan changes are no longer instant, 'a real upgrade' now means an admin/MSSP-approved SubscriptionRequest, not an immediate self-serve action.",
     "priority": "P0",
     "environment": [
       "stage",
@@ -116,15 +117,15 @@
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
-      "Org on 'growth' tier, which lacks feature 'vciso.advisor'"
+      "Org's entitlements lack a boolean-gated feature (e.g. 'module.vciso.enabled' is not true)"
     ],
     "steps": [
-      "Navigate to a vCISO page/section gated behind TierGate for 'vciso.advisor'",
-      "Observe the Alert: '<Feature> feature — This feature requires the <tier> plan or above.' with an 'Upgrade plan' button",
-      "Attempt to call the underlying API route directly (bypassing the UI) while still on 'growth' tier",
-      "Upgrade the org to a tier that includes 'vciso.advisor', then revisit the same page"
+      "Navigate to a page/section gated behind TierGate for that entitlement key",
+      "Observe the Alert: 'Feature not included' / 'This feature is not included in your current plan.' with a 'View plans' button",
+      "Attempt to call the underlying API route directly (bypassing the UI) while still lacking the entitlement",
+      "Have an admin/MSSP approve a SubscriptionRequest that grants the entitlement, then revisit the same page"
     ],
-    "expectedResult": "Direct API call is rejected 403 FEATURE_NOT_AVAILABLE even though the button is merely hidden client-side (confirms server-side parity, not just a UI label). After the real upgrade, the page renders the actual feature content instead of the gate alert.",
+    "expectedResult": "Direct API call is rejected 403 { errorCode:'ENTITLEMENT_NOT_AVAILABLE' } even though the button is merely hidden client-side (confirms server-side parity, not just a UI label). After the request is approved and applied, the page renders the actual feature content instead of the gate alert.",
     "tags": [
       "feature-gate",
       "tier-gate",
@@ -133,7 +134,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-005",
@@ -141,7 +142,7 @@
     "category": "e2e",
     "subFeature": "Invoice History",
     "title": "Invoice history lists Stripe invoices with correctly formatted amount/date, and PDF is obtained via Stripe's hosted invoice page",
-    "description": "There is no backend PDF proxy/download endpoint — the app only stores and links to Stripe's hosted_invoice_url, which itself offers a PDF download on Stripe's own page.",
+    "description": "There is no backend PDF proxy/download endpoint — the app only stores and links to Stripe's hosted_invoice_url, which itself offers a PDF download on Stripe's own page. Superseded by the 2026-08-04 billing rewrite — there is no invoice history feature, Stripe hosted invoice page, or PDF download path anywhere in the current codebase.",
     "priority": "P1",
     "environment": [
       "stage"
@@ -165,9 +166,9 @@
       "stripe"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-006",
@@ -175,7 +176,7 @@
     "category": "e2e",
     "subFeature": "Cancellation",
     "title": "Full-account cancellation (customer.subscription.deleted) revokes access immediately with no grace period",
-    "description": "Unlike framework-level cancellation, a whole-org Stripe subscription deletion sets Organization.subscription.status and SubscriptionOrg.status to 'cancelled' immediately — there is no org-level grace window.",
+    "description": "Unlike framework-level cancellation, a whole-org Stripe subscription deletion sets Organization.subscription.status and SubscriptionOrg.status to 'cancelled' immediately — there is no org-level grace window. Superseded by the 2026-08-04 billing rewrite — there is no Stripe subscription or customer.subscription.deleted webhook; full-account cancellation is now a SubscriptionRequest of type cancel_subscription or the admin-only POST /api/admin/billing/clients/:orgId/cancel endpoint.",
     "priority": "P0",
     "environment": [
       "stage"
@@ -197,9 +198,9 @@
       "grace-period"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-007",
@@ -207,7 +208,7 @@
     "category": "e2e",
     "subFeature": "Cancellation",
     "title": "Cancelling a single framework's subscription enters a 90-day grace period and revokes the framework license immediately",
-    "description": "Framework-scoped cancellation is handled differently from full-account cancellation: frameworkSubscriptions.$.status becomes 'grace' with graceEndsAt = now + 90 days, while ClientFramework.status is set to 'license_revoked' right away — i.e. the license is revoked immediately even though billing calls it a 'grace period'. Worth confirming this naming doesn't mislead users into thinking they retain framework access during the 90 days.",
+    "description": "Framework-scoped cancellation is handled differently from full-account cancellation: frameworkSubscriptions.$.status becomes 'grace' with graceEndsAt = now + 90 days, while ClientFramework.status is set to 'license_revoked' right away — i.e. the license is revoked immediately even though billing calls it a 'grace period'. Worth confirming this naming doesn't mislead users into thinking they retain framework access during the 90 days. Superseded by the 2026-08-04 billing rewrite — framework-level Stripe subscriptions and the 90-day grace/license_revoked webhook flow no longer exist; framework add/remove is now a SubscriptionRequest of type framework with no grace-period concept found in the current code.",
     "priority": "P1",
     "environment": [
       "stage"
@@ -230,9 +231,9 @@
       "framework-subscription"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "BILL-E2E-008",
@@ -240,7 +241,7 @@
     "category": "e2e",
     "subFeature": "Trial / Renewal Display",
     "title": "Overview tab's 'Renews In N Days' stat is the only renewal/trial countdown surfaced — there is no dedicated trial-ending banner",
-    "description": "No trial countdown banner component exists anywhere in vibrantix-client-panel. The closest analog is BillingOverview.jsx's generic 'Renews In N Days' stat card computed from plan.renewsAt, shown for any plan status, not specifically flagged during a trial or when trial-ending is imminent.",
+    "description": "No trial countdown banner component exists anywhere in vibrantix-client-panel. The closest analog is BillingOverview.jsx's generic 'Renews In N Days' stat card, now computed from subscription.controller.js getCurrent()'s plan.renewsAt (sourced from resolved.instance.termEnd), shown for any plan status, not specifically flagged during a trial or when trial-ending is imminent. plan.trialExpiresAt is populated only when resolved.instance.status==='trial', but no UI consumes it separately from the renewal stat.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -248,7 +249,7 @@
     "type": "manual",
     "automationStatus": "not_automated",
     "preconditions": [
-      "Org is on a 'trial' status plan with trialExpiresAt 2 days out"
+      "Org's SubscriptionInstance has status='trial' with termEnd 2 days out"
     ],
     "steps": [
       "Navigate to /billing-plans Overview tab",
@@ -264,6 +265,138 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-E2E-009",
+    "module": "billing-plans",
+    "category": "e2e",
+    "subFeature": "Subscription Requests",
+    "title": "End-to-end: customer submits a plan-change request, an admin approves it in vibrantix-admin-panel, and the customer's Overview/Usage reflects the new plan — with no payment step anywhere",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org on a lower-tier plan with no active MSSP relationship",
+      "An admin-panel user with admin:billing:enterprise scope"
+    ],
+    "steps": [
+      "As the org's billing.update user, open the client-panel Subscription Requests tab and submit a 'Plan upgrade or switch' request",
+      "Confirm the toast names the correct reviewer ('the platform administrator')",
+      "As the admin, open vibrantix-admin-panel's subscription requests queue and approve the request",
+      "Back in the client panel, reload the Overview/Usage tabs"
+    ],
+    "expectedResult": "The request shows status 'applied' in Request History with an appliedAt timestamp. Overview now reflects the new plan's label/limits, and Usage's entitlement balances reflect the new plan's limitValue — all without any Stripe/payment-method step at any point in the flow.",
+    "tags": [
+      "subscription-request",
+      "upgrade",
+      "admin-approval"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-E2E-010",
+    "module": "billing-plans",
+    "category": "e2e",
+    "subFeature": "AI Credits",
+    "title": "An AI-metered action that would exceed the remaining ai.credits balance triggers the credit-shortage UI, and requesting a credit pack replenishes the balance once approved",
+    "description": "Exercises the reserve/QuotaExceededError path end-to-end from a real AI feature (e.g. Smart Compliance run, which spends smart_compliance.ai_credits_per_run against 'ai.credits') through to CreditPackModal's add-on request flow.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org's 'ai.credits' balance has just enough remaining to be exceeded by one more AI action"
+    ],
+    "steps": [
+      "Trigger an AI-metered action that would push ai.credits usage over its limit",
+      "Confirm the caller surfaces a quota-exceeded state to the user (TopUpModal or equivalent)",
+      "Open CreditPackModal and request an AI credit pack (e.g. 'AI Silver')",
+      "As an admin, approve the resulting add_on SubscriptionRequest",
+      "Retry the original AI-metered action"
+    ],
+    "expectedResult": "The initial AI action is blocked with a user-facing quota message rather than a raw 402. After the credit pack request is approved, the org's EntitlementBalance for 'ai.credits' increases by the pack's granted amount (e.g. 1200 for ai_silver), and the retried AI action now succeeds.",
+    "tags": [
+      "ai-credits",
+      "quota",
+      "add-on"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-E2E-011",
+    "module": "billing-plans",
+    "category": "e2e",
+    "subFeature": "AI Credits",
+    "title": "AI Credits History tab lists commit-only usage events with correct service labels and paginates beyond 25 rows",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has more than 25 'ai.credits' commit-operation EntitlementUsageEvent rows across at least 2 different sourceService values (e.g. 'b:smart-compliance' and 'assistant-service:chat')"
+    ],
+    "steps": [
+      "Open the AI Credits History tab (AiCreditsHistory.jsx)",
+      "Verify the Service column shows the human label from AI_CREDIT_SOURCE_LABELS (e.g. 'Smart Compliance', 'AI Assistant') rather than the raw sourceService string",
+      "Verify 'reserve' and 'cancel' operations never appear as rows — only 'commit'",
+      "Paginate to page 2 and confirm rows/order continue correctly by occurredAt descending"
+    ],
+    "expectedResult": "Only commit-operation events are shown, each with a human-readable service label; unmapped sourceService values fall back to the raw string. Pagination metadata (page/limit/total/pages) matches the actual row count, and page 2 shows the next 25 most-recent events with no duplicates or gaps versus page 1.",
+    "tags": [
+      "ai-credits",
+      "history",
+      "pagination"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-E2E-012",
+    "module": "billing-plans",
+    "category": "e2e",
+    "subFeature": "Downgrade Flow",
+    "title": "After submitting a downgrade request, entitlements remain fully accessible and the only visible indication is the Request History table — PendingDowngradeBanner never renders",
+    "description": "Confirms a real (not assumed) UI gap: subscription.controller.js's getCurrent() plan object has no pendingChange field, so PendingDowngradeBanner.jsx's `if (!pendingChange...) return null` guard means it can never render post-rewrite, even though it is still mounted in BillingPlans.jsx.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org submits a 'downgrade' SubscriptionRequest with effectivePolicy='term_end'"
+    ],
+    "steps": [
+      "Submit the downgrade request via DowngradeModal",
+      "Reload /billing-plans and check the Plans tab for any pending-downgrade banner",
+      "Check the Subscription Requests history table for the same request",
+      "Attempt to access a feature only available on the current (higher) tier"
+    ],
+    "expectedResult": "No pending-downgrade banner appears anywhere on the page (confirmed dead code, not a missed manual check). The Subscription Requests history table is the only place the pending downgrade is visible, showing status 'submitted'/'approved' and the target effective date. The higher-tier feature remains fully accessible, since entitlements are unchanged until the request is actually applied at term end.",
+    "tags": [
+      "downgrade",
+      "ui-gap",
+      "dead-code"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

@@ -165,6 +165,11 @@
       "slug": "vtec",
       "name": "VTEC (Vibrantix Trust Edge Connector)",
       "scope": "feature"
+    },
+    {
+      "slug": "mssp",
+      "name": "MSSP (Managed Security Service Provider)",
+      "scope": "feature"
     }
   ]
 }
