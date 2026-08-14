@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/risk-register-idor.test.ts",
     "preconditions": [
       "Two orgs (A, B) each with at least one risk",
@@ -31,7 +31,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-002",
@@ -46,7 +46,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Org A has Project 1 and Project 2",
       "A risk exists in Project 1 with a non-null projectId",
@@ -66,7 +66,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-003",
@@ -81,7 +81,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User authenticated with a valid JWT but no risk.update permission (org-level or project-granted)"
     ],
@@ -97,7 +97,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-004",
@@ -112,7 +112,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Risk has acceptance.status='pending'",
       "Caller holds risk.update but not risk.approve"
@@ -130,7 +130,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-005",
@@ -145,7 +145,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/risk-authority-matrix.test.ts",
     "preconditions": [
       "Risk has acceptance.status='pending' with approverIds=[UserA] only",
@@ -166,7 +166,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-006",
@@ -216,7 +216,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/module-risk-promote-idor.test.ts",
     "preconditions": [
       "A pending module risk candidate belongs to Project Q",
@@ -236,7 +236,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-SEC-008",
@@ -251,7 +251,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Org B has a pending module risk candidate",
       "Caller is an org A user with risk.approve"
@@ -271,6 +271,6 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

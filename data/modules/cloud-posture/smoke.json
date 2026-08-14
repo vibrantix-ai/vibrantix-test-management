@@ -12,7 +12,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/cloud-posture/cloud-posture-smoke.test.ts::tests 6, 7, 8",
     "preconditions": [
       "Org has at least one provider configured and one completed scan"
     ],
@@ -27,7 +28,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-SMK-002",
@@ -42,7 +43,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/cloud-posture/cloud-posture-smoke.test.ts::tests 3, 11-13",
     "steps": [
       "Navigate to /cloud-posture/configure",
       "Switch between the AWS, Azure, and GCP tabs/sections"
@@ -55,7 +57,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-SMK-003",
@@ -70,7 +72,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/discover/cloud-posture/cloud-posture-smoke.test.ts::tests 11-13",
     "preconditions": [
       "A project has a verified provider configuration"
     ],
@@ -85,7 +88,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "CLPO-SMK-004",

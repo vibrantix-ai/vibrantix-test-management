@@ -79,7 +79,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/vciso/risk-intelligence-smoke.test.ts::test 9",
     "preconditions": [
       "Logged in as a user with vciso.create permission"
     ],
@@ -99,7 +100,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-E2E-004",

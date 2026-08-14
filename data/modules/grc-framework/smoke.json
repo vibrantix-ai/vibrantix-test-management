@@ -13,6 +13,7 @@
     ],
     "type": "both",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/compliance/grc-frameworks/grc-framework-smoke.test.ts::test 1",
     "preconditions": [
       "Logged in with framework.read",
       "A project with at least one active framework is selected"
@@ -28,7 +29,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SMK-002",
@@ -44,6 +45,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/compliance/grc-frameworks/grc-framework-smoke.test.ts::test 1",
     "steps": [
       "Navigate to /grc-framework and observe network calls to /compliance-frameworks/projects/:id/available-frameworks and /compliance-frameworks/projects/:id/compliance/frameworks"
     ],
@@ -55,7 +57,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SMK-003",
@@ -70,7 +72,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework is active for the current project and has at least one requirement"
     ],
@@ -85,7 +87,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SMK-004",
@@ -100,7 +102,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "At least one licensed, not-yet-added framework exists in the catalog"
     ],
@@ -116,6 +118,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

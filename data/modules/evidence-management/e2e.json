@@ -11,7 +11,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/evidence-management.spec.ts:88",
     "preconditions": [
       "Logged in as org admin",
@@ -31,7 +31,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-E2E-002",
@@ -102,7 +102,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/evidence-management.spec.ts",
     "preconditions": [
       "User A has both evidence.write and evidence.approve permissions",
@@ -123,7 +123,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-E2E-005",

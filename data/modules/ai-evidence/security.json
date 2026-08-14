@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/ai-evidence-permissions.test.ts:10",
     "preconditions": [
       "A user account with zero evidence.* permissions and no project-level grant"
@@ -30,7 +30,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SEC-002",
@@ -45,7 +45,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/ai-evidence-upload-validation.test.ts:14",
     "steps": [
       "Attempt to upload a Windows PE executable renamed to 'certificate.pdf' via /api/evidence/upload/ai"
@@ -58,7 +58,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SEC-003",
@@ -72,7 +72,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/ai-evidence-idor.test.ts:8",
     "preconditions": [
       "Two orgs (A, B), org B has an AI-assisted draft in status 'draft'",
@@ -91,7 +91,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SEC-004",
@@ -170,7 +170,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/ai-evidence-rate-limit.test.ts:6",
     "steps": [
       "From a single IP, issue 21 rapid POST requests to /api/evidence/upload/ai within a 15-minute window"
@@ -183,7 +183,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SEC-007",
@@ -198,7 +198,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/ai-evidence-upload-validation.test.ts:33",
     "steps": [
       "Upload a file named 'invoice.pdf' whose actual content is '<script>alert(1)</script>' HTML, sent with Content-Type: application/pdf declared but real bytes being HTML"
@@ -212,6 +212,6 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

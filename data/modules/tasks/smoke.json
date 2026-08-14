@@ -68,7 +68,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/nav/nav-smoke.test.ts::test 4",
     "steps": [
       "Log in and navigate to /tasks",
       "Open the browser devtools console"
@@ -81,7 +82,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TASK-SMK-004",

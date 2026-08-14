@@ -11,7 +11,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/evidence-idor.test.ts",
     "preconditions": [
       "Two orgs (A, B) each with at least one evidence item",
@@ -30,7 +30,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-SEC-002",
@@ -44,7 +44,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Attempt to upload a file with .pdf extension whose content is actually a Windows PE executable"
     ],
@@ -56,7 +56,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-SEC-003",
@@ -71,7 +71,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/evidence-idor.test.ts",
     "preconditions": [
       "Valid JWT for a user in org A",
@@ -91,7 +91,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "EVID-SEC-004",

@@ -42,7 +42,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/audit-assurance.spec.ts",
     "preconditions": [
       "A CAR exists with status='remediation_in_progress', assignedTo=userA"
@@ -60,7 +60,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-INT-003",

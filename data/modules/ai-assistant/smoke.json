@@ -12,6 +12,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::test 1",
     "preconditions": [
       "Logged in as a seeded test org user with a project selected"
     ],
@@ -25,7 +26,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-SMK-002",
@@ -40,6 +41,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::test 13",
     "preconditions": [
       "AI Engine reachable and healthy"
     ],
@@ -55,7 +57,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-SMK-003",
@@ -69,7 +71,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/health.routes.ts:39",
     "preconditions": [
       "Python AI Engine (AI_Assistant_Python) is stopped or unreachable",
@@ -86,7 +88,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-SMK-004",
@@ -101,6 +103,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::tests 4-8",
     "steps": [
       "Click any Quick Actions card in the sidebar (e.g. 'Evidence Discovery')"
     ],
@@ -112,7 +115,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-SMK-005",
@@ -127,6 +130,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::tests 9, 14",
     "preconditions": [
       "An active conversation with at least one exchanged message"
     ],
@@ -141,6 +145,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   }
 ]

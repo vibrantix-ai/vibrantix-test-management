@@ -11,7 +11,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/audit/intelli-audit/intelli-audit.test.ts::test 1",
     "steps": [
       "Log in as a seeded test org admin",
       "Navigate to /intelli-audit"
@@ -23,7 +24,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTA-SMK-002",
@@ -38,7 +39,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/audit/intelli-audit/intelli-audit.test.ts::tests 6, 9",
     "steps": [
       "Call GET /api/intelligent-audit/qre-questions/strategic with a valid session"
     ],
@@ -49,7 +51,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTA-SMK-003",
@@ -63,7 +65,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/audit/intelli-audit/intelli-audit.test.ts::test 2",
     "preconditions": [
       "User holds audit.create",
       "At least one framework activated for the project"
@@ -78,7 +81,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "INTA-SMK-004",

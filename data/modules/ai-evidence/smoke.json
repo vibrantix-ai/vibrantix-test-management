@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/ai-evidence.spec.ts:5",
     "preconditions": [
       "Logged in as a user with evidence.read",
@@ -28,7 +28,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SMK-002",
@@ -43,7 +43,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/evidence-mgt/evidence-repository/ai-assistedUIpload.test.ts::test 1",
     "preconditions": [
       "Project selected",
       "AI upload allowance available"
@@ -61,7 +62,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-SMK-003",
@@ -136,7 +137,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/smoke/ai-evidence-service-health.test.ts:4",
     "steps": [
       "From vibrantix-backend, issue a health/connectivity check against ${NOTEBOOK_AI_SERVICE_URL}/api/v1/documents/extract-metadata-fast (or its health endpoint)"
@@ -149,6 +150,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

@@ -42,7 +42,8 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/vendors/engagement/addVendor.test.ts::test 1",
     "steps": [
       "Open /vendors/list and click 'Add Vendor'",
       "Complete the VendorFormWizard with minimal required fields (name, category, riskTier)",
@@ -56,7 +57,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "VEND-SMK-003",
@@ -130,7 +131,8 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/vendors/engagement/evidenceVault.test.ts::tests 1-2",
     "steps": [
       "Navigate to a vendor's evidence tab and upload a 2 MB PDF via the standard (non-presigned) upload form",
       "Submit with required metadata (title, category, evidenceType)"
@@ -144,7 +146,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "VEND-SMK-006",
@@ -159,7 +161,8 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/vendors/questionnaire-template/questionnaire.test.ts::tests 1-2",
     "steps": [
       "Navigate to /vendors/templates",
       "Open the template builder for a new template"
@@ -172,6 +175,6 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

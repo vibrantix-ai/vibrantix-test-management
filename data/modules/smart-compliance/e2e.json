@@ -11,7 +11,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/compliance/smart-compliance/smart-compliance-smoke.test.ts::test 6",
     "preconditions": [
       "Project has at least one active SCQuestion",
       "Azure OpenAI env vars configured and at least one active ComplianceFramework exists",
@@ -33,7 +34,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SMCM-E2E-002",

@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/support-idor.test.ts",
     "preconditions": [
       "Org A and Org B each have a bug report",
@@ -32,7 +32,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SEC-002",
@@ -47,7 +47,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User A and User B in the same org; User B has no bug-report.read_all; User A owns a bug report"
     ],
@@ -64,7 +64,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SEC-003",
@@ -79,7 +79,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "JIRA_WEBHOOK_SECRET is configured with a known value"
     ],
@@ -97,7 +97,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SEC-004",
@@ -174,7 +174,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User without bug-report.read_all, valid session/JWT"
     ],
@@ -190,7 +190,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "SUPP-SEC-007",

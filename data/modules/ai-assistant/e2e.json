@@ -11,6 +11,7 @@
       "stage"
     ],
     "type": "both",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/ai-assistant.spec.ts",
     "preconditions": [
       "Logged in as a seeded user with a project selected",
@@ -35,8 +36,7 @@
     "execution": {
       "result": "not_run",
       "notes": ""
-    },
-    "automationStatus": "not_automated"
+    }
   },
   {
     "id": "AIAS-E2E-002",
@@ -83,7 +83,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "User A has an active /assistant conversation with visible messages",
       "User B is a different member of the same organization"
@@ -102,7 +102,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-E2E-004",
@@ -174,7 +174,8 @@
       "stage"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/assistant/assistant-smoke.test.ts::tests 11-12",
     "preconditions": [
       "At least 2 saved conversations exist for the current project"
     ],
@@ -191,7 +192,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-E2E-007",

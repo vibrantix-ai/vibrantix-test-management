@@ -11,7 +11,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/certification-transition.test.ts",
     "preconditions": [
       "A certification exists in 'draft' status"
@@ -27,7 +27,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-INT-002",
@@ -42,7 +42,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/share-link-create.test.ts",
     "preconditions": [
       "A certification exists with status 'archived'"
@@ -58,7 +58,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-INT-003",
@@ -73,7 +73,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/expiry-check-lock.test.ts",
     "preconditions": [
       "Redis is available and the lock key is not currently held"
@@ -91,7 +91,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-INT-004",
@@ -105,7 +105,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/framework-mapping.test.ts",
     "preconditions": [
       "An active certification exists",
@@ -123,7 +123,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-INT-005",
@@ -172,7 +172,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/risk-webhook.test.ts",
     "preconditions": [
       "An organization has one certification expiring in 5 days (urgent) and one certification with status='revoked'"
@@ -191,7 +191,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "TRVT-INT-007",
@@ -206,7 +206,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "trust-vault-service/tests/integration/my-reviews-identity.test.ts",
     "preconditions": [
       "A user's Keycloak JWT 'sub' is a UUID string, not a 24-hex Mongo ObjectId",
@@ -223,6 +223,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

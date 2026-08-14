@@ -10,7 +10,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Call GET /organizations/:orgId/executive-dashboard/security-score"
     ],
@@ -22,7 +22,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SAN-002",
@@ -36,6 +36,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/vciso/strategic-planning-smoke.test.ts::test 5",
     "steps": [
       "POST /initiatives with only the required fields: name, category, priority, budget.allocated, timeline.startDate/targetDate",
       "Call GET /initiatives and locate the new initiative"
@@ -48,7 +49,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SAN-003",
@@ -61,7 +62,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Call GET /compliance-oversight/frameworks for an org with at least 2 activated frameworks"
     ],
@@ -73,7 +74,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SAN-004",
@@ -86,7 +87,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "Call GET /third-party-risk/summary for an org with at least one vendor"
     ],
@@ -98,7 +99,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "VCIS-SAN-005",
@@ -112,6 +113,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
+    "automationRef": "test-automation/tests/executive/vciso/ai-strategy-advisor-smoke.test.ts::tests 6-8",
     "steps": [
       "POST /advisor/conversations with conversationType 'strategic_advisory'",
       "Call GET /advisor/conversations for the same user"
@@ -124,6 +126,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   }
 ]

@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "GET /compliance-frameworks/?limit=500&status=active"
     ],
@@ -24,7 +24,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SAN-002",
@@ -39,7 +39,7 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "steps": [
       "GET /compliance-frameworks/projects/:projectId/available-frameworks",
       "Inspect one entry from the frameworks array"
@@ -52,7 +52,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-SAN-003",

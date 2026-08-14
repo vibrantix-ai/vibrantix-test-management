@@ -11,7 +11,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/policy-mgt/dashboard.test.ts::test 1",
     "steps": [
       "Log in as a seeded test org admin",
       "Navigate to /policy-management"
@@ -23,7 +24,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "POLM-SMK-002",
@@ -37,7 +38,8 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/trust/policy-mgt/create-policy.test.ts::test 1",
     "steps": [
       "Click 'Create Policy' on /policy-management"
     ],
@@ -48,6 +50,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

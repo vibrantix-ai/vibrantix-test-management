@@ -12,7 +12,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/chat.routes.ts:205",
     "preconditions": [
       "Valid JWT for an org member",
@@ -30,7 +30,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-INT-002",
@@ -45,7 +45,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/chat.routes.ts:234",
     "preconditions": [
       "An existing conversation created under Project A",
@@ -65,7 +65,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-INT-003",
@@ -80,7 +80,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Org B has a real project with a valid ObjectId",
       "Caller is an org A user"
@@ -99,7 +99,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-INT-004",
@@ -114,7 +114,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/services/ConversationService.ts:147",
     "preconditions": [
       "User A and User B are both members of the same org",
@@ -134,7 +134,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-INT-005",
@@ -149,9 +149,8 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/chat.routes.ts:743",
-    "linkedDefect": "MRB-03",
     "preconditions": [
       "Caller belongs to Project A only",
       "Project B exists in the same organization"
@@ -167,10 +166,11 @@
       "regression"
     ],
     "requirement": "ISO 27001 Annex A.8.2",
+    "linkedDefect": "MRB-03",
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   },
   {
     "id": "AIAS-INT-006",
@@ -250,7 +250,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "assistant-service/src/routes/conversation.routes.ts:379",
     "preconditions": [
       "A prior conversation exists whose latest assistant message rendered a table block"
@@ -268,6 +268,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-11"
   }
 ]

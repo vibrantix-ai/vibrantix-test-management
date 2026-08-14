@@ -12,7 +12,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/project-billing-access.test.js",
     "preconditions": [
       "Organization.billingMode = 'project'",
@@ -29,7 +29,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-INT-002",
@@ -170,7 +170,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/modules/project-access.test.js",
     "preconditions": [
       "Org has 4 active projects and 1 archived project",
@@ -188,7 +188,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-INT-007",
@@ -203,7 +203,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "vibrantix-backend/tests/integration/project-creation-idempotency.test.js",
     "steps": [
       "Fire two concurrent POST /projects/:orgId requests with an identical Idempotency-Key and identical body",
@@ -218,6 +218,6 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   }
 ]

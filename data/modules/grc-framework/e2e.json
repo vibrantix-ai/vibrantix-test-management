@@ -10,7 +10,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/e2e/grc-framework.spec.ts",
     "preconditions": [
       "Logged in as a user with compliance.create",
@@ -30,7 +30,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-E2E-002",
@@ -43,7 +43,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "A framework with a non-zero controlCount is currently active"
     ],
@@ -60,7 +60,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-E2E-003",
@@ -73,7 +73,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Target framework has isLicensed:false for this org"
     ],
@@ -90,7 +90,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-E2E-004",
@@ -158,13 +158,13 @@
     "category": "e2e",
     "subFeature": "Sync / Refresh",
     "title": "Refresh on the frameworks catalog page bypasses the compliance-summary cache and shows updated coverage",
+    "description": "handleRefresh calls complianceService.refreshProjectSummary(projectId) before reloading — this forces aggregationService.refreshProjectSummary to recompute and re-cache ClientComplianceSummary, bypassing its 1-hour staleness threshold.",
     "priority": "P1",
     "environment": [
       "stage"
     ],
     "type": "manual",
     "automationStatus": "not_automated",
-    "description": "handleRefresh calls complianceService.refreshProjectSummary(projectId) before reloading — this forces aggregationService.refreshProjectSummary to recompute and re-cache ClientComplianceSummary, bypassing its 1-hour staleness threshold.",
     "preconditions": [
       "Some evidence was just approved, changing a control's coverageScore, but the project's ClientComplianceSummary cache is still within its 1-hour freshness window"
     ],
@@ -195,7 +195,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Framework has controls across at least 2 domains, mixed coverage statuses, and mixed asset attachments"
     ],
@@ -214,7 +214,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "GRCF-E2E-008",

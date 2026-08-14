@@ -12,7 +12,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/ai-evidence-upload.test.js:20",
     "preconditions": [
       "Logged in as a user with evidence.create",
@@ -33,7 +33,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-002",
@@ -48,7 +48,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/ai-evidence-upload.test.js:55",
     "preconditions": [
       "python-notebookAI-service stubbed to return a 500 or to hang past 120000ms"
@@ -65,7 +65,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-003",
@@ -79,7 +79,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/ai-evidence-confirm.test.js:18",
     "preconditions": [
       "An evidence draft exists in status 'draft' from a prior AI upload"
@@ -96,7 +96,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-004",
@@ -144,7 +144,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/evidence-upload-queue.test.js:30",
     "preconditions": [
       "S3 PUT stubbed to fail on the first 2 attempts and succeed on the 3rd"
@@ -162,7 +162,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-006",
@@ -176,7 +176,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/evidence-upload-queue.test.js:52",
     "steps": [
       "Upload 2 files via /api/evidence/upload/ai (or bulk) and immediately poll GET /upload/:evidenceId/upload-status",
@@ -190,7 +190,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-007",
@@ -204,7 +204,7 @@
       "stage"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/integration/ai-evidence-billing.test.js:12",
     "preconditions": [
       "Org has already consumed its annual AI-upload allowance (e.g. 50/50 used, non-unlimited plan)"
@@ -220,7 +220,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AIEV-INT-008",

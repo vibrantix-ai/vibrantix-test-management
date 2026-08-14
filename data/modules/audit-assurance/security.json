@@ -26,8 +26,8 @@
       "permission-gap",
       "audit-closure"
     ],
-    "linkedDefect": "H-004",
     "requirement": "ISO 27001:2022 Clause 9.2",
+    "linkedDefect": "H-004",
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
@@ -46,7 +46,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/audit-closure-sod.test.ts",
     "preconditions": [
       "UserA requested closure approval for an audit"
@@ -63,7 +63,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-SEC-003",
@@ -142,7 +142,7 @@
       "prod"
     ],
     "type": "both",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-framework/tests/security/audit-assurance-idor.test.ts",
     "preconditions": [
       "Two orgs (A, B) each have an audit with at least one CAR",
@@ -161,7 +161,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "AUDT-SEC-006",

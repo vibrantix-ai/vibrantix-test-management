@@ -11,7 +11,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "Cloud posture scan ingestion pipeline running against risk-management-service"
     ],
@@ -28,7 +28,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-002",
@@ -70,7 +70,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:663",
     "preconditions": [
       "Risk in phase 'assessment' with treatment.status='not_started'"
@@ -89,7 +89,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-004",
@@ -136,7 +136,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:924",
     "preconditions": [
       "Risk has a treatment plan with one open milestone at 80% progress"
@@ -154,7 +154,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-006",
@@ -169,7 +169,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/services/RiskRegisterService.ts:1313",
     "preconditions": [
       "Risk has acceptance.status='pending' with approverIds=[UserA]",
@@ -188,7 +188,7 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-007",
@@ -203,7 +203,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "preconditions": [
       "S3 credentials configured for risk-management-service",
       "An existing risk with no evidence"
@@ -221,7 +221,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-008",
@@ -236,7 +236,7 @@
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "risk-management-service/src/services/ModuleRiskService.ts:201",
     "preconditions": [
       "A pending module risk whose sourceState has since transitioned to 'resolved' (e.g. the Prowler check passed on rescan)"
@@ -254,7 +254,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "RISK-INT-009",

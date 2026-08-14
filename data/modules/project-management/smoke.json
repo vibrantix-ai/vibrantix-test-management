@@ -12,7 +12,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/project-management/prj-mgt.test.ts::test 1",
     "preconditions": [
       "Logged in as a user holding project.admin or at least one per-project admin ProjectRole"
     ],
@@ -26,7 +27,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SMK-002",
@@ -70,7 +71,8 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "not_automated",
+    "automationStatus": "automated",
+    "automationRef": "test-automation/tests/settings/project-management/prj-mgt.test.ts::test 3",
     "steps": [
       "From the project list, click the 'View Details' (eye) icon on any project row"
     ],
@@ -81,7 +83,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-12"
   },
   {
     "id": "PROJ-SMK-004",
