@@ -187,5 +187,64 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SEC-007",
+    "module": "dashboard-overview",
+    "category": "security",
+    "subFeature": "Priority Actions Multi-Tenant Isolation",
+    "title": "A non-admin cannot pull another project’s items into the Priority Actions feed via ?projectIds=",
+    "description": "GET /client/dashboard/executive/priority-actions (new in Dashboard 2.0, backing dashboardService.getPriorityActions/PriorityActionsPanel) accepts a projectIds param exactly like the older /api/dashboard/metrics. As a brand-new endpoint it needs its own verification that a non-admin's supplied foreign project ID is dropped from the resolved scope rather than assumed to inherit the same protection as the older, separately-implemented dashboard-metrics route.",
+    "priority": "P0",
+    "environment": [
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "User is a member of Project A only; Project B belongs to the same org but the user has no membership in it"
+    ],
+    "steps": [
+      "As that user, call GET /client/dashboard/executive/priority-actions?projectIds=<projectA>,<projectB>"
+    ],
+    "expectedResult": "The response's items only ever belong to Project A; no Project B item appears, and no error is thrown for the foreign ID (it is silently dropped from the resolved scope, matching the /api/dashboard/metrics pattern).",
+    "tags": [
+      "idor",
+      "multi-tenant",
+      "priority-actions",
+      "owasp-a01"
+    ],
+    "owner": "Security",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-SEC-008",
+    "module": "dashboard-overview",
+    "category": "security",
+    "subFeature": "Priority Actions Authentication",
+    "title": "GET /client/dashboard/executive/priority-actions rejects an unauthenticated request",
+    "description": "As a new endpoint introduced by the Dashboard 2.0 rewrite, priority-actions must not be reachable without a valid session/bearer token, consistent with every other authenticated route in this module.",
+    "priority": "P1",
+    "environment": [
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call GET /client/dashboard/executive/priority-actions with no Authorization header / no session cookie"
+    ],
+    "expectedResult": "401 Unauthorized is returned, with no priority-action items in the response body.",
+    "tags": [
+      "authentication",
+      "priority-actions"
+    ],
+    "owner": "Security",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

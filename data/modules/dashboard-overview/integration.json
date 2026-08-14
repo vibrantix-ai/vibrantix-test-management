@@ -211,5 +211,72 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-INT-008",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Priority Actions Feed",
+    "title": "GET /client/dashboard/executive/priority-actions returns cross-domain items scoped to the caller's projectIds and honors the limit param",
+    "description": "dashboardService.getPriorityActions (new in Dashboard 2.0) calls the executive-dashboard module's /priority-actions endpoint — a genuinely separate route from the legacy /api/dashboard/metrics — feeding PriorityActionsPanel's strip and its 'view all' modal (capped by VIEW_ALL_LIMIT=50 client-side). Verify the endpoint itself narrows items to the requested projectIds and respects a supplied limit rather than always returning the server default (documented as 15).",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org with overdue/near-SLA items across at least 2 different projects and at least 2 different modules (e.g. an overdue audit and a breached risk)"
+    ],
+    "steps": [
+      "Call GET /client/dashboard/executive/priority-actions?projectIds=<projectA only>",
+      "Call GET /client/dashboard/executive/priority-actions?projectIds=<projectA>,<projectB>&limit=50"
+    ],
+    "expectedResult": "First call's data.items only contains items belonging to projectA; second call's data.items count matches min(totalCount, 50) and includes items from both projects, with data.totalCount reflecting the true unfiltered-by-limit count.",
+    "tags": [
+      "priority-actions",
+      "cross-module",
+      "project-scope"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-INT-009",
+    "module": "dashboard-overview",
+    "category": "integration",
+    "subFeature": "Project Scope Propagation",
+    "title": "Opening a board from the dashboard passes DashboardFilterBar’s own project selection into that board, never re-deriving scope from the Sidebar’s single-select",
+    "description": "Every *BoardContent component (Audit/Framework/Compliance/Vendor/Risk/Resource) accepts a dashboardSelectedProjectIds prop from AuditOverviewContent and, per each component's own comment, must 'mirror the dashboard's own Filters -> Projects selection exactly' when that prop is supplied, falling back to the Sidebar's single-select only in standalone usage. This is called out in the source as the fix for a previously-real cross-project data leak (a board re-deriving its own scope from the Sidebar while the dashboard's own filter said something narrower/broader).",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "User belongs to Project A and Project B",
+      "Sidebar's active project is Project A"
+    ],
+    "steps": [
+      "On /dashboard, use the Filters project picker (not the Sidebar) to select Project B only",
+      "Click into the Audit Board via the module rail",
+      "Inspect the Audit Board's own fetched data / network calls"
+    ],
+    "expectedResult": "The Audit Board's data is scoped to Project B (the dashboard's own Filters selection) — not Project A, even though the Sidebar's ProjectSelector still shows Project A active.",
+    "tags": [
+      "project-scope",
+      "multi-tenant",
+      "cross-module"
+    ],
+    "linkedDefect": "cross-project leak (see AuditBoardContent.jsx source comment)",
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

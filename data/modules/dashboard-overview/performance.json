@@ -143,5 +143,63 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-PERF-006",
+    "module": "dashboard-overview",
+    "category": "performance",
+    "subFeature": "Single Active Board Rendering",
+    "title": "Switching the module rail unmounts the previously-selected board instead of leaving it mounted and polling in the background",
+    "description": "AuditOverviewContent wraps the board content in <AnimatePresence mode='wait'> with a single <motion.div key={selectedBoard}>, so only one board's content component is ever mounted at a time — switching boards fully unmounts the previous one (and its own internal data-fetch effects/intervals) rather than hiding it in place.",
+    "priority": "P2",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open Audit Board and let its data finish loading",
+      "Switch to Vendor Board via the module rail",
+      "Monitor the Network tab for any further requests originating from Audit Board’s own services"
+    ],
+    "expectedResult": "No further network requests attributable to Audit Board fire after switching away from it — confirming its component (and any interval/effect it owned) was actually unmounted, not merely hidden.",
+    "tags": [
+      "performance",
+      "module-rail",
+      "memory"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-PERF-007",
+    "module": "dashboard-overview",
+    "category": "performance",
+    "subFeature": "Priority Actions Refetch Guard",
+    "title": "PriorityActionsPanel skips a redundant refetch when projectIds is set to an identical value",
+    "description": "PriorityActionsPanel.jsx guards its fetch effect with lastKeyRef, comparing JSON.stringify(projectIds) against the previous call's key and returning early on a match — avoiding a duplicate /priority-actions request when the parent re-renders with a new array identity but the same underlying project IDs.",
+    "priority": "P3",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Trigger a parent re-render of AuditOverviewContent that produces a new selectedProjectIds array instance with the same string values (e.g. an unrelated state update)",
+      "Monitor Network calls to /client/dashboard/executive/priority-actions"
+    ],
+    "expectedResult": "No additional /priority-actions request fires for a re-render that carries the same project IDs, even if the array reference itself changed.",
+    "tags": [
+      "performance",
+      "priority-actions"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

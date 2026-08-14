@@ -180,5 +180,64 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-REG-007",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Deleted Per-Board Filter Sidebars",
+    "title": "No board content component references a deleted *ProjectFilterSidebar component",
+    "description": "The Dashboard 2.0 rewrite (2026-08-13) deleted AuditProjectFilterSidebar.jsx, ComplianceProjectFilterSidebar.jsx, FrameworkProjectFilterSidebar.jsx, and RiskProjectFilterSidebar.jsx in favor of DashboardFilterBar owning project scope for every board. Guards against a future revert/merge reintroducing a dangling import to one of these deleted files, which would be a build-time failure, not just a UX regression.",
+    "priority": "P1",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Run a repo-wide search for imports of AuditProjectFilterSidebar, ComplianceProjectFilterSidebar, FrameworkProjectFilterSidebar, or RiskProjectFilterSidebar",
+      "Run the frontend build"
+    ],
+    "expectedResult": "Zero matches for any of the 4 deleted sidebar component names anywhere under src/, and the build succeeds with no missing-module errors.",
+    "tags": [
+      "regression",
+      "dead-code",
+      "build"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-REG-008",
+    "module": "dashboard-overview",
+    "category": "regression",
+    "subFeature": "Cross-Project Scope Leak",
+    "title": "A board opened from the dashboard never falls back to the Sidebar's single-select project while the dashboard's own Filters selection is present",
+    "description": "Regression guard for the fix documented directly in AuditBoardContent.jsx's own source comment: 'this board must mirror the dashboard's own Filters -> Projects selection exactly — not re-derive its own scope from the Sidebar's single-select, which was the source of the cross-project leak.' The same dashboardSelectedProjectIds-mirroring pattern is repeated verbatim across FrameworkBoardContent, ComplianceBoardContent, VendorBoardContent, and ExecutiveRiskBoardContent.",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "User's Sidebar-active project (Project A) differs from the dashboard's own Filters selection (Project B)"
+    ],
+    "steps": [
+      "Set the dashboard’s Filters project selection to Project B while the Sidebar still shows Project A active",
+      "Open each of Audit Board, Framework Board, Compliance Board, Vendor Board, and Risk Board in turn via the module rail"
+    ],
+    "expectedResult": "Every one of the 5 boards scopes its own data to Project B (the dashboard's Filters selection), never silently falling back to Project A (the Sidebar's selection).",
+    "tags": [
+      "regression",
+      "project-scope",
+      "multi-tenant"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

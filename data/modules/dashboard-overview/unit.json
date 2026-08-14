@@ -116,7 +116,7 @@
     "category": "unit",
     "subFeature": "Sparkline Rendering",
     "title": "MiniSparkline renders a flat dashed placeholder instead of fabricating a trend from under 2 points",
-    "description": "AuditOverviewContent.jsx's MiniSparkline treats data.length < 2 as 'not enough real history' and substitutes a flat 6-point placeholder array in grey (#A0AEC0) with a dashed stroke, rather than drawing a slope from a single real value.",
+    "description": "AuditOverviewContent.jsx's MiniSparkline treats data.length < 2 as 'not enough real history' and substitutes a flat 6-point placeholder array in grey (#A0AEC0) with a dashed stroke, rather than drawing a slope from a single real value. DEPRECATED: superseded by the Dashboard 2.0 rewrite (2026-08-13) — MiniSparkline no longer exists anywhere in the codebase. The replacement, miniCharts/Sparkline.jsx, has a different empty-state (a flat solid [{value:0},{value:0}] line, not a grey dashed placeholder), and in any case the board-level chartType/chartData/bottomData fields still computed in AuditOverviewContent.jsx are no longer read by OverviewModuleRail or ExecutiveSummaryBoardContent — that computation path is now dead code.",
     "priority": "P2",
     "environment": [
       "dev"
@@ -134,9 +134,9 @@
       "unit"
     ],
     "owner": "SDET",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-UNIT-006",
@@ -192,5 +192,88 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-UNIT-008",
+    "module": "dashboard-overview",
+    "category": "unit",
+    "subFeature": "Board Health Bucketing",
+    "title": "pctHealth buckets a percentage into critical/warning/good at the <40/<70 thresholds and returns 'unknown' for null/NaN",
+    "description": "AuditOverviewContent.jsx's pctHealth(pct) — new in the Dashboard 2.0 rewrite — is the single shared health classifier for every board whose headline is itself a 0-100 score (Compliance Board, Risk Board, Framework Board's weakest-framework read). It drives each board's rail health dot color and the Summary board's composite-score ring via SummaryPostureHero's HEALTH_POINTS mapping, so an off-by-one at the threshold boundary would misclassify a board's status color across the whole module.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call pctHealth(39.9), pctHealth(40), pctHealth(69.9), pctHealth(70), pctHealth(100)",
+      "Call pctHealth(null), pctHealth(undefined), pctHealth(NaN)"
+    ],
+    "expectedResult": "39.9 -> 'critical', 40 -> 'warning', 69.9 -> 'warning', 70 -> 'good', 100 -> 'good'; null/undefined/NaN all return 'unknown'.",
+    "tags": [
+      "rail",
+      "health-status",
+      "unit"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-UNIT-009",
+    "module": "dashboard-overview",
+    "category": "unit",
+    "subFeature": "Shared Accent Palette",
+    "title": "overviewHex falls back to the 'unknown' neutral hex for an unrecognized color family and selects light/dark by colorMode",
+    "description": "overviewPalette.js's overviewHex(colorMode, family) looks up OVERVIEW_COLORS[family], falling back to OVERVIEW_COLORS.unknown when family isn't one of red/green/blue/amber/unknown. OverviewModuleRail's HEALTH_COLORS map and SummaryPostureHero's scoreColorHex both depend on this fallback never throwing or returning undefined for an unexpected input.",
+    "priority": "P3",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Call overviewHex('light', 'red') and overviewHex('dark', 'red')",
+      "Call overviewHex('light', 'not-a-real-family')"
+    ],
+    "expectedResult": "First two calls return OVERVIEW_COLORS.red.light ('#E53E3E') and .dark ('#C4787A') respectively; the third call returns OVERVIEW_COLORS.unknown.light ('#A0AEC0') rather than undefined or throwing.",
+    "tags": [
+      "palette",
+      "unit"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-UNIT-010",
+    "module": "dashboard-overview",
+    "category": "unit",
+    "subFeature": "Summary Composite Score",
+    "title": "SummaryPostureHero's composite score averages only boards with a known health state, excluding 'unknown' boards entirely rather than scoring them 0",
+    "description": "SummaryPostureHero.jsx's compositeScore useMemo maps each board's health to HEALTH_POINTS (good=92, warning=55, critical=18) and averages only the boards where HEALTH_POINTS[health] is defined — a board with health='unknown' (e.g. Framework Board with zero active frameworks) is dropped from both the numerator and denominator, not counted as a 0-point board that would unfairly drag the composite down.",
+    "priority": "P2",
+    "environment": [
+      "dev"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Render SummaryPostureHero with boards=[{title:'A',health:'good'},{title:'B',health:'critical'},{title:'C',health:'unknown'}]",
+      "Read the rendered composite score in the ring"
+    ],
+    "expectedResult": "Composite score is round((92+18)/2) = 55 — board C ('unknown') is excluded from the average, not averaged in as 0 (which would instead yield 37).",
+    "tags": [
+      "summary-board",
+      "composite-score",
+      "unit"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

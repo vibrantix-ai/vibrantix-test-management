@@ -4,24 +4,24 @@
     "module": "dashboard-overview",
     "category": "e2e",
     "subFeature": "Initial Load",
-    "title": "Loading /dashboard renders all 6 populated board cards for an org with real data",
-    "description": "AuditOverviewContent.jsx renders a SimpleGrid of 6 MetricCards (Resource, Compliance, Framework, Audit, Vendor, Risk Board) fed from a single dashboardService.getDashboardMetrics() call plus 5 parallel trend calls.",
+    "title": "Loading /dashboard renders the Summary board by default with the module rail listing all 7 boards populated",
+    "description": "Dashboard 2.0 rewrite (2026-08-13): AuditOverviewContent.jsx no longer renders a SimpleGrid of 6 MetricCards. It now renders a persistent left OverviewModuleRail (Summary, Audit, Risk, Resource, Framework, Compliance, Vendor — 7 entries) fed by the same dashboardService.getDashboardMetrics() call plus 5 parallel trend calls, alongside DashboardFilterBar and PriorityActionsPanel in a fixed top strip. The content pane defaults to the new Summary board (ExecutiveSummaryBoardContent), not any of the original 6.",
     "priority": "P0",
     "environment": [
       "stage"
     ],
     "type": "automated",
-    "automationStatus": "automated",
-    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::tests 3-4",
+    "automationStatus": "not_automated",
+    "automationRef": "test-automation/tests/overview/overview-smoke.test.ts (spec currently at this path still targets the pre-rewrite modal/grid UI — e.g. tests 3-4 assert exact-text \"Resource Board\" board cards, which no longer render; the rail only shows the short label \"Resource\" plus a value tile. Needs a rewrite against OverviewModuleRail’s actual DOM before it can be trusted again.)",
     "preconditions": [
       "Logged in as an org member",
       "Org has at least one active project with compliance/risk/vendor/audit data"
     ],
     "steps": [
       "Navigate to /dashboard",
-      "Wait for the 6 BoardCardSkeleton placeholders to disappear"
+      "Wait for the rail’s loading skeleton rows (6 SkeletonCircle placeholders) to disappear"
     ],
-    "expectedResult": "All 6 cards (Resource, Compliance, Framework, Audit, Vendor, Risk Board) render with non-zero, populated KPI values, sparklines/donuts/gauges, and the 'LIVE DATA' pulse indicator, within a few seconds of navigation.",
+    "expectedResult": "The module rail shows all 7 entries (Summary, Audit, Risk, Resource, Framework, Compliance, Vendor) each with a non-placeholder value/secondaryStat and a health dot; the content pane shows the Summary board (posture hero + coverage chain) selected by default; DashboardFilterBar and the Priority Actions strip are both populated, not skeletons.",
     "tags": [
       "dashboard",
       "kpi-cards"
@@ -29,7 +29,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-002",
@@ -37,7 +37,7 @@
     "category": "e2e",
     "subFeature": "Board Drill-Down Navigation",
     "title": "Clicking a board card collapses the grid into the NavCard strip and expands that board's detail content",
-    "description": "handleCardClick collapses the 6-card SimpleGrid into a horizontal NavCard strip and mounts the matching *BoardContent component below (e.g. ComplianceBoardContent for the Compliance Board). This is the dashboard's only in-page 'quick action' style navigation.",
+    "description": "handleCardClick collapses the 6-card SimpleGrid into a horizontal NavCard strip and mounts the matching *BoardContent component below (e.g. ComplianceBoardContent for the Compliance Board). This is the dashboard's only in-page 'quick action' style navigation. DEPRECATED: superseded by Dashboard 2.0 (2026-08-13) — there is no collapsing grid, no modal dialog, no NavCard strip, and no 'Overview / <Board>' breadcrumb or 'Overview' back button anywhere in the new architecture. Navigation is now a permanent split-pane: OverviewModuleRail (always visible) on the left, board content on the right, swapped via a plain onSelect(title) call with no dialog/portal involved. See DASH-E2E-008 for the replacement coverage.",
     "priority": "P1",
     "environment": [
       "stage"
@@ -56,17 +56,17 @@
       "compliance-board"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-003",
     "module": "dashboard-overview",
     "category": "e2e",
     "subFeature": "Project Filter Empty State",
-    "title": "Deselecting every project in the filter bar zeroes out all 6 cards instead of leaving stale numbers on screen",
-    "description": "When selectedProjectIds becomes empty, AuditOverviewContent sets metrics=null and skips the fetch entirely; every card falls back to its hardcoded default (e.g. '0%', '0') via optional-chaining fallbacks.",
+    "title": "Deselecting every project in the filter bar zeroes out the module rail and shows the empty-scope prompt instead of stale numbers",
+    "description": "When selectedProjectIds becomes empty, AuditOverviewContent sets metrics=null and skips the fetch entirely; every rail entry falls back to its hardcoded default (e.g. '0%', '0', health='unknown') via optional-chaining fallbacks, and the open board's own content component (which independently tracks the same dashboardSelectedProjectIds) renders its own 'Select projects from the filter bar above...' prompt rather than stale numbers.",
     "priority": "P1",
     "environment": [
       "stage"
@@ -77,7 +77,7 @@
       "On /dashboard with data populated, open the Filters project picker",
       "Click 'Deselect All'"
     ],
-    "expectedResult": "All 6 cards immediately show their zero/default values (0%, 0) rather than continuing to display the previously-fetched org-wide numbers; no network call to /api/dashboard/metrics fires while zero projects are selected.",
+    "expectedResult": "All 7 rail entries immediately fall back to their zero/default values (0%, 0, 'unknown' health) instead of continuing to display the previously-fetched numbers; the currently-open board's content pane shows its own project-selection prompt; no network call to /api/dashboard/metrics fires while zero projects are selected.",
     "tags": [
       "filter-bar",
       "empty-state"
@@ -85,15 +85,15 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-004",
     "module": "dashboard-overview",
     "category": "e2e",
     "subFeature": "Filter Bar",
-    "title": "Selecting a date preset re-fetches metrics and updates Finding/risk-derived numbers only",
-    "description": "DashboardFilterBar's date preset drives dateFrom/dateTo in effectiveFilters, which only affects the Finding and risks aggregations server-side (per dashboard-metrics/index.js's dateRangeMatch) — compliance's snapshot-based timeline is unaffected.",
+    "title": "Selecting a date preset re-fetches metrics and updates Finding/risk-derived rail entries only",
+    "description": "DashboardFilterBar's date preset drives dateFrom/dateTo in effectiveFilters, which only affects the Finding and risks aggregations server-side (per dashboard-metrics/index.js's dateRangeMatch) — compliance's snapshot-based timeline is unaffected. The Filters control itself is unchanged in the rewrite (same popover, same date-preset dropdown), only the destination of the resulting numbers moved from 6 cards to the module rail's Resource/Risk/Compliance entries.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -102,10 +102,10 @@
     "automationStatus": "not_automated",
     "steps": [
       "On /dashboard, open Filters and select 'Last 7 Days'",
-      "Observe the Resource and Risk Board cards update",
-      "Observe the Compliance Board card's KPI value"
+      "Observe the Resource and Risk Board entries in the module rail update",
+      "Observe the Compliance Board entry's KPI value in the rail"
     ],
-    "expectedResult": "A new /api/dashboard/metrics request fires with dateFrom/dateTo set to the last 7 days; Resource/Risk numbers reflect only recent findings/risks; the Compliance Board's coverage % is unchanged by the date filter.",
+    "expectedResult": "A new /api/dashboard/metrics request fires with dateFrom/dateTo set to the last 7 days; the Resource/Risk rail entries reflect only recent findings/risks; the Compliance Board rail entry's coverage % is unchanged by the date filter.",
     "tags": [
       "filter-bar",
       "date-range"
@@ -113,7 +113,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-005",
@@ -121,7 +121,7 @@
     "category": "e2e",
     "subFeature": "Fresh Tenant Empty State",
     "title": "A brand-new org with zero projects/risks/vendors/frameworks loads the dashboard without errors",
-    "description": "Verifies the honest-empty-state design principle documented throughout dashboard-metrics/index.js and AuditOverviewContent.jsx: absent data must render as '0', '—', or a 'Pending' badge, never a fabricated non-zero number.",
+    "description": "Verifies the honest-empty-state design principle carried forward into the Dashboard 2.0 rewrite: absent data must render as '0', '—', or a 'Pending' badge, never a fabricated non-zero number. All 7 module rail entries and the default Summary board must render cleanly with no data, and none of the 4 deleted top-level components (AIRiskRecommendations.jsx, RiskAreas.jsx, RiskDistribution.jsx) are on the render path to have their own empty-state bugs anymore.",
     "priority": "P0",
     "environment": [
       "stage"
@@ -134,7 +134,7 @@
     "steps": [
       "Log in as the new org's first user and navigate to /dashboard"
     ],
-    "expectedResult": "The page loads without a console error or the red error Alert; all 6 cards render with 0%/0 KPI values, empty donuts/gauges, and Vendor/Resource Board's 'pending' metric rows show their dashed badge rather than 0.",
+    "expectedResult": "The page loads without a console error or the red 'Dashboard Load Failed' Alert; all 7 rail entries render with 0%/0 values and 'unknown'/neutral health dots; the Summary board shows its 'No data available for the selected projects.' / 'Select projects from the filter bar above to view the summary' messaging rather than a blank or crashed panel.",
     "tags": [
       "fresh-tenant",
       "empty-state",
@@ -143,15 +143,15 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-006",
     "module": "dashboard-overview",
     "category": "e2e",
     "subFeature": "Sidebar Project Sync",
-    "title": "Switching the Sidebar's active project re-syncs the dashboard's own project filter",
-    "description": "AuditOverviewContent watches the Redux sidebarSelectedProject and re-seeds selectedProjectIds to just that project whenever it changes, unless the user has already manually broadened the dashboard's own Filters selection.",
+    "title": "Switching the Sidebar's active project re-syncs the dashboard's own project filter and the currently-open board",
+    "description": "AuditOverviewContent watches the Redux sidebarSelectedProject and re-seeds selectedProjectIds to just that project whenever it changes, unless the user has already manually broadened the dashboard's own Filters selection — this sync effect is unchanged by the Dashboard 2.0 rewrite. The visible effect moved from '6 cards refresh' to 'the module rail and whichever board is currently open both refresh'.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -162,10 +162,10 @@
       "User belongs to at least 2 projects"
     ],
     "steps": [
-      "On /dashboard, note the current KPI values (scoped to Project A via the Sidebar)",
+      "On /dashboard, note the current KPI values (scoped to Project A via the Sidebar) in the module rail",
       "Use the Sidebar's project selector to switch to Project B"
     ],
-    "expectedResult": "The dashboard's Filters project picker updates to show only Project B selected, and all 6 cards refresh to Project B's numbers.",
+    "expectedResult": "The dashboard's Filters project picker updates to show only Project B selected, the module rail's 7 entries refresh to Project B's numbers, and if a board (e.g. Audit Board) is currently open, its own content also refreshes to Project B.",
     "tags": [
       "project-selector",
       "sidebar"
@@ -173,7 +173,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-E2E-007",
@@ -181,7 +181,7 @@
     "category": "e2e",
     "subFeature": "Mobile Responsive Layout",
     "title": "The 6-card grid collapses to a single column on a mobile viewport with the filter bar still usable",
-    "description": "The SimpleGrid uses columns={{base:1, md:2, lg:3}}; on a narrow viewport all controls in DashboardFilterBar (project picker, date preset, severity) must remain reachable, not clipped or overlapped by the card grid.",
+    "description": "The SimpleGrid used columns={{base:1, md:2, lg:3}}; on a narrow viewport all controls in DashboardFilterBar (project picker, date preset, severity) had to remain reachable, not clipped or overlapped by the card grid. DEPRECATED: superseded by Dashboard 2.0 (2026-08-13) — the 6-card SimpleGrid no longer exists, so there is nothing left to 'collapse to a single column' in the sense this case describes. The new layout is a fixed-width rail (230px expanded / 60px collapsed) plus a flex-1 content pane in a single row with no observed responsive breakpoint override for narrow viewports; DashboardFilterBar's own top strip does wrap (flexWrap base='wrap'). See DASH-E2E-009 for a case that verifies the new layout's actual (not assumed) narrow-viewport behavior instead of asserting a single-column collapse that isn't implemented.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -199,8 +199,214 @@
       "mobile"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-008",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Module Rail Navigation",
+    "title": "Clicking each of the 7 module rail entries swaps the content pane to that board and shows the correct active-state styling",
+    "description": "OverviewModuleRail.jsx replaces the old tile-grid-then-modal pattern: clicking a rail entry calls onSelect(title), which sets AuditOverviewContent's selectedBoard state and swaps only the content pane next to it (no dialog/portal). The active entry gets a colored left accent bar, a border/background matching its accentColor, and a raised shadow; the connector bridge between rail and content also recolors to the active board's accent.",
+    "priority": "P0",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /dashboard, click each of Summary, Audit Board, Risk Board, Resource Board, Framework Board, Compliance Board, and Vendor Board in the module rail, in turn",
+      "After each click, inspect the clicked rail entry's border/background/left-accent styling and the content pane's rendered component"
+    ],
+    "expectedResult": "Each click renders that board's real content component (ExecutiveSummaryBoardContent / AuditBoardContent / ExecutiveRiskBoardContent / ExecutiveResourceBoardContent / FrameworkBoardContent / ComplianceBoardContent / VendorBoardContent) with a brief blur-focus entrance transition; only the just-clicked entry shows the active border/background/accent-bar; the connector bridge between rail and content recolors to match.",
+    "tags": [
+      "navigation",
+      "module-rail"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-009",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Mobile Responsive Layout",
+    "title": "The module rail and board content remain reachable (not clipped or overlapping) on a 375px-wide viewport",
+    "description": "Unlike the old 6-card SimpleGrid (which had an explicit columns={{base:1,...}} single-column breakpoint), the new rail+content row (AuditOverviewContent's Box display='flex' ... h='calc(100vh - 144px)') has no observed responsive override for narrow viewports — only the top DashboardFilterBar+PriorityActionsPanel strip wraps (flexWrap base='wrap'). This case verifies actual behavior rather than assuming either a graceful collapse or a broken layout.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Resize the browser (or use mobile device emulation) to a 375px-wide viewport",
+      "Navigate to /dashboard",
+      "Attempt to read the module rail’s entries and open a board; attempt to use the Filters project picker"
+    ],
+    "expectedResult": "Record the actual observed behavior of the rail (fixed 230px/60px width) and the content pane at this viewport width — whether both remain usable side-by-side, the rail collapses automatically, or content is clipped/requires horizontal scrolling — and file a defect if either the rail or the Filters/Priority Actions strip becomes unreachable or unusable.",
+    "tags": [
+      "responsive",
+      "mobile"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-010",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Priority Actions Deep Link",
+    "title": "Clicking a Priority Actions chip switches to the item’s own board and highlights it for a few seconds",
+    "description": "PriorityActionsPanel's chip onClick calls onSelectItem(item), which AuditOverviewContent wires to handleSelectPriorityAction: it sets selectedBoard to item.board and sets highlightAction={board, id} for 3 seconds (auto-cleared via setTimeout) so the destination board can scroll-to-and-pulse the specific item once its content mounts. Risk Board specifically consumes this via its highlightRiskId prop (item.id with a 'risk-' prefix stripped).",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has at least one overdue/breached item surfaced in Priority Actions belonging to the Risk Board"
+    ],
+    "steps": [
+      "On /dashboard, locate a Risk Board chip in the Priority Actions strip",
+      "Click the chip"
+    ],
+    "expectedResult": "The module rail's selection switches to Risk Board, ExecutiveRiskBoardContent mounts with highlightRiskId set to that risk's ID, and the matching row/card is visibly highlighted/scrolled-to; the highlight clears on its own after a few seconds without user action.",
+    "tags": [
+      "priority-actions",
+      "deep-link",
+      "risk-board"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-011",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Priority Actions View All",
+    "title": "Priority Actions' \"N more\" link opens a modal with the full route-capped list, and clicking a row deep-links and closes the modal",
+    "description": "When totalCount exceeds the items already shown in the strip, PriorityActionsPanel renders an 'N more' text button that calls dashboardService.getPriorityActions({projectIds, limit: 50}) (VIEW_ALL_LIMIT) and opens a Modal with a full table (Severity, Module, Item, Owner, Status, When, Score columns). Clicking any row calls the same onSelectItem/onSelectBoard deep-link used by the strip's chips and then closes the modal.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has more than the strip’s visible item count of priority actions in the last 7 days"
+    ],
+    "steps": [
+      "On /dashboard, click the 'N more' link at the end of the Priority Actions strip",
+      "In the resulting modal, click any row"
+    ],
+    "expectedResult": "The modal opens showing up to 50 items in a 7-column table, each with a colored severity badge and a colored module badge matching that board's accent; clicking a row switches the dashboard to that item's board and closes the modal.",
+    "tags": [
+      "priority-actions",
+      "modal"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-012",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Priority Actions Empty State",
+    "title": "A fresh org with nothing urgent in the last 7 days shows Priority Actions' explicit empty-state message, not a blank strip",
+    "description": "PriorityActionsPanel renders 'All clear — nothing urgent in the last 7 days.' when items.length === 0 and there's no error, both in the strip and (implicitly, via the same modalItems.length check) in the 'view all' modal.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Newly onboarded org, or an org whose overdue/breached items are all older than the 7-day window"
+    ],
+    "steps": [
+      "Navigate to /dashboard for such an org",
+      "Inspect the Priority Actions strip"
+    ],
+    "expectedResult": "The strip shows the text 'All clear — nothing urgent in the last 7 days.' instead of an empty/blank horizontal area, and there is no 'N more' link since totalCount is 0.",
+    "tags": [
+      "priority-actions",
+      "empty-state",
+      "fresh-tenant"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-013",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Filter Persistence Across Boards",
+    "title": "Project, date, and severity filter selections persist unchanged when switching boards via the module rail",
+    "description": "barFilters and selectedProjectIds both live in AuditOverviewContent's own state (the parent of OverviewModuleRail and every *BoardContent), and DashboardFilterBar itself never unmounts when selectedBoard changes — only the content pane below it does. This means, unlike a per-board sidebar filter (the old, now-deleted *ProjectFilterSidebar.jsx pattern), a filter selection made while on one board should still be in effect after switching to another.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "User belongs to at least 2 projects"
+    ],
+    "steps": [
+      "On /dashboard (Summary board active), open Filters and select a single project plus a date preset of \"Last 30 Days\"",
+      "Switch to Audit Board via the module rail",
+      "Reopen the Filters popover"
+    ],
+    "expectedResult": "The Filters popover still shows the same single project and 'Last 30 Days' preset selected after switching to Audit Board — the selection is not reset to 'All Projects'/'All Time', and Audit Board's own data is scoped to that same single project.",
+    "tags": [
+      "filter-bar",
+      "state-persistence"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-E2E-014",
+    "module": "dashboard-overview",
+    "category": "e2e",
+    "subFeature": "Module Rail Collapse",
+    "title": "Collapsing the module rail switches it to icon-only mode with tooltips, and expanding restores full labels without losing the active selection",
+    "description": "OverviewModuleRail.jsx has its own isCollapsed state (default expanded, EXPANDED_WIDTH=230px / COLLAPSED_WIDTH=60px) toggled by a ChevronsLeft/ChevronsRight IconButton. Collapsed mode replaces each labeled row with a centered icon-only button wrapped in a Tooltip showing '<label> · <kpiLabel>: <value>'.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "On /dashboard with Audit Board selected, click the rail’s collapse chevron",
+      "Hover over the collapsed Audit icon",
+      "Click the expand chevron"
+    ],
+    "expectedResult": "The rail narrows to icon-only entries with a health-colored dot on each; hovering the Audit icon shows a tooltip with its label, kpiLabel, and value; Audit Board remains the active/highlighted entry throughout; expanding restores the full labeled rows with Audit Board still selected and the content pane unchanged.",
+    "tags": [
+      "module-rail",
+      "collapse"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

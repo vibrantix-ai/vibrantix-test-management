@@ -13,7 +13,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::test 2",
+    "automationRef": "test-automation/tests/overview/overview-smoke.test.ts::test 2",
     "steps": [
       "As an authenticated user with a valid orgId, call GET /api/dashboard/metrics"
     ],
@@ -25,7 +25,7 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-SMK-002",
@@ -41,7 +41,7 @@
     ],
     "type": "automated",
     "automationStatus": "automated",
-    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::tests 1, 14, 15",
+    "automationRef": "test-automation/tests/overview/overview-smoke.test.ts::tests 1, 14, 15 (test 15’s wait condition is stale — see description)",
     "preconditions": [
       "Seeded demo org with at least one active project"
     ],
@@ -57,14 +57,15 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14",
+    "description": "Test 15 in the referenced spec waits for the text 'Loading dashboard metrics...' to disappear before sampling console errors — that literal text no longer exists anywhere in the Dashboard 2.0 rewrite (the loading state is now Chakra Skeleton placeholders with no such string), so the wait resolves immediately rather than actually waiting for load completion. The spec still runs and its 'no console error' assertion is still meaningful, but it is weaker than intended and should be rewritten to wait for a real post-load signal (e.g. the module rail's skeleton rows disappearing)."
   },
   {
     "id": "DASH-SMK-003",
     "module": "dashboard-overview",
     "category": "smoke",
     "subFeature": "Board Cards Render",
-    "title": "All 6 board cards render with their correct icon and title in the idle grid",
+    "title": "All 7 module rail entries render with their correct icon and label on initial load",
     "priority": "P1",
     "environment": [
       "dev",
@@ -72,12 +73,12 @@
       "prod"
     ],
     "type": "automated",
-    "automationStatus": "automated",
-    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::test 3",
+    "automationStatus": "not_automated",
+    "automationRef": "test-automation/tests/overview/overview-smoke.test.ts (test 3 currently asserts exact-text \"<X> Board\" cards from the old grid, which don’t render in the new rail — only the short label does; needs rewriting against OverviewModuleRail’s markup)",
     "steps": [
-      "Navigate to /dashboard and wait for loading to finish"
+      "Navigate to /dashboard and wait for the rail’s loading skeletons to finish"
     ],
-    "expectedResult": "Resource Board (ShieldAlert), Compliance Board (CheckCircle2), Framework Board (Shield), Audit Board (ClipboardCheck), Vendor Board (Building2), and Risk Board (TrendingUp) all appear, each with its title minus the word 'Board' shown per MetricCard's title.replace(' Board','').",
+    "expectedResult": "All 7 rail entries appear in order (Summary, Audit, Risk, Resource, Framework, Compliance, Vendor) each with its correct icon and label.",
     "tags": [
       "smoke",
       "kpi-cards"
@@ -85,7 +86,8 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14",
+    "description": "Dashboard 2.0 rewrite (2026-08-13): there is no more idle grid. OverviewModuleRail permanently lists Summary (LayoutDashboard), Audit Board (ClipboardCheck), Risk Board (TrendingUp), Resource Board (ShieldAlert), Framework Board (Shield), Compliance Board (CheckCircle2), and Vendor Board (Building2) — 7 entries, not 6 — each shown with its icon and a label equal to board.title.replace(' Board', '') (so 'Summary' stays as-is, others drop the word 'Board')."
   },
   {
     "id": "DASH-SMK-004",
@@ -145,5 +147,64 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SMK-006",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "Priority Actions Render",
+    "title": "PriorityActionsPanel mounts and shows either populated chips or the explicit empty state, without throwing",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Navigate to /dashboard for any org (populated or fresh) and wait for the top strip to finish loading"
+    ],
+    "expectedResult": "The Priority Actions strip renders either at least one severity-colored chip or the 'All clear — nothing urgent in the last 7 days.' text — never a blank area, a spinner stuck indefinitely, or a thrown error.",
+    "tags": [
+      "smoke",
+      "priority-actions"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-SMK-007",
+    "module": "dashboard-overview",
+    "category": "smoke",
+    "subFeature": "Filter Bar Projects Picker",
+    "title": "DashboardFilterBar's Filters popover opens/closes cleanly and its merged Projects picker lists the org's real projects",
+    "description": "DashboardFilterBar now owns project scope directly (the former standalone top-right ProjectsDropdown was merged into its Filters popover) alongside date/severity/framework controls.",
+    "priority": "P1",
+    "environment": [
+      "dev",
+      "stage",
+      "prod"
+    ],
+    "type": "automated",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has at least 2 projects"
+    ],
+    "steps": [
+      "On /dashboard, click the Filters button",
+      "Open the Projects dropdown inside the panel"
+    ],
+    "expectedResult": "The Filters popover opens without error; the Projects dropdown lists every one of the org's real projects by name (not empty, not a loading spinner stuck indefinitely); closing the popover leaves the dashboard in a usable state.",
+    "tags": [
+      "smoke",
+      "filter-bar"
+    ],
+    "owner": "SDET",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

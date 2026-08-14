@@ -4,7 +4,7 @@
     "module": "dashboard-overview",
     "category": "sanity",
     "subFeature": "KPI Value Bounds",
-    "title": "Resource Board KPI is a percentage between 0 and 100",
+    "title": "Resource Board's rail KPI is a percentage between 0 and 100",
     "description": "The Resource Board's headline value is passRate = round(compliantResources/totalResources*100), an outcome metric (design doc D1 fix), not a raw resource count — it must never render as a raw count or exceed 100%.",
     "priority": "P1",
     "environment": [
@@ -13,7 +13,7 @@
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
-      "Open /dashboard and read the Resource Board's headline KPI value"
+      "Open /dashboard and read the Resource Board entry's value tile in the module rail (format 'N% pass')"
     ],
     "expectedResult": "Value is formatted as 'N%' with 0 <= N <= 100.",
     "tags": [
@@ -23,26 +23,26 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-SAN-002",
     "module": "dashboard-overview",
     "category": "sanity",
     "subFeature": "Board Drill-Down Coverage",
-    "title": "Every one of the 6 board cards opens its real board content, never the generic 'coming soon' fallback",
-    "description": "AuditOverviewContent's workspace panel maps selectedBoard to one of ComplianceBoardContent/ExecutiveResourceBoardContent/VendorBoardContent/ExecutiveRiskBoardContent/AuditBoardContent/FrameworkBoardContent; anything unmatched falls through to a plain '... content coming soon' text node.",
+    "title": "Every one of the 7 module rail entries opens its real board content when clicked — never a blank content pane",
+    "description": "Dashboard 2.0 rewrite (2026-08-13): AuditOverviewContent's content pane maps selectedBoard to one of ExecutiveSummaryBoardContent/ComplianceBoardContent/ExecutiveResourceBoardContent/VendorBoardContent/ExecutiveRiskBoardContent/AuditBoardContent/FrameworkBoardContent by exact title match against the same 7-entry `boards` array the rail renders from, so every rail entry has a guaranteed matching branch. There is no 'coming soon' fallback text anywhere in the new code (verified: no such string exists) — the failure mode to watch for instead is a blank content pane, which would only happen if a title typo diverged between the rail’s `boards` array and the switch in the render function.",
     "priority": "P1",
     "environment": [
       "stage"
     ],
     "type": "manual",
-    "automationStatus": "automated",
-    "automationRef": "test-automation/tests/executive/overview/overview-smoke.test.ts::tests 5-11",
+    "automationStatus": "not_automated",
+    "automationRef": "test-automation/tests/overview/overview-smoke.test.ts (spec still targets the old modal-dialog pattern for this flow — needs a full rewrite for the rail+inline-content architecture)",
     "steps": [
-      "Click each of the 6 board cards in turn, returning to Overview between each"
+      "Click each of the 7 module rail entries in turn"
     ],
-    "expectedResult": "Each click renders its dedicated board content component; the 'coming soon' fallback text never appears for any of the 6 named boards.",
+    "expectedResult": "Each click renders its dedicated board content component; the content pane is never blank for any of the 7 named boards.",
     "tags": [
       "sanity",
       "navigation"
@@ -50,7 +50,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-11"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-SAN-003",
@@ -84,8 +84,8 @@
     "module": "dashboard-overview",
     "category": "sanity",
     "subFeature": "Honest Pending State",
-    "title": "Vendor Board's untracked metrics show a 'Pending' badge, never a fabricated 0",
-    "description": "'Critical dependencies' and 'Avg trust score' in the Vendor Board's bottom metrics are marked pending:true with a pendingReason because their backing vendor fields (businessInfo.criticalVendor, riskProfile.singlePointOfFailure, securityInfo/performanceMetrics) don't exist on any real vendor document yet.",
+    "title": "Vendor Board's Avg Trust Score KPI shows a dashed 'Pending' badge, never a fabricated 0, when trust-score inputs aren't populated",
+    "description": "Dashboard 2.0 rewrite (2026-08-13) changed which vendor metrics are pending: 'Critical Dependencies' is now a real, non-pending KPI (ExecutiveVendorMetricsCards.jsx's criticalDependencyCount, inside the full Vendor Board, not the rail). Only 'Avg Trust Score' remains pending — ExecutiveVendorMetricsCards computes trustScoreAvailable = data.avgTrustScore !== null/undefined and passes pending={!trustScoreAvailable} into the shared KpiStatCard, which renders the value as '—' with a dashed-border 'Pending' badge and a gray accent, and a helpText of 'Trust-score inputs not populated yet'.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -93,10 +93,10 @@
     "type": "manual",
     "automationStatus": "not_automated",
     "steps": [
-      "Open the Vendor Board and inspect the 'Critical dependencies' and 'Avg trust score' rows",
-      "Hover over each row"
+      "Open the Vendor Board and inspect the 'Avg Trust Score' KPI card among the 5 Executive Vendor Metrics cards",
+      "Also inspect 'Critical Dependencies' on the same row"
     ],
-    "expectedResult": "Both rows show '—' with a dashed 'Pending' badge; hovering reveals a tooltip explaining the missing backing field — neither row shows a numeric 0 or 100.",
+    "expectedResult": "'Avg Trust Score' shows '—' with a dashed 'Pending' badge and the helpText 'Trust-score inputs not populated yet' whenever no vendor has trust-score inputs populated; 'Critical Dependencies' shows a real numeric count (not a Pending badge) reflecting criticalDependencyCount.",
     "tags": [
       "sanity",
       "vendor-board",
@@ -105,7 +105,7 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-SAN-005",
@@ -113,7 +113,7 @@
     "category": "sanity",
     "subFeature": "Overdue Aging Buckets",
     "title": "CarAgingChart shows an explicit zero-state message instead of an empty chart",
-    "description": "CarAgingChart (Audit Board) buckets overdue CARs into 0-30d/31-60d/61-90d/90+d and shows a red '<n> overdue' badge; when all buckets are 0 it must show 'No overdue corrective actions' rather than a blank/empty bar chart.",
+    "description": "CarAgingChart (Audit Board) buckets overdue CARs into 0-30d/31-60d/61-90d/90+d and shows a red '<n> overdue' badge; when all buckets are 0 it must show 'No overdue corrective actions' rather than a blank/empty bar chart. DEPRECATED: superseded by the Dashboard 2.0 rewrite (2026-08-13) — CarAgingChart.jsx still exists as a file but is no longer imported/rendered anywhere in AuditBoardContent, AuditHealthSnapshotCard, or AuditRegisterCard (the Audit board's redesign comment explicitly notes 'Finding Mix / CAR Aging were dropped from this card in favor of Framework Completion'). The new AuditCarDueListCard lists individual open CARs sorted by due date instead of an aging-bucket chart; see the gap-fill case covering its own empty state.",
     "priority": "P2",
     "environment": [
       "stage"
@@ -134,9 +134,9 @@
       "empty-state"
     ],
     "owner": "QA",
-    "status": "active",
+    "status": "deprecated",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-08-14"
   },
   {
     "id": "DASH-SAN-006",
@@ -169,5 +169,64 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "DASH-SAN-007",
+    "module": "dashboard-overview",
+    "category": "sanity",
+    "subFeature": "Compliance Controls Drill-In",
+    "title": "ComplianceControlsModal shows real, server-paginated control rows and an em-dash (not $0) for controls with no cost data",
+    "description": "ComplianceControlsModal.jsx (new in Dashboard 2.0) is opened from ComplianceBoardContent either via a general 'view controls' action (unfiltered) or by clicking a coverage-status segment (pre-filtered to that coverageStatus), and fetches real rows via executiveComplianceBoardService.getComplianceControls with search/coverageStatus/criticality filters and page-based pagination. Its 'Est. Cost to Close' column renders '—' when a control has neither an estimatedCost nor estimatedEffortHours value, rather than a fabricated $0.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Open the Compliance Board and click a 'Gap' coverage segment to drill in",
+      "Inspect the modal's rows and the 'Est. Cost to Close' column for a control with no cost data on record"
+    ],
+    "expectedResult": "The modal opens pre-filtered to coverageStatus='gap' with real control rows (name, ucl code, domain, criticality, owner, evidence count); a control with no cost/effort data shows '—' in the Est. Cost to Close column, never '$0'.",
+    "tags": [
+      "compliance-board",
+      "drill-in",
+      "honest-empty-state"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "DASH-SAN-008",
+    "module": "dashboard-overview",
+    "category": "sanity",
+    "subFeature": "Framework Crosswalk Empty State",
+    "title": "FrameworkCrosswalkModal shows an explicit 'no mappings exist yet' message instead of a blank table for an unmapped framework pair",
+    "description": "FrameworkCrosswalkModal.jsx (new in Dashboard 2.0, opened via the Framework Board's 'Crosswalk' button, disabled unless the org has 2+ active frameworks) fetches CrossFrameworkControlMapping rows for the selected framework pair. When data.crosswalk is empty, it renders explanatory text ('No cross-framework mappings exist yet between <A> and <B>. Mappings are curated per organization — none have been created for this pair.') rather than an empty table.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": [
+      "Org has 2+ active frameworks with no curated CrossFrameworkControlMapping rows between at least one pair of them"
+    ],
+    "steps": [
+      "Open the Framework Board, click 'Crosswalk'",
+      "Select a framework pair with no curated mapping"
+    ],
+    "expectedResult": "The modal shows the explicit 'No cross-framework mappings exist yet...' message (naming both selected frameworks) instead of a blank/empty table.",
+    "tags": [
+      "framework-board",
+      "drill-in",
+      "honest-empty-state"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "DASH-A11Y-001",
+    "module": "dashboard-overview",
+    "category": "accessibility",
+    "subFeature": "Module Rail Collapsed Mode",
+    "title": "Collapsed module rail entries expose an accessible name to assistive tech, not just an icon inside a visual Tooltip",
+    "description": "In OverviewModuleRail.jsx's collapsed mode, each entry is a `<Flex as='button' type='button'>` wrapping only a ModuleIconBadge (an icon, no visible text) inside a Chakra `<Tooltip>`. Chakra's Tooltip shows its label visually and can wire aria-describedby to the trigger, but that is not equivalent to an accessible *name* (aria-label/visible text) on the button itself — a screen reader landing on the button with no aria-label would announce it as an unlabeled button rather than e.g. 'Audit'. The expanded-mode buttons don't have this gap since they render a real, associated Text label.",
+    "priority": "P2",
+    "environment": [
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "steps": [
+      "Collapse the module rail",
+      "Using a screen reader (or the browser accessibility tree inspector), tab to each collapsed rail entry and read its announced accessible name"
+    ],
+    "expectedResult": "Each collapsed rail entry announces a meaningful name (e.g. 'Audit', or 'Audit · <kpiLabel>: <value>') via aria-label or equivalent — not a generic 'button' with no name. File a defect if the accessible name is empty despite the visual Tooltip.",
+    "tags": [
+      "accessibility",
+      "module-rail",
+      "aria-label",
+      "wcag"
+    ],
+    "owner": "QA",
+    "status": "draft",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
+  }
+]
