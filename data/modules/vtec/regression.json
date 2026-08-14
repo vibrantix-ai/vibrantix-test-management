@@ -380,5 +380,34 @@
     "status": "active",
     "createdAt": "2026-08-07",
     "updatedAt": "2026-08-07"
+  },
+  {
+    "id": "VTEC-REG-013",
+    "module": "vtec",
+    "category": "regression",
+    "subFeature": "Entitlement Gating",
+    "title": "Enterprise orgs actually have 'vtec_connector' in their plan's features array, not just a migration that could grant it",
+    "description": "add-vtec-feature-to-enterprise-plans.js (Task 7.4/7.5) is dry-run by default and was written but never run with --apply against the real environment — so no real Enterprise SubscriptionPlan document ever had 'vtec_connector' in its features array, and every /api/vtec/* route 403'd with \"Feature \\\"vtec_connector\\\" is not included in your plan\" for every real user, live, since Phase 7. Found via a live user report opening /vtec/fleet. Fixed by running the migration with --apply; confirmed via a follow-up dry run showing 0 plans remaining and a direct read of the real plan document showing vtec_connector present.",
+    "priority": "P0",
+    "environment": [
+      "dev",
+      "stage"
+    ],
+    "type": "manual",
+    "automationStatus": "not_automated",
+    "preconditions": ["An organization-scope SubscriptionPlan document with tierCode: 'enterprise'"],
+    "steps": [
+      "Run node src/migrations/add-vtec-feature-to-enterprise-plans.js (dry run) and note the count of plans missing the feature",
+      "As a user on that org, load /vtec/fleet",
+      "Run the migration with --apply",
+      "Reload /vtec/fleet without restarting the backend"
+    ],
+    "expectedResult": "Before the fix: dry run reports >0 plans and /vtec/fleet 403s with FEATURE_NOT_AVAILABLE. After --apply: the dry run reports 0 plans, and /vtec/fleet loads successfully on the very next request with no server restart needed (tierContext reads entitlements fresh per request, no cache to bust).",
+    "tags": ["regression", "entitlement", "migration", "billing"],
+    "linkedDefect": "VTEC-internal (unapplied migration, found via live user report on /vtec/fleet)",
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-07",
+    "updatedAt": "2026-08-07"
   }
 ]
