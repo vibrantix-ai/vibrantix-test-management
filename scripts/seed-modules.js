@@ -25,7 +25,11 @@ const MODULES = [
   { slug: 'notifications', name: 'Notifications', routes: [], qaAgent: 'Notifications_QA_Agent', scope: 'platform', description: 'Notification dispatch pipeline, Socket.IO real-time delivery, unread state, BullMQ queue.' },
   { slug: 'onboarding', name: 'Onboarding & Getting Started', routes: ['/getting-started', '/onboarding'], qaAgent: 'Onboarding_QA_Agent', scope: 'feature', description: 'First-run wizard, step completion tracking, checklist, platform tour.' },
   { slug: 'organization-management', name: 'Organization Management', routes: ['/organization'], qaAgent: 'Organization_Management_QA_Agent', scope: 'feature', description: 'Org profile, team management, roles/permissions, security policy, departments.' },
-  { slug: 'billing-plans', name: 'Billing & Plans', routes: ['/billing', '/billing-plans'], qaAgent: 'Billing_Plans_QA_Agent', scope: 'feature', description: 'Plan comparison, Stripe checkout, feature gates, seat limits, invoices.' },
+  // Description/routes updated 2026-08-14 after the 2026-08-04 billing rewrite (Stripe +
+  // org-level subscription-tier model deleted entirely) was confirmed via code analysis —
+  // the prior text was stale, still describing deleted Stripe/seat-limit mechanics and
+  // omitting the MSSP usage-billing surface and admin billing UI that now exist.
+  { slug: 'billing-plans', name: 'Billing & Plans', routes: ['/billing', '/billing-plans', '/mssp/usage-billing'], qaAgent: 'Billing_Plans_QA_Agent', scope: 'feature', description: 'Public plan catalog, V2 entitlement ledger (reserve/commit/cancel), AI-credits lifecycle, subscription-change request workflow (submit/approve/reject/escalate), admin plan-catalog & tier management, and MSSP cross-client billing consolidation views.' },
   { slug: 'profile-settings', name: 'Profile Settings', routes: ['/profile'], qaAgent: 'Profile_Settings_QA_Agent', scope: 'feature', description: 'User profile fields, notification preferences, account activity, MFA flag.' },
   { slug: 'project-management', name: 'Project Management', routes: ['/project-management'], qaAgent: 'Project_Management_QA_Agent', scope: 'feature', description: 'Project creation wizard, project-scoped data filtering, multi-project isolation.' },
   { slug: 'tasks', name: 'Centralised Tasks', routes: ['/tasks'], qaAgent: 'Tasks_QA_Agent', scope: 'feature', description: 'Cross-module task aggregation from 9 entity types, filters, overdue flags.' },

@@ -4,8 +4,9 @@
   "scope": "feature",
   "routes": [
     "/billing",
-    "/billing-plans"
+    "/billing-plans",
+    "/mssp/usage-billing"
   ],
   "qaAgent": "Billing_Plans_QA_Agent",
-  "description": "Plan comparison, Stripe checkout, feature gates, seat limits, invoices."
+  "description": "Public plan catalog, V2 entitlement ledger (reserve/commit/cancel), AI-credits lifecycle, subscription-change request workflow (submit/approve/reject/escalate), admin plan-catalog & tier management, and MSSP cross-client billing consolidation views."
 }

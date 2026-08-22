@@ -191,5 +191,37 @@
     "status": "draft",
     "createdAt": "2026-08-14",
     "updatedAt": "2026-08-14"
+  },
+  {
+    "id": "BILL-REG-007",
+    "module": "billing-plans",
+    "category": "regression",
+    "subFeature": "V2 Cutover Completeness",
+    "title": "Retired subscription models (SubscriptionOrg, SubscriptionProject, PendingTierChange) are never imported by live runtime code, and V2 behavior is not gated by rollout flags",
+    "description": "Cross-referenced from an existing dev-authored Jest suite discovered during a repo-wide billing assessment: vibrantix-backend/tests/modules/subscription-v2-cutover.test.js already automates this exact guard (3 tests: no runtime file imports subscription-org.model/subscription-project.model/pending-tier-change.model; the retired model files themselves don't exist; no banned rollout-flag pattern gates V2 behavior). This QA-registry entry exists so the cutover's completeness has visibility in test-management-system too, not only in the dev test suite — the QA suite was previously unaware this automated coverage existed at all.",
+    "priority": "P1",
+    "environment": [
+      "stage"
+    ],
+    "type": "automated",
+    "automationStatus": "automated",
+    "automationRef": "vibrantix-backend/tests/modules/subscription-v2-cutover.test.js",
+    "preconditions": [],
+    "steps": [
+      "Grep all live (non-test, non-migration) source files under vibrantix-backend/src for imports of subscription-org.model, subscription-project.model, or pending-tier-change.model",
+      "Confirm the three retired model files do not exist on disk",
+      "Grep for any rollout-flag pattern (e.g. a feature-flag check) gating V2 subscription behavior"
+    ],
+    "expectedResult": "Zero live imports of the three retired models, the model files themselves are absent, and no rollout flag conditionally enables/disables V2 behavior — the cutover is unconditional and complete, matching subscription-v2-cutover.test.js's own three assertions.",
+    "tags": [
+      "regression",
+      "cutover",
+      "architecture-guard",
+      "v2-migration"
+    ],
+    "owner": "SDET",
+    "status": "active",
+    "createdAt": "2026-08-14",
+    "updatedAt": "2026-08-14"
   }
 ]
