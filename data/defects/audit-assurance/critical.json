@@ -7,11 +7,11 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Audit Integrity",
-    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js:131–170`\n\nRoot Cause: `approveClosure()` updates `approveStatus` to approved and transitions the audit to `closed` in a single operation with no pre-condition query against `audit_nonconformances`. The only existing guard checks that the closure checklist is complete — NC disposition is never verified.\n\nImpact: An ISO 27001 Clause 9.2.2 requirement mandates all nonconformities be corrected before an audit can be signed off. An external certification body reviewing this platform's records would immediately flag this as a major NC against the platform itself.\n\nClaude Fix Prompt:\n```\nFix CD-001 in vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js around lines 131–170.\n\nThe approveClosure() method approves audit closure without checking for open major nonconformances.\n\nRequired changes:\n1. Before the status update, query AuditNonConformance:\n     const openMajorNCs = await AuditNonConformance.countDocuments({\n       auditId: closure.auditId,\n       ncType: 'major',\n       status: { $nin: ['closed', 'accepted', 'not_applicable'] }\n     });\n2. If openMajorNCs > 0, throw 422:\n     \"Cannot approve closure: ${openMajorNCs} major NC(s) still open. Resolve or formally accept all major NCs before closure.\"\n3. Append an audit trail entry when the gate passes (timestamp, userId, openMajorNCs count checked).\n4. Do NOT gate on minor NCs — advisory only.\n5. Unit tests: (a) 422 when open major NC exists, (b) approval succeeds when all major NCs closed/accepted.\n```",
+    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js:131–170`\n\nRoot Cause: `approveClosure()` updates `approveStatus` to approved and transitions the audit to `closed` in a single operation with no pre-condition query against `audit_nonconformances`. The only existing guard checks that the closure checklist is complete — NC disposition is never verified.\n\nImpact: An ISO 27001 Clause 9.2.2 requirement mandates all nonconformities be corrected before an audit can be signed off. An external certification body reviewing this platform's records would immediately flag this as a major NC against the platform itself.\n\nClaude Fix Prompt:\n```\nFix CD-001 in vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js around lines 131–170.\n\nThe approveClosure() method approves audit closure without checking for open major nonconformances.\n\nRequired changes:\n1. Before the status update, query AuditNonConformance:\n     const openMajorNCs = await AuditNonConformance.countDocuments({\n       auditId: closure.auditId,\n       type: 'major_nc',\n       recordType: 'car',\n       status: { $nin: ['closed', 'verified', 'cancelled'] }\n     });\n2. If openMajorNCs > 0, throw 422:\n     \"Cannot approve closure: ${openMajorNCs} major NC(s) still open. Resolve or formally accept all major NCs before closure.\"\n3. Append an audit trail entry when the gate passes (timestamp, userId, openMajorNCs count checked).\n4. Do NOT gate on minor NCs — advisory only.\n5. Unit tests: (a) 422 when open major NC exists, (b) approval succeeds when all major NCs closed/accepted.\n```",
     "requirement": "ISO 27001 Clause 9.2.2",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-08-02",
-    "runsOpen": 2,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -23,9 +23,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Data Integrity",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 2,
-    "fixEvidence": "`importFromPcl()` and `importFromTemplate()` now wrapped in MongoDB session transactions (`startSession`/`startTransaction`/`commitTransaction`) — `audit-assurance.service.js` lines 152–167, 301–316",
+    "fixEvidence": "Re-verified 2026-08-22. `audit-assurance.service.js`'s `importFromRequirements()` (the real seeding logic behind the `importFromPcl` compatibility alias) wraps its `AuditScopeItem.bulkWrite(bulkOps, { session, ordered: true })` in a `mongoose.startSession()`/`startTransaction()`/`commitTransaction()` block (current lines ~317–333); `importFromTemplate()` does the same (current lines ~678–694). Both now use `ordered: true` inside a real transaction, not `ordered:false` with no session. Citation drifted from the original 152–167/301–316 due to file growth but the fix is confirmed intact.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -37,23 +37,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Data Integrity",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 2,
-    "fixEvidence": "`verify()` now uses `findOneAndUpdate` with `status: 'verification_pending'` precondition + segregation-of-duties check — `corrective-action.service.js` lines 395–419",
-    "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
-  },
-  {
-    "id": "D-01",
-    "module": "audit-assurance",
-    "title": "Company size selection UI removed — every Quick Template audit silently uses `startup_smb` template regardless of org size",
-    "severity": "Critical",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
-    "category": "Functional Defect",
-    "description": "Files: `vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx`\n\nRoot Cause: The company size selection step was removed from the Quick Template flow but the template resolver was not updated. The template always resolves to `startup_smb` regardless of actual org size.\n\nImpact: A 10,000-person enterprise gets a startup-sized audit template (~30–40 controls) when ISO 27001 full scope is 93 controls. The audit is fundamentally mis-scoped with no user warning.\n\nClaude Fix Prompt:\n```\nFix D-01 in vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx.\n\nCompany size selector was removed so Quick Template always uses startup_smb template.\n\nOption A — Restore company size step:\n1. Re-add company size selection: startup_smb (1–50), medium (51–500), enterprise (500+).\n2. Wire selected size to the template resolver so the correct templateId is passed to the API.\n3. Show the resolved template name in the review step for user confirmation.\n\nOption B — Derive from org profile:\n1. Read employeeCount/size from the tenant profile already in the org model.\n2. Map ranges: <50 → startup_smb, 51–500 → medium, >500 → enterprise.\n3. Show the derived template name with a \"Change\" override link.\n\nIn both cases: never silently default to startup_smb — always make the template selection visible before submission.\n```",
-    "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 3,
+    "fixEvidence": "Re-verified 2026-08-22. `corrective-action.service.js`'s `verify()` (current lines 807–878) performs an atomic `AuditNonConformance.findOneAndUpdate` with the precondition `status: 'verification_pending'` AND `assignedTo: { $ne: userId }` (segregation of duties) in the same filter, `$push`-ing to `verificationHistory` in the same operation. On a null result it re-queries to distinguish not-found/self-verify/already-verified and throws the correct 403/409. No read-check-update gap remains. Citation drifted from the original 395–419 due to file growth.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -65,9 +51,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "UX Issue",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "Submit button now disabled (not hidden); per-field inline errors via {touched.field && errors.field} — CreateTemplateAuditPage.jsx lines 747-748, 810-812",
+    "fixEvidence": "Re-verified 2026-08-22 against the live component `vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx` (the `-2` implementation actually routed at `/audit-assurance/new-template`). Button uses `isDisabled={!canSubmit}` (not conditional rendering), lines 1361-1370; wrapped in a `CustomTooltip` showing `Missing: ${getMissingFields().join(', ')}` when disabled, lines 1333-1337; an `onPointerDown` handler on the wrapping `Box` (lines 1338-1360) force-touches all required fields and recomputes errors so the user gets inline feedback even on a disabled-button click. Citation corrected from the original 747-748/810-812 (which actually point at the audit-name field, not the submit button).",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -79,9 +65,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Audit Integrity",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "Plain `<Select>` replaced by `Audit3WorkflowUpdateModal` with enforced transition buttons — `ScopeItemDetailDrawer.jsx` lines 85, 2657",
+    "fixEvidence": "Re-verified 2026-08-22. Two UI widgets can still change `assessmentStatus` (an inline `<Select>` and the `Audit3WorkflowUpdateModal`), but both now source their option list exclusively from `availableTransitions` fetched from the backend workflow engine (`getAvailableTransitions('audit_scope_item', ...)`) and submit via `auditAssuranceService.triggerTransition(...)` → `POST /api/workflows/audit_scope_item/:id/transition` — `ScopeItemDetailDrawer.jsx:1698-1734` (inline editor), `ScopeItemDetailDrawer.jsx:2617-2632` (modal invocation), `common/Audit3WorkflowUpdateModal.jsx:56-115`. The backend `updateScopeItem` controller now explicitly rejects any direct `assessmentStatus` write on the plain PUT endpoint (`audit-assurance.controller.js:1071-1076`: \"assessmentStatus cannot be changed via this endpoint... Use POST /api/workflows/...\"), so a one-click `not_started → closed` jump is no longer possible — the option list is transition-constrained. Citation corrected from the original 85/2657.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   }
 ]

@@ -3,20 +3,23 @@
     "id": "CP-001",
     "module": "cloud-posture",
     "severity": "Critical",
-    "status": "wont_fix",
+    "status": "fixed",
     "component": "/cloud-posture/scans/[scanId] (results & export)",
     "category": "Cross-tenant data leak (IDOR)",
     "title": "Both handlers fall back to CloudPostureScan.findById(scanId) with NO organizationId filter when the org-scoped lookup misses, unlike the sibling getScanProgress (line 215) which re-checks scan.organizationId === req.orgId after the identical fallback and throws 403 if not.",
     "description": "Route middleware's getScanProjectId (scan.routes.js) is itself org-scoped, so for a foreign-org scanId it returns null; because the route uses requireProjectMembership({...,required:false}), a null result lets the request through instead of blocking it. The unscoped findById fallback then returns the OTHER organization's full scan + findings (or generates a PDF/CSV/Excel export of it). Any authenticated user who learns/guesses another org's scan _id can read or export that org's complete cloud security findings. CONFIRMED by direct code read of all 3 functions + the route middleware chain.",
     "affectedFiles": [
-      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:290-296 (getScanResults), :320-331 (exportScanResults)"
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:399-403 (getScanResults), :442-447 (exportScanResults)",
+      "vibrantix-backend/src/modules/cloud-posture/scan.routes.js:157-171 (results route), :180-194 (export route) — now also gated by requireProjectMembership"
     ],
     "verified": true,
     "tags": [
-      "verified-note: Yes - full exploit chain traced and confirmed"
+      "verified-note: Yes - full exploit chain traced and confirmed",
+      "2026-08-24 re-verification: FIXED"
     ],
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv",
-    "lastVerified": "2026-08-04"
+    "lastVerified": "2026-08-24",
+    "fixEvidence": "Re-read getScanResults (scan.controller.js:395-430) and exportScanResults (:436-461) in full. Both now build the fallback ObjectId lookup as `CloudPostureScan.findOne({ _id: scanId, ...buildOrgFilter(req) })` — i.e. the fallback carries the SAME organizationId filter as the primary scanId lookup; there is no bare findById anywhere in either handler. A foreign-org scan/ObjectId now resolves to `scan === null` on both the primary and fallback query, and the handler throws AppError.notFound('Scan not found') before any data is read. Additionally, scan.routes.js's PLAC Phase 0/2 fix now adds requireProjectMembership({ getProjectId: getScanProjectId, required: false }) plus augmentPermissionsWithProjectGrant to both the /results/:scanId and /:scanId/export routes (routes.js:157-171, 180-194), so the route-level gate has also been hardened on top of the controller-level org fix. The described exploit chain no longer reproduces."
   },
   {
     "id": "CP-002",
@@ -28,13 +31,15 @@
     "title": "getScanProgress unconditionally overrides the MongoDB status with the Redis cache's status (status = cacheData.status || dbStatus) with no timestamp/staleness comparison against dbStatus. The Python worker's redis_cache.delete_scan_status() is defined but never called anywhere, so the stale key only expires after a fixed 1-hour TTL.",
     "description": "If a Prowler worker crashes mid-scan after writing status:'running' to Redis, scan-reconciler.job.js correctly marks Mongo status:'abandoned' within minutes, but getScanProgress keeps returning the stale cached 'running X%' for up to the remaining hour - the user sees an apparently-live scan that will never move again. CONFIRMED: verified the unconditional override at the exact lines cited.",
     "affectedFiles": [
-      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:229-234",
-      "vibrantix-prowler/src/utils/redis_cache.py:44-94,143-156"
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:330-336 (cacheData.status || dbStatus, no staleness/timestamp comparison)",
+      "vibrantix-prowler/src/utils/redis_cache.py:143-156 (delete_scan_status defined) — grep-confirmed 2026-08-24: zero call sites anywhere in vibrantix-prowler/src"
     ],
     "verified": true,
     "tags": [
-      "verified-note: Yes - unconditional cache override confirmed at the exact lines cited"
+      "verified-note: Yes - unconditional cache override confirmed at the exact lines cited",
+      "2026-08-24 re-verification: STILL OPEN, citations updated for line drift"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
@@ -47,13 +52,15 @@
     "title": "None of the frontend's 3 'is this scan done?' terminal-status checks (nor the backend's own progress-percentage switch) include 'abandoned', 'timed_out', or 'completed_with_warnings' - all 3 are real, live terminal statuses (abandoned is set in 5 places by scan-reconciler.job.js; completed_with_warnings/timed_out are real model enum values used elsewhere).",
     "description": "Once a scan is marked abandoned/timed_out/completed_with_warnings, the frontend's 15s fallback poll interval never recognizes it as finished and never calls clearInterval - it polls forever for the life of the component, the progress card silently freezes at its last %, and the user never sees a failure/abandoned toast. CONFIRMED: verified all 3 terminal-status arrays are missing all 3 values, and that scan-reconciler.job.js genuinely sets 'abandoned' in 5 code paths.",
     "affectedFiles": [
-      "vibrantix-backend/.../scan.controller.js:236-248 (switch)",
-      "vibrantix-client-panel/.../CloudPostureMainDashboard.jsx lines ~1105,1129,1394-1431"
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:338-355 (getScanProgress's default-case switch, no case for abandoned/timed_out/completed_with_warnings)",
+      "vibrantix-client-panel/src/components/cloud-posture/CloudPostureMainDashboard.jsx:1143,1167,1442 (all 3 terminal-status arrays still only ['completed','failed','cancelled','canceled','error'])"
     ],
     "verified": true,
     "tags": [
-      "verified-note: Yes - both cache-override and terminal-status-list gaps directly confirmed"
+      "verified-note: Yes - both cache-override and terminal-status-list gaps directly confirmed",
+      "2026-08-24 re-verification: STILL OPEN, citations updated for line drift (grep-reconfirmed all 3 arrays + 5 abandoned-setting sites in scan-reconciler.job.js)"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   }
 ]

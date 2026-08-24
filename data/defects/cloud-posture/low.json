@@ -9,12 +9,14 @@
     "title": "No component anywhere in the frontend builds a link matching this route pattern - it's unreachable via any UI action. It also hard-requires a ?projectId= query param that nothing ever supplies, so even a hand-typed URL shows 'No project specified'.",
     "description": "A route that exists in the codebase but has no way to be reached through normal navigation; dead weight / confusing for future maintainers.",
     "affectedFiles": [
-      "vibrantix-client-panel/app/(detail)/cloud-posture/[provider]/checks/[checkId]/page.jsx"
+      "vibrantix-client-panel/src/app/(detail)/cloud-posture/[provider]/checks/[checkId]/page.jsx:109,122,144-149 (hard-requires ?projectId=, shows 'No project specified' otherwise)"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: STILL OPEN — repo-wide grep found no component building a link matching this route pattern; the projectId query-param requirement is unchanged"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
@@ -27,31 +29,36 @@
     "title": "completedScans and averageScore are computed only from the CURRENT PAGE's scans array (post skip/limit), not the full filtered match set, even though totalScans correctly comes from a separate countDocuments(filter) call.",
     "description": "A project with 500 scans (300 completed) requesting page 1 (limit 20) would get completedScans/averageScore computed over just those 20 rows instead of the true 300 - currently no visible symptom since the only consumer discards this field, but a landmine for the next consumer.",
     "affectedFiles": [
-      "vibrantix-backend/.../scan.controller.js:635-643"
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:779-787 (includeAnalytics block still filters/averages over the already skip()/limit()'d `scans` array, not the full filtered set)"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: STILL OPEN, citation line drift corrected — also reconfirmed ScanMonitoringPanel.jsx (the stated consumer) is still unimported anywhere"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
     "id": "CP-013",
     "module": "cloud-posture",
     "severity": "Low",
-    "status": "open",
+    "status": "fixed",
     "component": "compareScans finding-pairing logic",
     "category": "Wrong pairing logic",
     "title": "getKey() falls back to finding_info.title (or f.message) when finding_info.uid is absent, then builds a Map keyed by that value - if two different resources in the same scan share an identical generic title with no uid, one silently overwrites the other in the Map, dropping it from the comparison entirely.",
     "description": "Conditional on finding_info.uid being missing (not the normal path) - if it happens, N-1 findings sharing a title vanish from a scan comparison instead of appearing as their own resolved/new/unchanged/changed row.",
     "affectedFiles": [
-      "vibrantix-backend/.../scan.controller.js:1009,1019-1020"
+      "vibrantix-backend/src/modules/cloud-posture/scan-comparison.js:40-51 (findingIdentity — composite key: provider+account+region+checkId+resource uid/id/name, only true last-resort is uid alone), :80-88 (groupByIdentity uses arrays per key, never a single-value overwrite), :137-143 (takeBaselineMatch consumes one array entry per current-finding match, sequential pairing instead of collapsing)"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: FIXED"
     ],
-    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+    "lastVerified": "2026-08-24",
+    "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv",
+    "fixEvidence": "The old Map<title, finding> single-value overwrite logic no longer exists. scan-comparison.js's findingIdentity() now builds a composite key from provider+account+region+checkId+resource-uid/id/name (falling back to title only as the very last component, not the whole key) — collisions on title alone are now far less likely. More importantly, groupByIdentity() (lines 80-88) stores an ARRAY of findings per identity key (not a single value), and compareRawScanFindings' takeBaselineMatch() (lines 137-143) consumes one array entry per matching current-scan finding via an index counter — so even if two findings do share an identity, both are paired sequentially (one becomes a genuine 'changed'/'unchanged' row, the other pairs with the next available baseline match or is reported as 'new'/'resolved') instead of one silently overwriting and dropping the other."
   },
   {
     "id": "CP-019",
@@ -63,12 +70,14 @@
     "title": "Resource rows in the category-detail drawer have hover affordance suggesting they're clickable and are wired to an onRowClick handler whose entire body is commented out with a TODO.",
     "description": "User opens a category drawer expecting drill-down on a resource row click; nothing happens with no feedback at all.",
     "affectedFiles": [
-      "vibrantix-client-panel/components/cloud-posture/ResourceCategoryDetailsDrawer.jsx:290-297 (handleViewResource entirely commented out) but still wired to onRowClick at line 868"
+      "vibrantix-client-panel/src/components/cloud-posture/ResourceCategoryDetailsDrawer.jsx:290-297 (handleViewResource body is still just a commented-out TODO) but still wired to onRowClick at line 868"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: STILL OPEN, unchanged"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
@@ -81,12 +90,15 @@
     "title": "The status filter param the frontend sends for per-provider resource filtering is never read by the backend - harmless today only because the frontend ALSO re-applies the same filter client-side against the full unfiltered list, but it's dead weight and a trap for any future change relying on server-side filtering/pagination.",
     "description": "No current visible symptom (masked by a client-side redundant filter) but silently broken if that redundant client-side filter is ever removed.",
     "affectedFiles": [
-      "vibrantix-client-panel/components/cloud-posture/CloudProviderDashboard.jsx:172-175 (sends a status query param) vs. vibrantix-backend/.../resource.controller.js:233-236 (destructures only page/limit/search/service/severity - status is silently dropped)"
+      "vibrantix-client-panel/src/components/cloud-posture/CloudProviderDashboard.jsx:202-204 (sends a status query param), :657-662 (redundant client-side status re-filter over service groups — the actual reason there's no visible symptom today)",
+      "vibrantix-backend/src/modules/cloud-posture/resource.controller.js:243 (getCloudProviderResources destructures only page/limit/search/service/severity - status is silently dropped)"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: STILL OPEN, confirmed by direct read of both files"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
@@ -99,12 +111,14 @@
     "title": "Neither component is imported by any route file - both contain their own independent (and in CloudProviderDetail.jsx's case, differently-computed) finding/compliance logic that will silently drift out of sync with the real in-use components if anyone edits one believing it's live.",
     "description": "Wasted maintenance effort / confusion risk only - not user-facing today.",
     "affectedFiles": [
-      "vibrantix-client-panel/components/cloud-posture/CloudProviderDetail.jsx and ComplianceDashboard.jsx"
+      "vibrantix-client-panel/src/components/cloud-posture/CloudProviderDetail.jsx and ComplianceDashboard.jsx"
     ],
-    "verified": false,
+    "verified": true,
     "tags": [
-      "verified-note: Not independently re-verified"
+      "verified-note: Not independently re-verified",
+      "2026-08-24 re-verification: STILL OPEN — repo-wide grep confirmed neither file is imported by any route or component (the ComplianceDashboard hits found elsewhere are an unrelated risk-center service method and a code comment, not an import of this file)"
     ],
+    "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   }
 ]

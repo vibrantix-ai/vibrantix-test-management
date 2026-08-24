@@ -4,14 +4,14 @@
     "module": "audit-assurance",
     "title": "No ISMS scope statement captured before audit creation — ISO 27001 Clause 4.3 requires defined scope",
     "severity": "High",
-    "status": "fixed",
-    "statusRaw": "🟢 FIXED",
+    "status": "regressed",
+    "statusRaw": "🔁 REGRESSED",
     "category": "ISO Compliance Gap",
+    "description": "Re-verified 2026-08-22 against `vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx` (full 1379-line read). The backend/service plumbing previously cited as the fix is real: ISMS-scope state is declared (lines 320-323), `upsertIsmsScope` is called non-blockingly after audit creation (lines 620-629), and the client service method correctly PUTs to `/audit-assurance/:id/isms-scope`, backed by a real `audit-isms-scope.model.js` + `isms-scope.routes.js` + controller on the backend. However, after reading the full file there is NO rendered input UI anywhere that ever calls `setIsmsOrgBoundary`, `setIsmsLocations`, `setIsmsServicesInScope`, or `setIsmsExclusions` — the only remaining trace of a UI section is a bare comment placeholder `{/* ── Section 6: ISMS Scope ── */}` at line 1328, immediately followed by the Actions bar. `hasIsms` is therefore always false in practice and `upsertIsmsScope` never fires with real data. From a user's perspective the ISMS scope statement is still never captured before/during audit creation — the previously recorded 'fixed' status overclaimed a backend-only, functionally-inert wiring as a full fix.\n\nClaude Fix Prompt:\n```\nFix D-03 in vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx.\n\nThe backend isms-scope upsert plumbing already exists (state at lines 320-323, upsertIsmsScope call at 620-629) but there is no input form — replace the dead placeholder comment near line 1328 with a real \"ISMS Scope\" section: org boundary textarea, locations multi-input, services-in-scope textarea, exclusions textarea, each bound to the existing setIsmsOrgBoundary/setIsmsLocations/setIsmsServicesInScope/setIsmsExclusions setters so hasIsms actually becomes true when the user fills it in.\n```",
     "requirement": "ISO 27001 Clause 4.3",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 3,
-    "fixEvidence": "ISMS scope statement fields added (lines 248-251) with upsert on creation (lines 544-552) — CreateTemplateAuditPage.jsx",
+    "lastVerified": "2026-08-22",
+    "runsOpen": 1,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -22,11 +22,11 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "ISO Compliance Gap",
-    "description": "Files: `vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx`, `audit.model.js`\n\nClaude Fix Prompt:\n```\nFix D-04 in vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx and audit.model.js.\n\nISO 19011 §5.4 requires audit objectives and criteria — neither field exists.\n\nRequired changes:\n1. audit.model.js: add auditObjectives: [String] and auditCriteria: [String].\n2. CreateTemplateAuditPage.jsx: add tag-input/textarea for each. Pre-populate auditCriteria with the selected framework name on Quick Template selection.\n3. Required for certification type, optional for internal.\n4. Display both prominently at the top of Audit Detail view.\n```",
+    "description": "Files: `vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx`, `audit.model.js`\n\nRe-verified 2026-08-22 by full read of CreateTemplateAuditPage.jsx: no UI field for objectives/criteria exists anywhere, and the `createAudit` payload sends only `name, description, type, priority, mode, templateId, startDate, dueDate, projectId, leadAuditor, secondaryAuditors` — no `auditObjective` or `auditScope`. The backend `audit.model.js` already has dedicated fields for exactly this (`auditObjective` string; `auditScope.clauses`/`auditScope.description`, explicitly commented \"ISO 27001 Clause 9.2.2\" / \"Audit Report Fields\") but the frontend never surfaces or sends them — confirms still open.\n\nClaude Fix Prompt:\n```\nFix D-04 in vibrantix-client-panel/src/components/audit-assurance-2/CreateTemplateAuditPage.jsx and audit.model.js.\n\nISO 19011 §5.4 requires audit objectives and criteria — neither field exists in the UI. Note: audit.model.js already has auditObjective and auditScope.clauses/description fields (unused, duplicated — see M-005); reuse those instead of adding new ones.\n\nRequired changes:\n1. CreateTemplateAuditPage.jsx: add tag-input/textarea for each, wired to the existing auditObjective/auditScope model fields. Pre-populate auditCriteria with the selected framework name on Quick Template selection.\n2. Required for certification type, optional for internal.\n3. Display both prominently at the top of Audit Detail view.\n```",
     "requirement": "ISO 19011 §5.4",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 3,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 4,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -38,9 +38,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Functional Defect",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "`secondaryAuditors` state + multi-select UI with dedup guard and 10-person cap present in `audit-assurance-2/CreateTemplateAuditPage.jsx` lines 242, 870–895 (prior agent checked wrong directory)",
+    "fixEvidence": "Re-verified 2026-08-22. `secondaryAuditors` state declared at line 314; multi-select `Select` + badge chips at lines 945-986 with a dedup guard (`!secondaryAuditors.includes(val)`) and a 10-person cap (`secondaryAuditors.length < 10`), both at line 954; removal via badge click at line 977; included in the submit payload at line 616. Citation corrected from the original 242/870-895.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -52,9 +52,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Functional Defect",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "Free-text description field present; no longer hardcoded — CreateTemplateAuditPage.jsx lines 241, 757-768",
+    "fixEvidence": "Re-verified 2026-08-22. Free-text `Textarea` bound to `description`/`setDescription`, with placeholder and a 1000-char counter, at lines 832-844 (state declared line 313). The hardcoded-template-name behaviour survives only as a fallback when the field is left empty (`description.trim() || \\`Created from template: ...\\`` at line 607), which is reasonable, not a defect. Citation corrected from the original 241/757-768.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -66,9 +66,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "ISO Compliance Gap",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "NC model now has ncType, objectiveEvidence, targetClosureDate — audit-nonconformance.model.js lines 28, 34, 44",
+    "fixEvidence": "Re-verified 2026-08-22 against the post-merge `audit-nonconformance.model.js` (audit_findings and audit_nonconformances are now one collection, discriminated by `recordType: 'finding'|'car'`). The literal field name `ncType` no longer exists — it was renamed `type` (line 61, enum-validated against `NC_TYPES`) as part of that merge. `objectiveEvidence` (lines 77-80, required when `recordType==='car'`) and `targetClosureDate` (lines 105-108, required when `recordType==='car'`) are both present exactly as the original fix intended. `corrective-action.service.js`'s `resolveType()` (lines 59-63) is a documented legacy-compatibility shim that still accepts an old-style `ncType` request field from not-yet-migrated frontend callers and maps it onto the canonical `type` enum.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -81,9 +81,9 @@
     "category": "Audit Integrity",
     "requirement": "ISO 27001 Clause 7.5.3",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 3,
-    "fixEvidence": "Comment soft-delete via deletedAt, deletedBy, deletionReason fields — audit-scope-item.model.js lines 101-103",
+    "fixEvidence": "Re-verified 2026-08-22. `audit-scope-item.model.js`'s `commentSchema` (lines 165-183) carries `deletedAt`/`deletedBy`/`deletionReason` (lines 179-182). `audit-assurance.controller.js`'s `deleteComment()` (lines 2011-2059) sets those three fields and saves — it never splices/removes the subdocument — with an idempotent short-circuit for an already-deleted comment (lines 2024-2027); soft-deleted comment text is redacted for non-admins in `updateScopeItem` (lines 1132-1141). Citation corrected from the original 101-103.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -91,14 +91,14 @@
     "module": "audit-assurance",
     "title": "`not_applicable` status requires no justification and creates no SoA entry — ISO 27001 Clause 6.1.3(c) requires documented exclusion reasons",
     "severity": "High",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
     "category": "ISO Compliance Gap",
-    "description": "Files: `vibrantix-client-panel/src/components/audit-assurance-2/ScopeItemDetailDrawer.jsx`, scope item update API\n\nClaude Fix Prompt:\n```\nFix D-24 in ScopeItemDetailDrawer.jsx and the scope item status update API.\n\nSetting not_applicable is one-click with no justification — violates ISO 27001 Clause 6.1.3(c).\n\nRequired changes:\n1. Intercept not_applicable selection with a mandatory modal:\n   - Exclusion Reason (dropdown): out_of_scope / not_applicable_technology / not_applicable_process / risk_accepted / other\n   - Justification Text (textarea, required, min 20 chars)\n   - Approved By (user picker, required for certification audits)\n2. Block status change if modal is dismissed.\n3. Store on scope item: exclusionReason, exclusionJustification, excludedBy, excludedAt.\n4. Auto-create/update a Statement of Applicability entry for this control.\n5. Include not_applicable items with justifications in an \"Exclusions\" section of all audit report exports.\n```",
+    "description": "Files: `vibrantix-client-panel/src/components/audit-assurance-2/ScopeItemDetailDrawer.jsx`, `vibrantix-backend/src/modules/audit-assurance/controllers/workflow.controller.js`, `controllers/soa.controller.js`\n\nRe-verified 2026-08-22 — partially fixed since last run. The 'requires no justification' half is now FALSE at the API layer: `workflow.controller.js` (lines 10-18) hard-rejects (400) any `audit_scope_item` → `not_applicable` transition unless `justificationText` is at least 10 characters, and persists it to `AuditScopeItem.notApplicableJustification` (lines 81-99). The 'creates no SoA entry' half REMAINS TRUE: the Statement of Applicability is a fully separate model/workflow (`models/audit-soa.model.js` + `controllers/soa.controller.js`) — an `AuditSoa` document is only created/updated via the explicit `POST /:auditId/soa/:scopeItemId` (`updateSoaControl`), which independently requires its own `exclusionReason` when `applicable:false` (lines 364-369, citing ISO 27001 §6.1.3(d) in its own error message). Nothing in the workflow transition (or anywhere else in the module) auto-creates or syncs an SoA row when a scope item becomes `not_applicable`; `_merge()` (soa.controller.js line 150) defaults `applicable: true` for any scope item with no existing SoA doc, so a scope item marked not-applicable on the audit side still shows as \"Applicable\" on the SoA side until someone manually re-enters the same decision on the separate SoA tab. No `approvedBy`/exclusion-reason-dropdown exists on the scope-item side either (only a single free-text `notApplicableJustification`).\n\nClaude Fix Prompt:\n```\nFix the remaining gap for D-24: when a scope-item workflow transition to not_applicable succeeds in workflow.controller.js, also upsert the corresponding AuditSoa document (applicable:false, exclusionReason mirrored from justificationText) via the same code path soa.controller.js's updateSoaControl uses, so the SoA tab and the scope item never disagree about applicability.\n```",
     "requirement": "ISO 27001 Clause 6.1.3(c)",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 3,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 4,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -110,9 +110,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Functional Defect",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 2,
-    "fixEvidence": "Status changes now routed through `audit.changeStatus()` which enforces transition map — `audit-assurance.controller.js` line 608",
+    "fixEvidence": "Re-verified 2026-08-22. `audit.model.js` defines a real `AUDIT_TRANSITIONS` map (lines 279-285: draft→[active,cancelled], active→[on_hold,closed,cancelled], on_hold→[active,closed,cancelled], closed→[], cancelled→[]) and `changeStatus()` (lines 288+) hard-throws a 403 (\"Closed audits are immutable and cannot change status.\") if the current status is closed/cancelled. `audit-assurance.controller.js`'s `updateAudit()` (line 716-717) routes every status change through `audit.changeStatus()` — the `status` field is never written directly to the document. Citation corrected from the original 608 to 716-717.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -123,10 +123,10 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Data Integrity",
-    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/controllers/audit-assurance.controller.js:598–612`\n\nRoot Cause: `deleteAudit()` deletes the audit and scope items but does not cascade to `audit_findings` or `audit_nonconformances`. These records remain with a dangling `auditId` reference.\n\nClaude Fix Prompt:\n```\nFix H-002 in vibrantix-backend/src/modules/audit-assurance/controllers/audit-assurance.controller.js lines 598–612.\n\ndeleteAudit() leaves orphaned findings, NCs, and CARs.\n\nRequired changes:\n1. Pre-delete check:\n     const [findingCount, ncCount, carCount] = await Promise.all([\n       AuditFinding.countDocuments({ auditId, isDeleted: { $ne: true } }),\n       AuditNonConformance.countDocuments({ auditId, deletedAt: null }),\n       CorrectiveAction.countDocuments({ auditId, status: { $nin: ['closed', 'cancelled'] } })\n     ]);\n2. If any exist, reject 422: \"Cannot delete audit with open findings, NCs, or CARs.\"\n3. If permitted (draft only), use a transaction to soft-delete in order: scope items → findings → NCs → audit document.\n4. Never hard-delete audit records that have associated findings.\n```",
+    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js:819–834` (citation corrected from the original 598–612 due to file growth)\n\nRe-verified 2026-08-22: `deleteAudit()` (current lines 819-834) still cascades only `AuditScopeItem.deleteMany({auditId})`, `AuditAssuranceChange.deleteMany({auditId})`, and `audit.deleteOne()` via `Promise.all` — no query against `AuditNonConformance` (the merged findings/CARs collection) exists before deletion. Orphaned finding/CAR documents still pointing at a deleted `auditId`/`scopeItemId` remain a live risk. Defect reproduces exactly as originally described.\n\nClaude Fix Prompt:\n```\nFix H-002 in vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js lines 819–834.\n\ndeleteAudit() leaves orphaned findings and CARs in the merged audit_nonconformances collection.\n\nRequired changes:\n1. Pre-delete check:\n     const [openFindingsAndCars] = await Promise.all([\n       AuditNonConformance.countDocuments({ auditId, deletedAt: null, status: { $nin: ['closed', 'cancelled', 'verified'] } }),\n     ]);\n2. If any exist, reject 422: \"Cannot delete audit with open findings or corrective actions.\"\n3. If permitted (draft only), use a transaction to soft-delete in order: scope items → audit_nonconformances rows → audit document.\n4. Never hard-delete audit records that have associated findings/CARs.\n```",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 2,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -137,11 +137,10 @@
     "status": "in_progress",
     "statusRaw": "🟡 IN_PROGRESS",
     "category": "Data Integrity",
-    "description": "Files: `audit-scope-item.model.js` (isDeleted+deletedAt), `audit-finding.model.js` (isDeleted), `audit-nonconformance.model.js` (deletedAt)\n\nRoot Cause: Three different soft-delete conventions are used across the module. Controllers filter inconsistently, causing deleted records to appear in some query results.\n\nClaude Fix Prompt:\n```\nFix H-003 across audit-assurance models and controllers.\n\nThree different soft-delete conventions cause deleted records to leak into results.\n\nStandardise to deletedAt: Date (null = active, Date = deleted):\n1. audit-scope-item.model.js: add deletedAt: { type: Date, default: null }. If isDeleted exists, add a pre-save hook: if (this.isDeleted && !this.deletedAt) this.deletedAt = new Date().\n2. audit-finding.model.js: same.\n3. audit-nonconformance.model.js: already uses deletedAt — verify all queries filter on it.\n4. Add a Mongoose plugin or default query filter on each model: schema.pre(/^find/, function() { if (!this.getQuery().includeDeleted) this.where({ deletedAt: null }); }).\n5. Audit every controller query to confirm consistent filtering.\n```",
+    "description": "Files: `audit-scope-item.model.js` (isDeleted+deletedAt), `models/audit-finding.model.js` (isDeleted+deletedAt, now legacy/dead-write), `audit-nonconformance.model.js` (deletedAt only)\n\nRe-verified 2026-08-22, architecture has shifted since last run (audit_findings and audit_nonconformances have been merged into one collection). Current state: `audit-nonconformance.model.js` is now fully standardized on `deletedAt`/`deletedBy` only (lines 155-156, query-exclusion middleware lines 195-202) — this part of the prior partial fix holds. `models/audit-finding.model.js` (the pre-merge model) still carries both `isDeleted` and `deletedAt` with sync-on-save middleware (lines 96-103) — but per `findings.controller.js`'s own code comments (lines 18-22) this model is no longer written to anywhere in the module (dead-write, retained read-only as a rollback safety net) and `controllers/programme.controller.js` is the one remaining live reader of it, meaning the Audit Programme report's findings summary is now silently stale (returns 0/empty going forward) — a new, related bug from the migration, not itself one of the tracked defect IDs. `audit-scope-item.model.js` still carries BOTH `isDeleted` and `deletedAt` with the same sync middleware (lines 357-359, 392-398) — this part of the original defect is unchanged and still open. Net: standardization is real for the merged NC/CAR collection but the scope-item model (and the now-orphaned legacy finding model) remain dual-field, so \"in_progress\" remains the accurate status.\n\nClaude Fix Prompt:\n```\nFix H-003 remaining scope: standardise audit-scope-item.model.js to deletedAt-only (it already has a pre-save sync hook keeping isDeleted in step, so this is a read-path cleanup — update all controller queries that check isDeleted directly to check deletedAt instead, then drop the isDeleted field in a follow-up migration). Separately, migrate controllers/programme.controller.js off the dead AuditFinding model onto AuditNonConformance (recordType:'finding') so its report data stops being silently stale.\n```",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 2,
-    "fixEvidence": "`audit-nonconformance.model.js` standardised to `deletedAt`; `audit-finding.model.js` retains both `isDeleted` AND `deletedAt` with sync middleware — partial fix only",
+    "lastVerified": "2026-08-22",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -152,10 +151,10 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Security Issue",
-    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/routes/audit-closure.routes.js:16–17`\n\nRoot Cause: Approve and reject closure routes use `requirePermission('audit.update')`. The lead auditor who submitted the closure also holds `audit.update`, enabling self-approval. ISO 27001 requires independent review.\n\nClaude Fix Prompt:\n```\nFix H-004 in vibrantix-backend/src/modules/audit-assurance/routes/audit-closure.routes.js lines 16–17.\n\nClosure approval uses audit.update — submitting auditor can approve their own closure.\n\nRequired changes:\n1. Create permission: audit.approve_closure.\n2. Update approve/reject routes to requirePermission('audit.approve_closure').\n3. In approveClosure() service, add independence check:\n     if (closure.submittedBy.toString() === userId.toString())\n       throw createError(403, 'You cannot approve a closure you submitted.');\n4. Assign audit.approve_closure only to Audit Manager and Admin roles — not Lead Auditor.\n5. Document permission matrix in the routes directory.\n```",
+    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/routes/audit-closure.routes.js:20–22` (citation corrected from the original 16–17 due to file growth)\n\nRe-verified 2026-08-22: `/request-approval`, `/approve`, and `/reject` all still use `requirePermission('audit.update')`. This is confirmed still too broad — and notably, `audit.approve` DOES exist and is actively enforced elsewhere in this same module (`routes/governance.routes.js:45-48` gates report approve/reject/publish/archive with it), so there is no technical reason closure approval couldn't use the same permission — it simply wasn't wired up here. A partial mitigation exists that wasn't present in the original defect write-up: `audit-closure.service.js`'s `approveClosure()` (lines 142-144) now blocks the LITERAL same user who requested closure from approving it (`AppError.forbidden('Approver cannot be the same as the requestor')`). However, any other user merely holding the broad `audit.update` permission — not a dedicated approver/manager role — can still approve/reject, so the core role-separation gap remains.\n\nClaude Fix Prompt:\n```\nFix H-004 in vibrantix-backend/src/modules/audit-assurance/routes/audit-closure.routes.js lines 20-22.\n\nChange requirePermission('audit.update') to requirePermission('audit.approve') on the /request-approval, /approve, and /reject routes — audit.approve already exists as a permission (see governance.routes.js) and just needs to be applied here too. Assign audit.approve only to Audit Manager and Admin roles — not Lead Auditor.\n```",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 2,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -167,9 +166,9 @@
     "statusRaw": "🟢 FIXED",
     "category": "Security Issue",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 2,
-    "fixEvidence": "`addEvidence()` now validates extension via `ALLOWED_EXTENSIONS.has(ext)` and constrains S3 path to `evidence/$orgId/` — `corrective-action.service.js` lines 328–338",
+    "fixEvidence": "Re-verified 2026-08-22. `corrective-action.service.js` defines `ALLOWED_EXTENSIONS`/`ALLOWED_MIME_TYPES` sets and `MAX_EVIDENCE_BYTES = 25MB` (lines 24-34). `addEvidence()` (lines 461-514) validates the extension allowlist (482-487), constrains the S3 path to `evidence/${orgId}/` (490-492), and verifies real server-side size/MIME via S3 `HeadObject` (497-510) rather than trusting client-supplied metadata. `uploadEvidenceFile()` (lines 554-582) applies the same three checks for direct uploads. Confirmed fixed and more thorough than originally claimed. Citation corrected from the original 328-338.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -180,10 +179,10 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Functional Defect",
-    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js:52–202`\n\nRoot Cause: The closure lifecycle (`not_started → in_progress → pending_approval → approved/rejected → closed`) has no state machine. `rejected → approved` is possible without a rework cycle.\n\nClaude Fix Prompt:\n```\nFix H-006 in vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js lines 52–202.\n\nClosure transitions are not validated — rejected can go directly to approved.\n\nRequired changes:\n1. Define transition map:\n     const CLOSURE_TRANSITIONS = {\n       not_started: ['in_progress'],\n       in_progress: ['pending_approval'],\n       pending_approval: ['approved', 'rejected'],\n       rejected: ['in_progress'],\n       approved: ['closed'],\n       closed: []\n     };\n2. Validate every status update against this map; throw 422 on invalid transition.\n3. Rejection must require rejectionReason (throw 400 if missing) and record who rejected and when.\n4. Return to in_progress after rejection must require updatedChecklistNotes documenting what was reworked.\n```",
+    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js:47–203` (citation corrected from the original 52–202)\n\nRe-verified 2026-08-22 — narrower than originally described. The `not_started → pending_approval` checklist-bypass half is NO LONGER TRUE: `requestApproval()` (lines 87-129) hard-blocks with a 400 unless `checklist.length > 0` and every item is completed, regardless of the closure's current status. The `rejected → approved` half REMAINS TRUE: `rejectClosure()` (lines 172-203) only flips `closureStatus`/`approval.status` to 'rejected' — nothing resets checklist completion or forces documented rework. `requestApproval()`'s only block is `approval.status === 'approved'` (line 106); 'rejected' passes straight through, so a requestor can immediately re-call `requestApproval()` (re-entering `pending_approval` with zero required rework) and then get approved, with no state machine enforcing that any rework actually happened or was documented.\n\nClaude Fix Prompt:\n```\nFix the remaining half of H-006 in audit-closure.service.js: requestApproval(). When called while closure.approval.status === 'rejected', require a new field (e.g. reworkNotes, min 20 chars) documenting what was changed since rejection before allowing re-entry to pending_approval, and store it on the closure record's history for the eventual approver to review.\n```",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
-    "runsOpen": 2,
+    "lastVerified": "2026-08-22",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   },
   {
@@ -191,13 +190,13 @@
     "module": "audit-assurance",
     "title": "Scope import error `console.error()`'d but not re-thrown — API returns `201 Created` with empty audit; user gets false success",
     "severity": "High",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
     "category": "Functional Defect",
-    "description": "Files: `vibrantix-backend/src/modules/audit-assurance/controllers/audit-assurance.controller.js:188–230`\n\nRoot Cause: Catch blocks in the import flow call `console.error()` and `continue`/return without re-throwing. The calling controller receives a resolved promise and returns `201 Created` for an empty or partial audit.\n\nClaude Fix Prompt:\n```\nFix H-007 in vibrantix-backend/src/modules/audit-assurance/controllers/audit-assurance.controller.js lines 188–230 and the scope import service.\n\nImport errors are swallowed — API returns 201 for failed/partial imports.\n\nRequired changes:\n1. In every catch block in the import service, replace console.error() + continue/return with: throw err (or a wrapped AppError).\n2. In the controller, wrap the service call:\n     try {\n       await auditService.importScope(auditId, scopeData);\n     } catch (err) {\n       return reply.code(500).send({ error: 'Scope import failed', detail: err.message });\n     }\n3. For partial success (some items imported, some failed), return 207 Multi-Status listing which items failed — never 201.\n4. Replace all console.error() in this path with logger.error().\n```",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-06-18",
+    "lastVerified": "2026-08-22",
     "runsOpen": 2,
+    "fixEvidence": "Re-verified 2026-08-22. `audit-assurance.controller.js`'s `createAudit()` (lines 294-332) wraps each import mode (`intelli_audit`, `requirements`, `template`) in a try/catch that logs via `logger.error(...)` (not `console.error`), rolls back by deleting the just-created audit document (`AuditAssurance.deleteOne({_id: audit._id})`), and returns `res.status(500).json({ error: 'Scope import failed', detail: err.message })` — never a silent fall-through to 201. Citation corrected from the original 188-230.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
   }
 ]
