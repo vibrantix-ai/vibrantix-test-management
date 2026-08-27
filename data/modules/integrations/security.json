@@ -236,5 +236,30 @@
     "status": "active",
     "createdAt": "2026-07-31",
     "updatedAt": "2026-07-31"
+  },
+  {
+    "id": "INTG-SEC-008",
+    "module": "integrations",
+    "category": "security",
+    "subFeature": "Sophos Central — Credential Scope & Host Allow-List",
+    "title": "SophosCentralConnector enforces tenant-only OAuth2 credentials and a strict *.central.sophos.com host allow-list on the API host it discovers at runtime",
+    "description": "SophosCentralConnector.discoverTenant() calls Sophos's global whoami endpoint and requires idType === 'tenant', rejecting partner- or organization-scoped service principals outright. It then validates the returned data-region API host (validateApiHost()) against a strict https + *.central.sophos.com allow-list before ever issuing a request to it — rejecting a missing host, a different domain, or a suffix-spoofed lookalike (e.g. central.sophos.com.attacker.example.com). This is a genuine, verified control: unlike a credential-scope check alone, it also prevents a compromised or malicious whoami response from redirecting all subsequent evidence collection to an attacker-controlled host.",
+    "priority": "P0",
+    "environment": ["dev", "stage"],
+    "type": "both",
+    "automationStatus": "automated",
+    "preconditions": ["Sophos Central connector with valid client-credentials configured"],
+    "steps": [
+      "Mock the whoami response with idType 'partner' and idType 'organization' — confirm testConnection() rejects both with a message naming the received idType",
+      "Mock the whoami response with a data-region host on a suffix-spoofed lookalike domain — confirm testConnection() rejects it and no request is ever issued to that host",
+      "Mock a genuine tenant response with a real *.central.sophos.com data-region host — confirm it is accepted"
+    ],
+    "expectedResult": "Non-tenant idType is always rejected before any evidence API is called. A data-region host that is missing, on the wrong domain, or suffix-spoofed is rejected and never dereferenced. Only a genuine https://*.central.sophos.com origin is accepted and used for subsequent calls.",
+    "tags": ["sophos-central", "ssrf-guard", "credential-scope", "positive-control"],
+    "requirement": "ISO 27001 Annex A.8.20",
+    "owner": "Security",
+    "status": "active",
+    "createdAt": "2026-08-24",
+    "updatedAt": "2026-08-24"
   }
 ]
