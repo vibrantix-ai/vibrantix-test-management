@@ -1,5 +1,48 @@
 [
   {
+    "id": "EM-040",
+    "module": "evidence-management",
+    "title": "AI-credit reservation leak in the single-file AI-upload path — `reserve()` is called outside any try/catch, so a downstream throw in `Evidence.create`/`debugLog`/`assignEvidenceCode` never commits or cancels the reservation",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "AI Billing and Entitlement Gating",
+    "requirement": null,
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:788",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:794-828",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:830-840",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:858-891"
+    ],
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Evidence_Management_QA_Agent",
+    "description": "**Files:** `vibrantix-backend/src/modules/evidence/evidence-upload.controller.js` — `uploadAI` handler (single-file AI-assisted upload, `POST /upload/ai`)\n**Root Cause:** `aiUploadBilling.reserve(req.orgId, evidenceId, aiUploadConfig)` is called at line 788, OUTSIDE any try/catch block. The following code — `Evidence.create(...)` (lines 794-828), `debugLog(...)` (lines 830-838), and `assignEvidenceCode(...)` (line 840) — is also NOT wrapped in try/catch. Only `queueUploadJobs`/`commitSuccessful`/`cancelFailed` (lines 858-891) are inside a try/catch that correctly commits or cancels the reservation. Contrast with the bulk-upload path (`uploadAIBulk`, lines 927-1075) where `reserve()` at line 976 IS inside the same try block that also contains `Evidence.create` and `assignEvidenceCode`, with `cancelFailed` in the catch (lines 1058-1069) — the single-file path is inconsistent with its own bulk sibling.\n**Impact:** If `Evidence.create` throws (Mongoose validation error, duplicate key, transient Mongo error) after the credit reservation at line 788 succeeds, the reservation is never committed (no charge, so no evidence produced) NOR cancelled (so the hold is never released) — the customer's AI-upload allowance/credit balance is permanently strand-held for work that never happened, a real entitlement/billing integrity bug that would surface as customers losing AI credits with no matching evidence record to show for it.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-backend/src/modules/evidence/evidence-upload.controller.js — uploadAI handler\n\n1. Wrap the reserve() call and everything through Evidence.create/debugLog/assignEvidenceCode in one try/catch, mirroring the uploadAIBulk pattern (lines 971-1074).\n2. In the catch, call aiUploadBilling.cancelFailed(aiCreditReservationId) before re-throwing/responding with the error.\n3. Add a regression test: mock Evidence.create to throw, assert cancelFailed is called with the reservation id from reserve().\n```"
+  },
+  {
+    "id": "EM-041",
+    "module": "evidence-management",
+    "title": "Presigned-upload confirm path bypasses magic-byte content validation — declared `mimeType` is trusted with no inspection of the actual uploaded S3 object bytes, unlike the direct multipart upload path",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Security",
+    "requirement": "ISO 27001 Annex A.8.20",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence/evidence-upload.routes.js:79-87",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.routes.js:120-129",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:1713-1751",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:1757-1817",
+      "vibrantix-backend/src/modules/evidence/evidence-upload.multer.js:96-117"
+    ],
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Evidence_Management_QA_Agent",
+    "description": "**Files:** `evidence-upload.controller.js:1713-1751` (`generateUploadUrl`, `POST /upload/presigned`), `:1757-1817` (`confirmPresignedUpload`, `POST /:evidenceId/files/confirm`); `evidence-upload.routes.js:79-87,120-129` (neither route has `validateMagicBytes` attached); `evidence-upload.multer.js:96-117` (`validateMagicBytes` — the magic-byte check that IS attached to every direct multer route)\n**Root Cause:** The direct multipart upload path (`multerUpload`/`multerSingle` + `validateMagicBytes`, attached on every route in `evidence-upload.routes.js` lines 58/72/73/76/132) inspects the first 4100 bytes of every uploaded file against `ALLOWED_DETECTED_MIMES` — specifically to defend against a file claiming an allowed MIME type while actually containing disallowed content (the multer.js file's own comment explains this is exactly why `application/octet-stream` is excluded: \"any file can claim this type\"). The presigned-upload flow has no equivalent check: `generateUploadUrl` validates the CLIENT-DECLARED `mimeType` against `ALLOWED_MIME_TYPES` (line 1719-1724, correctly excluding text/html etc.) before issuing the presigned URL, but the client then uploads the actual file bytes directly to S3 — bypassing the application entirely — and `confirmPresignedUpload` only verifies file SIZE via an S3 HEAD request (lines 1775-1783); it never downloads or inspects the object's actual bytes. The `mimeType` stored on `evidence.files[]` (line 1795: `mimeType: mimeType || s3Meta.contentType`) is whatever the client declared, not a magic-byte-verified value.\n**Impact:** A malicious client can request a presigned URL declaring an allowed mimeType (e.g. `application/pdf`), then PUT arbitrary byte content (e.g. an HTML payload) to S3 with a `Content-Type: application/pdf` header satisfying the presign signature — content the multer path's magic-byte check would have rejected — and it becomes a confirmed evidence file with no server-side content verification at any point. Files can later be served `inline` (confirmed at `evidence.controller.js:898` and `evidence-upload.controller.js:1524`), so a content-type/content mismatch is a meaningful defense-in-depth gap versus the multer path's documented threat model.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-backend/src/modules/evidence/evidence-upload.controller.js — confirmPresignedUpload\n\n1. After the existing S3 HEAD/size check, download the first ~4KB of the object (S3 GetObject with a Range header) and run it through the same fileTypeFromBuffer + ALLOWED_DETECTED_MIMES check used by validateMagicBytes in evidence-upload.multer.js.\n2. If the detected type is disallowed, delete the S3 object and the TenantStorageObject reservation (mirroring the existing size-mismatch rejection path at lines 1779-1783) and return 400.\n3. Extract the magic-byte check in evidence-upload.multer.js into a reusable function callable both from validateMagicBytes (multer path) and confirmPresignedUpload (presigned path) instead of duplicating logic.\n```"
+  },
+  {
     "id": "EM-004",
     "module": "evidence-management",
     "title": "ISO 27001 framework version badge not rendered — `ControlMappingTable.jsx` badge only renders for `aws_/azure_/gcp_/k8s_` prefixes; ISO 27001 version silently hidden; auditors cannot distinguish 2013 (114 controls) from 2022 (93 controls)",
@@ -8,10 +51,10 @@
     "statusRaw": "🔴 OPEN",
     "category": "ISO Compliance",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/ControlMappingTable.jsx` — badge renderer\n**Root Cause:** The version badge renderer uses a prefix-match that covers only `aws_`, `azure_`, `gcp_`, `k8s_` prefixes. ISO 27001 framework IDs use a different pattern (e.g. `iso27001_2022`). They fall through the match without rendering any version indicator, leaving auditors unable to distinguish the 2013 edition (114 controls) from the current 2022 edition (93 controls).\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/ControlMappingTable.jsx\n\nIn the badge renderer function, add:\n  if (frameworkId.includes('iso27001') || frameworkId.includes('27001')) {\n    const year = frameworkId.match(/\\d{4}/)?.[0];\n    if (year >= 2022) return <Badge color=\"green\">ISO 27001:2022</Badge>;\n    return <Badge color=\"yellow\">ISO 27001:2013 <Tooltip>Superseded — current standard is 2022</Tooltip></Badge>;\n  }\nPlace this check before the cloud-provider checks to give it priority.\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/control-mapping/ControlMappingTable.jsx:83-97`; also duplicated in `control-mapping/tabs/ApprovedMappingsTable.jsx:25-33`\n**Root Cause:** The version/provider badge renderer's if/else-if ladder still only matches `aws_`/`_aws`, `azure`, `gcp`, and `k8s`/`kubernetes` — confirmed no `iso27001`/`ISO`/`27001` branch exists in either file. A framework named `iso27001_2022` falls through with no provider badge.\n**Re-verified 2026-08-27:** STILL OPEN, and the same unhandled logic is now duplicated in a second file (`ApprovedMappingsTable.jsx`), doubling the maintenance burden of the fix.\n**Claude Fix Prompt:**\n```\nFiles: ControlMappingTable.jsx AND ApprovedMappingsTable.jsx (fix both — the logic is duplicated)\n\nIn the badge renderer function, add before the cloud-provider checks:\n  if (rawName.toLowerCase().includes('iso27001') || rawName.toLowerCase().includes('27001')) {\n    const year = rawName.match(/\\d{4}/)?.[0];\n    provider = year >= 2022 ? 'ISO 27001:2022' : 'ISO 27001:2013 (superseded)';\n  }\nConsider extracting the shared badge logic into one utility function imported by both files instead of maintaining two copies.\n```"
   },
   {
     "id": "EM-005",
@@ -23,25 +66,26 @@
     "category": "Data Leakage",
     "requirement": "ISO 27001 Annex A.8.16",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceRequestsContent.jsx`, `AutoCollectorsContent.jsx`\n**Root Cause:** Development-era `console.log` calls were never removed from both components. They log internal project identifiers, organization IDs, and API response payloads to the browser DevTools console in production builds, violating A.8.16 (information in application logs).\n**Claude Fix Prompt:**\n```\n1. In EvidenceRequestsContent.jsx, remove all console.log calls (approximately 6–8 statements).\n2. In AutoCollectorsContent.jsx, remove all console.log calls (approximately 4–6 statements).\n3. Run: grep -rn \"console.log\" src/components/evidence-management/ and fix any remaining instances.\n4. Add ESLint rule to prevent future occurrences: \"no-console\": \"error\" in the project's .eslintrc.js.\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceRequestsContent.jsx` (11 statements: lines 67,80,82,88,89,91,94,101,102,103,160), `AutoCollectorsContent.jsx` (15 statements: lines 199,204,213,230,234,242,245,325,328,340,346,353,361,539,563)\n**Root Cause:** Development-era `console.log` calls were never removed. They log internal project identifiers, organization IDs, and API response payloads to the browser DevTools console in production builds, violating A.8.16.\n**Re-verified 2026-08-27:** STILL OPEN — and the count has grown, not shrunk: 26 total console.log statements confirmed (11 + 15) vs. the ~12 originally documented.\n**Claude Fix Prompt:**\n```\n1. In EvidenceRequestsContent.jsx, remove all 11 console.log calls (lines 67,80,82,88,89,91,94,101,102,103,160).\n2. In AutoCollectorsContent.jsx, remove all 15 console.log calls (lines 199,204,213,230,234,242,245,325,328,340,346,353,361,539,563).\n3. Run: grep -rn \"console.log\" src/components/evidence-management/ and fix any remaining instances.\n4. Add ESLint rule to prevent future occurrences: \"no-console\": \"error\" in the project's .eslintrc.js.\n```"
   },
   {
     "id": "EM-006",
     "module": "evidence-management",
     "title": "No due date or SLA field on evidence requests — `CreateEvidenceRequestDrawer` collects no `dueDate`; overdue requests indistinguishable from recently created ones; violates ISO 27001:2022 Clause 9.2",
     "severity": "High",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
     "category": "ISO Compliance",
     "requirement": "ISO 27001:2022 Clause 9.2",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
+    "lastVerified": "2026-08-27",
     "runsOpen": 1,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/CreateEvidenceRequestDrawer.jsx`; `vibrantix-backend/src/modules/evidence/evidence-request.model.js`\n**Root Cause:** The request creation form collects title, description, and assignee but no `dueDate` field. The schema likely has no required `dueDate`. Without a due date, no overdue indicator, SLA tracking, or automated reminder is possible.\n**Claude Fix Prompt:**\n```\nBackend — evidence-request.model.js:\n1. Add: dueDate: { type: Date, required: true }\n2. Add server-side validation: dueDate: Joi.date().min('now').required()\n\nFrontend — CreateEvidenceRequestDrawer.jsx:\n3. Add <DatePicker label=\"Due Date\" required /> field.\n4. Client-side validation: if (!dueDate || dueDate < new Date()) setError('Due date must be in the future').\n\nFrontend — EvidenceRequestsContent.jsx:\n5. Add overdue badge:\n   const isOverdue = req.dueDate && new Date() > new Date(req.dueDate) && req.status !== 'fulfilled';\n   if (isOverdue) render <Badge color=\"red\">Overdue — {daysOverdue}d</Badge>\n```"
+    "fixEvidence": "Re-verified 2026-08-27: `CreateEvidenceRequestDrawer.jsx` now has a `dueDate` form field (state at line 47, DatePicker input at lines 428-429, submitted at line 267). Backend `evidence-request.model.js:29` has `dueDate: { type: Date }` and `evidence-request.controller.js:158-159` validates it's a parseable date. `EvidenceRequestsContent.jsx:259-266` now computes `isOverdue` and renders a red 'Overdue' badge. Residual gap: `dueDate` is not `required: true` on the backend schema nor `isRequired` on the frontend FormControl, so a request can still be created with no due date — worth a follow-up but the core defect (field did not exist at all) is resolved.",
+    "description": "**Files (original):** `vibrantix-client-panel/src/components/evidence-management/CreateEvidenceRequestDrawer.jsx`; `vibrantix-backend/src/modules/evidence-request/evidence-request.model.js`\n**Root Cause (original):** The request creation form collected title, description, and assignee but no `dueDate` field at all.\n**Status:** FIXED — see fixEvidence."
   },
   {
     "id": "EM-007",
@@ -53,10 +97,10 @@
     "category": "Non-Functional UI",
     "requirement": "ISO 27001:2022 Clause 9.3",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/AnalyticsContent.jsx` — Download button\n**Root Cause:** The Download button in `AnalyticsContent.jsx` was added as a UI placeholder during development. No `onClick` handler was implemented; clicking it does nothing.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/AnalyticsContent.jsx\n\nIn the Download button onClick:\n1. Collect analytics data from component state (coverage %, status counts, review times, framework breakdown).\n2. Build a CSV:\n   const csvRows = [headers, ...dataRows].map(r => r.join(',')).join('\\n');\n3. Trigger download:\n   const blob = new Blob([csvRows], { type: 'text/csv' });\n   const url = URL.createObjectURL(blob);\n   const a = document.createElement('a'); a.href = url; a.download = `evidence-analytics-${date}.csv`; a.click();\n4. Include in CSV: Framework, Coverage%, Mapped, Total, Evidence by Status, Avg Review Time (days), Export Date.\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/AnalyticsContent.jsx:323-330` — Download/Date Range buttons\n**Root Cause:** Neither the 'Date Range' nor 'Export Report' button has an `onClick` — confirmed via a full-file grep for `onClick` in AnalyticsContent.jsx returning zero matches anywhere in the file.\n**Re-verified 2026-08-27:** STILL OPEN — no implementation added.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/AnalyticsContent.jsx\n\nIn the Export Report button onClick:\n1. Collect analytics data from component state (coverage %, status counts, review times, framework breakdown).\n2. Build a CSV and trigger a Blob download (see original fix prompt pattern).\n3. Wire the Date Range button to a popover date-range picker that re-fetches analytics scoped to the selected range.\n```"
   },
   {
     "id": "EM-008",
@@ -67,10 +111,10 @@
     "statusRaw": "🔴 OPEN",
     "category": "ISO Compliance",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/IntegrationEvidenceListPage.jsx`\n**Root Cause:** Integration evidence items (from Okta, GitHub, Jira, AWS Security Hub, etc.) are displayed without their associated ISO 27001 Annex A control references. The backend integration workers map evidence to control IDs internally, but `IntegrationEvidenceListPage.jsx` never renders an \"Annex A Control\" column.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/IntegrationEvidenceListPage.jsx\n\n1. Add MODEL_TO_ANNEX_A mapping object:\n   const MODEL_TO_ANNEX_A = {\n     'okta_user': ['A.5.15', 'A.5.16'], 'github_commit': ['A.8.32'],\n     'aws_finding': ['A.8.8', 'A.8.20'], 'jira_ticket': ['A.8.19'], ...\n   };\n2. Add \"Annex A Controls\" column to the table.\n3. Render each control reference as a badge: <Badge>{control}</Badge>.\n4. If no mapping exists, render a \"Map to Control\" button linking to ControlMappingContent.\n5. Ensure backend integration evidence endpoint returns `annex_a_controls: string[]` per item.\n```"
+    "description": "**Files:** all 10 provider renderers under `vibrantix-client-panel/src/components/evidence-management/integration-hub/evidence-detail/` (GitHubEvidenceContent.jsx, JiraEvidenceContent.jsx, NessusEvidenceContent.jsx, OpenVASEvidenceContent.jsx, Rapid7EvidenceContent.jsx, SentinelEvidenceContent.jsx, SplunkEvidenceContent.jsx, SumoLogicEvidenceContent.jsx, OktaEvidenceContent.jsx, GenericEvidenceContent.jsx)\n**Root Cause:** Re-checked across all 10 provider-specific renderers (up from the original 4 documented) — a case-insensitive grep for `Annex`, `A.5`, `A.8`, `control` returns zero real Annex A control-code matches in any of them; only `Rapid7EvidenceContent.jsx` has generic prose mentions of 'controls' with no framework/control-code mapping.\n**Re-verified 2026-08-27:** STILL OPEN across the now-larger 10-renderer surface. NOTE: a static, non-computed ISO 27001/SOC2/NIST mapping DOES appear in the PDF export path (`IntegrationEvidenceDetailPage.jsx:225-229`), but it is hardcoded and identical for every evidence item regardless of type — that is a distinct, worse defect tracked separately as EM-043 (fabricated compliance data), not a fix for this gap.\n**Claude Fix Prompt:**\n```\nFiles: all 10 provider renderers under integration-hub/evidence-detail/\n\n1. Add a shared MODEL_TO_ANNEX_A mapping utility (single source of truth, imported by all 10 renderers, not duplicated).\n2. Add an \"Annex A Controls\" section/badges to each renderer using the item's canonical model/type.\n3. Ensure this is sourced from the SAME real per-evidence control-verdict data already used in IntegrationEvidenceDetailPage.jsx (controlStringId/controlTitle/verdict), not a new static list — see EM-043 for why a static list is itself a Critical defect.\n```"
   },
   {
     "id": "EM-009",
@@ -82,10 +126,10 @@
     "category": "Non-Functional UI",
     "requirement": "ISO 27001:2022 Clause 7.5.3",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx` — `handleExport`\n**Root Cause:** The `handleExport` function wraps all export calls in a generic `catch` that only shows `toast.error('Export failed')`. Unimplemented formats, network timeouts, and server errors all produce the same opaque message. Users cannot distinguish \"this format is not yet available\" from \"something went wrong\".\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx\n\n1. For each format button, check implementation status:\n   const IMPLEMENTED_FORMATS = ['csv']; // extend as formats are built\n   if (!IMPLEMENTED_FORMATS.includes(format)) {\n     return <Button disabled tooltip=\"Coming soon\"><Badge>Planned</Badge> {format.toUpperCase()}</Button>;\n   }\n2. In handleExport error handler, distinguish error types:\n   if (err.status === 404) toast.info(`${format} export is not yet available`);\n   else if (err.status === 408 || err.status === 504) toast.error('Export timed out — try a smaller date range');\n   else toast.error(`Export failed: ${err.message}`);\n3. Add a progress indicator while export is in-flight.\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx:187-218` (`handleExport`), `:376-398` (`isSupported` gate), `:583-594` (Recent Exports row Download button)\n**Root Cause:** Partially improved but core gap remains. The main format-selection UI now gates unsupported formats via `isSupported = format === 'csv'` (line 376) with a 'Coming Soon' tooltip, disabling the button — this is new since the original finding. However `handleExport` itself (lines 187-218) still coerces any non-csv format to `json` (line 190) and funnels every failure into one identical `catch` block with a generic 'Export failed' toast — no distinction between 'not implemented' vs. network/server errors. Worse: the 'Recent Exports' per-row Download button (lines 583-594) calls `handleExport(format)` for ANY historical format unconditionally, completely bypassing the `isSupported` gate that protects the main UI.\n**Re-verified 2026-08-27:** STILL OPEN (partial improvement in the primary flow; the history-row download bypass is arguably a new sub-issue worth explicit test coverage).\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx\n\n1. Apply the same isSupported check inside the Recent Exports row Download handler (line ~588) before calling handleExport — do not let history rows bypass the gate.\n2. In handleExport's catch block, distinguish error types:\n   if (err.status === 404) toast.info(`${format} export is not yet available`);\n   else if (err.status === 408 || err.status === 504) toast.error('Export timed out — try a smaller date range');\n   else toast.error(`Export failed: ${err.message}`);\n```"
   },
   {
     "id": "EM-010",
@@ -97,10 +141,10 @@
     "category": "Audit Trail",
     "requirement": "ISO 19011:2018 §6.4.9",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceValidationReviewDrawer.jsx` — `resolutionNotes` Textarea\n**Root Cause:** The `resolutionNotes` field in the AI metadata validation drawer is optional — reviewers can approve or reject AI-parsed metadata with an empty note. This mirrors EM-002 but applies to AI-assisted upload validation, where justification is equally critical for traceability.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/EvidenceValidationReviewDrawer.jsx\n\n1. In the submit handler, add before API call:\n   if (!resolutionNotes || resolutionNotes.trim().length < 30) {\n     setNoteError('Resolution note required (min 30 characters)'); return;\n   }\n2. Pass error and helperText to Textarea.\n3. Backend AI validation endpoint: add resolutionNotes: Joi.string().min(30).required()\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceValidationReviewDrawer.jsx:70` (`resolutionNotes` state)\n**Root Cause:** Worse than originally documented — `resolutionNotes` (line 70) is not merely 'optional', it is completely dead state: never rendered in any Textarea/FormControl, never read anywhere else in the file, and never passed to `evidenceValidationService.resolveWorkflow()` in `handleAcceptAI` (lines 146-194) or `handleSplitFiles` (lines 197-249). No input for it exists in the UI at all.\n**Re-verified 2026-08-27:** STILL OPEN — confirmed the field is entirely unwired, not just unvalidated.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/EvidenceValidationReviewDrawer.jsx\n\n1. Add a Textarea bound to resolutionNotes, rendered in the Accept/Keep AI metadata flow.\n2. In handleAcceptAI, add before the API call:\n   if (!resolutionNotes || resolutionNotes.trim().length < 30) {\n     setNoteError('Resolution note required (min 30 characters)'); return;\n   }\n3. Pass resolutionNotes into the resolveWorkflow() payload — it is currently never sent.\n4. Backend AI validation endpoint: add resolutionNotes: Joi.string().min(30).required()\n```"
   },
   {
     "id": "EM-011",
@@ -112,10 +156,10 @@
     "category": "Security",
     "requirement": "ISO 27001 Annex A.8.20",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-11",
-    "runsOpen": 1,
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/GDriveFileBrowser.jsx`\n**Root Cause:** `GDriveFileBrowser.jsx` calls `fetch(CS_URL, { headers: { Authorization: 'Bearer ' + token } })` using the raw JWT from Redux state. `CS_URL` is the connector service origin (a different domain). This bypasses the Next.js API proxy, violates CORS policy in production, and exposes the user's JWT to a cross-origin endpoint.\n**Impact:** CORS preflight will fail in production, breaking Google Drive integration entirely. The JWT could be intercepted or misused by the connector service.\n**Claude Fix Prompt:**\n```\n1. Create Next.js API route: pages/api/evidence/gdrive-files.js\n   — Accepts GET with query params\n   — Adds Authorization header server-side (use service account or exchange JWT)\n   — Proxies to connector service, returns response\n\n2. In GDriveFileBrowser.jsx, replace:\n   fetch(CS_URL, { headers: { Authorization: 'Bearer ' + token } })\n   with:\n   fetch('/api/evidence/gdrive-files?' + queryParams)\n\n3. Remove direct CS_URL reference from the component.\n4. Add CSRF token validation in the API route.\n```"
+    "description": "**Files:** `vibrantix-client-panel/src/services/integrationHubService.js:10-13` (`CONNECTOR_SERVICE_URL`), `:29-47` (`getIntegrationHubAccessToken`), `:52-69` (axios instance + request interceptor)\n**Root Cause:** The implementation has changed but the underlying defect persists in a different location. `GDriveFileBrowser.jsx` itself no longer makes a raw `fetch()` call (confirmed — zero `fetch(` occurrences); it now delegates to `getConnectors`/`getDriveFiles` from `integrationHubService.js`. That service still calls the connector-service origin DIRECTLY (`CONNECTOR_SERVICE_URL`, defaulting to `http://localhost:5009/api/connector-service`) via a dedicated axios instance, bypassing any Next.js API proxy, with a request interceptor (line 64) attaching `Authorization: Bearer <token>` — the token now sourced from the NextAuth session (`getSession()`, line 34) rather than Redux state, but the direct-to-connector-service-origin, proxy-bypassing pattern is unchanged.\n**Re-verified 2026-08-27:** STILL OPEN, relocated from `GDriveFileBrowser.jsx` (no longer applicable — no raw fetch there) to `integrationHubService.js` (the real current location of the bearer-token-to-connector-service-origin pattern). NOTE: separately, the specific Google Drive routes this service calls do not even exist on the connector-service side — see new Critical defect EM-042, which supersedes this as the primary blocker for the Google Drive feature specifically (this defect's security concern still applies to every other integration-hub call routed through this same service file).\n**Claude Fix Prompt:**\n```\n1. Create a Next.js API route (e.g. app/api/integration-hub/[...path]/route.js) that proxies requests to CONNECTOR_SERVICE_URL server-side, attaching the bearer token from the server-side session rather than exposing it to a cross-origin client request.\n2. In integrationHubService.js, replace the direct axios baseURL pointing at CONNECTOR_SERVICE_URL with calls to the new Next.js proxy route.\n3. Remove NEXT_PUBLIC_CONNECTOR_SERVICE_URL (a client-exposed env var) once no client code calls the connector service directly.\n```"
   },
   {
     "id": "G-CT-03",
@@ -125,7 +169,11 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Celery",
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `audit-report-generator-service/app/api/routes/report_generation.py:391-439` (`cancel_job`)\n**Re-verified 2026-08-27:** STILL OPEN. The handler's own docstring (lines 412-415) still says: \"In Phase 3, no Celery task revocation occurs (tasks are not yet dispatched). In Phase 7, this endpoint will also call celery_app.control.revoke(task_id, terminate=True)...\" — but `report_generation.py:160-161` and `reports.py:417-418` confirm Celery tasks ARE actually dispatched via `celery_app.send_task(...)` in the current codebase, contradicting the docstring's premise and confirming the revoke gap is real, not just theoretical."
   },
   {
     "id": "G-R10-01",
@@ -135,17 +183,26 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "R10 Evidence Status",
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/evidence_status_aggregator.py:180` (`expiry_str = \"\"`)\n**Re-verified 2026-08-27:** STILL OPEN — confirmed hardcoded empty string with an explicit comment 'per-item expiryDate is not returned by the controller', and there is even a passing unit test (`tests/test_phase2b_aggregators.py:843-859`, `test_expiry_date_field_is_empty_string`) that asserts this behavior, meaning the gap is codified rather than accidental."
   },
   {
     "id": "G-R10-03",
     "module": "evidence-management",
     "title": "Cannot distinguish \"not yet reviewed\" from \"actively rejected\" evidence",
     "severity": "High",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
     "category": "R10 Evidence Status",
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "fixEvidence": "Re-verified 2026-08-27: `vibrantix-backend/src/modules/audit-assurance/controllers/evidence-status.controller.js:62-64` now computes three genuinely distinct counts per scope item — `approved = attachments.filter(a => a.verdict === 'approved').length`, `rejected = attachments.filter(a => a.verdict === 'rejected').length`, `pending = attachments.filter(a => a.verdict === null || a.verdict === undefined).length` — not conflated. `audit-report-generator-service/app/services/report_generation/evidence_status_aggregator.py:34-46` documents and consumes these as distinct `approved_count`/`rejected_count`/`pending_count` fields, with `coverage_status` distinguishing 'partial' (rejected>0) from 'uncovered' (no evidence) from 'covered'.",
+    "description": "**Files (original):** R10 Evidence Status aggregation path\n**Root Cause (original):** Both 'not yet reviewed' and 'actively rejected' evidence were counted together as rejected, with no way to tell them apart.\n**Status:** FIXED — see fixEvidence. Note: `pending_count` is still computed as a derived remainder (`ev_count - approved - rejected`) rather than an independent count in the Python aggregator (`evidence_status_aggregator.py:162`) — this is the previously-documented G-R10-02 concern (not itself tracked in this JSON store) and is low-risk since approved/rejected are now independently and correctly computed."
   },
   {
     "id": "G-ST-01",
@@ -155,7 +212,11 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Storage",
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/storage/job_service.py:40-145` (`_patch`, `mark_completed`, `record_report_result`)\n**Re-verified 2026-08-27:** STILL OPEN. No MongoDB session/transaction usage found anywhere in `job_service.py` or `report_generation_tasks.py` (grep for `transaction`, `session`, `atomic` returns nothing) — `mark_completed()` patches the ReportJob document's status/output_report_ids via a plain `update_one`, separately from wherever the actual AuditReport artifact record is created, with no transactional wrapping between the two."
   },
   {
     "id": "G-ST-02",
@@ -165,6 +226,31 @@
     "status": "open",
     "statusRaw": "🔴 OPEN",
     "category": "Storage",
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `audit-report-generator-service/app/tasks/report_generation_tasks.py`, `app/services/report_generation/storage/job_service.py`\n**Re-verified 2026-08-27:** STILL OPEN — no distributed lock (Redis SETNX/lock, or a MongoDB `findOneAndUpdate`-based claim pattern) found guarding job pickup; a repo-wide search for lock-related identifiers in the report-generation task/storage layer returns no relevant results."
+  },
+  {
+    "id": "EM-039",
+    "module": "evidence-management",
+    "title": "Verdict rejection silently overwritten by next AI-upload callback",
+    "severity": "High",
+    "status": "fixed",
+    "statusRaw": "🟢 FIXED",
+    "category": "Control Mapping / UCL Verdicts",
+    "requirement": "ISO 27001 Annex A.5.3; ISO 27001:2022 Clause 9.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence/evidence.controller.js:1182-1240",
+      "vibrantix-backend/src/modules/evidence/evidence-control-verdicts.controller.js:31,120-166",
+      "vibrantix-backend/src/modules/evidence/evidence-verdict-rejection.model.js"
+    ],
+    "firstDetected": "2026-08-16",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Evidence_Management_QA_Agent",
+    "fixEvidence": "First formally persisted to the JSON store this run (previously documented only in this agent's own 'Known Confirmed Defects' narrative, never written to a severity file). Verified FIXED in code as of 2026-08-27: `evidence-control-verdicts.controller.js:135-165` (`reportControlVerdicts`, the AI-upload 'completed' callback) still does a full-array replace of `evidence.controlVerdicts` (line 139: `evidenceUpdate.controlVerdicts = verdicts.map(...)`), but it now explicitly builds a `priorByCode` lookup (lines 135-137) and, for any `uclCode` whose prior `reviewStatus` was not `'pending'` (i.e. previously `'approved'` or `'rejected'`), carries forward `reviewStatus`/`reviewedBy`/`reviewedAt`/`rejectionReason` from the prior record instead of resetting to `'pending'` (lines 141, 157-162). An inline comment (lines 123-134) explicitly documents this as a deliberate fix for exactly this bug: \"A human review decision must survive a re-run of the pipeline. This used to hard-code reviewStatus:'pending' for every incoming verdict...\". Confirmed via `git log` that this file has received targeted fix commits. No dedicated regression test exists yet for this specific preserve-on-rerun behavior — worth adding, but the production code path is confirmed correct.",
+    "description": "**Files:** `vibrantix-backend/src/modules/evidence/evidence.model.js` (`controlVerdicts[]` schema); `evidence-control-verdicts.controller.js` (AI-upload callback); `evidence-verdict-rejection.model.js` (append-only rejection log)\n**Root Cause (original, as documented in this agent's architecture notes 2026-08-16):** Rejecting an AI-suggested control verdict flipped `evidence.controlVerdicts[].reviewStatus` to `'rejected'` in place, but the next AI-upload callback for that evidence item replaced the entire `controlVerdicts[]` array wholesale, silently discarding the rejection.\n**Status:** FIXED — see fixEvidence. This record is being persisted to the JSON store for the first time in this run; it was previously described only in this agent's narrative documentation, never logged as a JSON defect."
   }
 ]
