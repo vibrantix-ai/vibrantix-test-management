@@ -13,24 +13,28 @@
       "components/risk-center/RiskHeatMap.jsx"
     ],
     "description": "`getRisksInCell` filters with `r.likelihood === cellLikelihood && r.impact === cellImpact` using strict `===`. If `likelihood` or `impact` are stored as floats (e.g., `2.5`) or strings (`\"3\"`), they never match any integer cell.",
+    "fixEvidence": "Re-verified 2026-08-27: RiskHeatMap.jsx:89-94 now computes `Math.round(Number(risk.likelihood || risk.riskAssessment?.likelihood || 0))` before the `===` comparison. Confirmed fixed for the cited pattern (separately, see new record RR-050: this component isn't wired into the Risk Center's own dashboard at all, so this fix is currently only exercised via SCRC/vCISO dashboards).",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
     "id": "RR-022",
     "module": "risk-register",
     "severity": "Low",
-    "status": "fixed",
-    "statusRaw": "✅ FIXED",
-    "component": "Risk Register Layout",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "component": "Risk Center Layout",
     "category": "Authorization Gap",
-    "title": "Single `PermissionGate permission='risk.read'` wraps all routes — no sub-permission differentiation for write, delete, or accept actions",
+    "title": "Single `PermissionGate permission='risk.read'` wraps all risk-center routes — no sub-permission differentiation for write, delete, or accept actions",
     "requirement": "A.5.3",
     "affectedFiles": [
-      "app/(private)/risk-register/layout.jsx",
-      "app/(private)/risk-register/page.jsx",
-      "risk-management-service"
+      "vibrantix-client-panel/src/app/(private)/risk-center/layout.jsx:60-62"
     ],
-    "description": "All risk register routes are behind a single `PermissionGate permission='risk.read'`. No differentiated gates for write, delete, accept, or governance actions.",
+    "description": "All risk-center routes are behind a single `PermissionGate permission='risk.read'`. No differentiated gates for write, delete, accept, or governance actions at the frontend layout level.",
+    "fixEvidence": "Re-verified 2026-08-27 per this module's own Architecture note (do not rubber-stamp fixed just because the file moved): risk-center/layout.jsx:60 still reads exactly `<PermissionGate permission=\"risk.read\" allowProjectGrant>{children}</PermissionGate>` wrapping every sub-route with a single gate. The underlying frontend gap is unchanged — only relocated from the deleted risk-register/layout.jsx. (Note: the BACKEND is correctly granular — risk-register.routes.ts and sibling route files enforce distinct risk.read/create/update/delete/approve preHandlers per route, independently confirmed 2026-08-27 — this record is specifically about the frontend gate having no equivalent differentiation.) Re-opened; was incorrectly marked fixed in a prior conversion.",
+    "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -47,6 +51,8 @@
       "app/(private)/risk-center/governance/page.jsx"
     ],
     "description": "`Documentation = Math.min(100, approvalRate + 5)` — always within 5 points of Policy Compliance. The governance radar has two nearly-identical dimensions instead of two independent signals.",
+    "fixEvidence": "Re-verified 2026-08-27: same fix as RR-010 — `documentation` in governance/page.jsx is now derived from `risksWithJustification`/`risksWithTreatmentPlan` ratios, independent of `policyApprovalRate`. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -63,6 +69,8 @@
       "components/risk-register/AIRiskDraftModal.jsx"
     ],
     "description": "When a similar existing risk is detected, the deduplication warning is shown as informational text only. Users can dismiss or ignore it and save the duplicate without any friction or forced acknowledgement.",
+    "fixEvidence": "Re-verified 2026-08-27: AIRiskDraftModal.jsx:681 disables the Save button via `isDisabled={similarRisks.length > 0 && !acknowledgedDuplicate}`, requiring an explicit 'acknowledge' click (line 513) before saving. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -79,6 +87,8 @@
       "app/(private)/risk-center/trends/page.jsx"
     ],
     "description": "Trends CSV/PDF export contains data rows only — no metadata header with time range, export timestamp, org name, or active filter state. Evidence packages are incomplete without this context.",
+    "fixEvidence": "Re-verified 2026-08-27: trends/page.jsx:323,343,360 now prepend/include organisation name, export timestamp (ISO), time range, and active filters (JSON) as metadata in both CSV and Excel/HTML exports. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -92,8 +102,13 @@
     "title": "`promotedAt` set client-side — `promotedAt` field does not exist in this codebase; false positive",
     "requirement": "cl. 8.2",
     "affectedFiles": [
-      "components/risk-register/ModuleRiskTriageQueue.jsx"
+      "vibrantix-client-panel/src/components/risk-register/ModuleRiskTriageQueue.jsx",
+      "risk-management-service/src/services/BaseIntegrationService.ts:350",
+      "risk-management-service/src/services/ModuleRiskService.ts:569,593",
+      "risk-management-service/src/types/index.ts:1318"
     ],
+    "fixEvidence": "Re-verified 2026-08-27, and the ORIGINAL REASONING was itself wrong even though the closure verdict was right: `promotedAt` DOES exist in the codebase — `moduleRiskDoc.promotedAt = now` in BaseIntegrationService.ts:350, and `promotedAt: now` in ModuleRiskService.ts:569 and :593, typed at types/index.ts:1318. It is set SERVER-SIDE (backend `now`), not client-side as the original title claimed. The record's closure (wont_fix / false positive) is still correct — there is no client-set-timestamp integrity issue — but the stated reason should read 'promotedAt exists and is properly server-set on promotion, contradicting the original false claim that the field did not exist at all', not 'field does not exist'.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   }
 ]

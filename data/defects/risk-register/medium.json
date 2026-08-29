@@ -13,6 +13,8 @@
       "app/(private)/risk-register/page.jsx"
     ],
     "description": "Clone risk action button only checks `risk.read` permission. No `risk.write` or `risk.create` guard. No warning when cloning a `Restricted` or `Confidential` risk that the clone will inherit the same classification.",
+    "fixEvidence": "Re-verified 2026-08-27: clone action in risks/page.jsx is wrapped in `<PermissionHide permission=\"risk.create\" allowProjectGrant>`, and a classification-inherited warning (`cloneClassificationWarning`) is shown in the clone confirmation modal before cloning. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -29,6 +31,8 @@
       "components/risk-center/RiskHeatMap.jsx"
     ],
     "description": "`getRiskColor` maps both `score < 5` and `score 5–9` to green. There is no \"Very Low\" zone. Negligible risks (score 1–4) are visually identical to Low risks (score 5–9).",
+    "fixEvidence": "Re-verified 2026-08-27: RiskHeatMap.jsx:75-80 now defines 5 distinct zones (Critical>=20 red, High>=15 orange, Medium>=9 yellow, Low>=4 green, Very Low<4 teal) with distinct colors. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -45,6 +49,8 @@
       "app/(private)/risk-center/governance/page.jsx"
     ],
     "description": "`reviewCadence = Math.max(0, 100 − reviewDue × 10)` — any organisation with 10+ overdue reviews scores 0% regardless of total risk count. A 500-risk org with 10 overdue is penalised identically to a 20-risk org with 10 overdue.",
+    "fixEvidence": "Re-verified 2026-08-27: governance/page.jsx:158-160 now computes `reviewCadence = Math.max(0, Math.round((1 - overdueReviews/totalRisks) * 100))` — proportional to total risk count, not a flat per-overdue-review penalty. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -61,22 +67,28 @@
       "app/(private)/risk-center/ai-predictions/page.jsx"
     ],
     "description": "Prediction factor strings contain a `riskId` reference but no clickable UI link. Auditors cannot navigate from a prediction to the underlying risk record that generated it.",
+    "fixEvidence": "Re-verified 2026-08-27: ai-predictions/page.jsx:598-606 now derives `factorRiskId` from `factor.riskId || factor.sourceRiskId` and renders `href={'/risk-center/risks/' + factorRiskId}` when present. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
     "id": "RR-016",
     "module": "risk-register",
     "severity": "Medium",
-    "status": "fixed",
-    "statusRaw": "✅ FIXED",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
     "component": "Risk Trends Page",
     "category": "Analytics Completeness",
     "title": "No year-over-year comparison — single time-window only; auditor cannot demonstrate continual improvement per ISO cl. 10.1",
     "requirement": "cl. 10.1",
     "affectedFiles": [
-      "app/(private)/risk-center/trends/page.jsx"
+      "vibrantix-client-panel/src/app/(private)/risk-center/trends/page.jsx:182,389-399"
     ],
     "description": "Trends page supports only a single time-window selection. No option to overlay a prior period or compare current year vs. prior year risk counts/scores.",
+    "fixEvidence": "Re-verified 2026-08-27: trends/page.jsx's `timeRange` selector still offers only 30d/90d/180d/1y as a single window (lines 389-399) — no comparison/overlay/prior-period option exists anywhere in the file (grepped for previousYear/comparisonData/vsLastYear/priorYear/YoY — zero matches). Not fixed; re-opened.",
+    "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -93,6 +105,8 @@
       "components/risk-register/ModuleRiskTriageQueue.jsx"
     ],
     "description": "Triage queue items from Prowler, VendorService, etc. show no `lastScanAt` or age indicator. A finding from a 6-week-old Prowler scan that has since been remediated appears identical to a fresh finding.",
+    "fixEvidence": "Re-verified 2026-08-27: ModuleRiskTriageQueue.jsx:131-136 defines `getStaleness(createdAt)` with aging(14d)/stale(30d)/very-stale(42d) thresholds plus staleness filter options. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -109,6 +123,8 @@
       "components/risk-register/AIRiskDraftModal.jsx"
     ],
     "description": "AI-returned `likelihood` and `impact` values stored as-is. Out-of-range values (0 or 6+) produce invalid scores (0 or 30+) that fall outside the 5×5 heat map grid, causing rendering errors or misplacement.",
+    "fixEvidence": "Re-verified 2026-08-27: AIRiskDraftModal.jsx:188-192 clamps via `Math.max(1, Math.min(5, Math.round(Number(draft.likelihood ?? 3))))` (same for impact) and shows a warning when clamping occurred. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -126,6 +142,8 @@
       "risk-management-service"
     ],
     "description": "The approver dropdown is not filtered to exclude the risk owner or creator. Risk owners can select themselves as the approver for their own risk acceptance.",
+    "fixEvidence": "Re-verified 2026-08-27: RiskAcceptanceWorkflow.jsx:706-712 filters `eligibleApprovers` to exclude `currentUser._id`/`.id`, `risk.ownerId`, and `risk.createdBy`. Confirmed fixed (though the workflow is unreachable in practice for real backend data per new record RR-048).",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -142,6 +160,8 @@
       "components/risk-register/RiskTreatmentPanel.jsx"
     ],
     "description": "Treatment description input has no minimum length validation. Entries like `TBD` or `see ticket` are accepted as documented treatment evidence.",
+    "fixEvidence": "Re-verified 2026-08-27: RiskTreatmentPanel.jsx:408-508 enforces a visible 30-char minimum with a disabled-save state below that threshold. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -158,6 +178,8 @@
       "risk-management-service/src/repositories/risk.repository.ts"
     ],
     "description": "In `submitAcceptanceRequest`, approvers are constructed as `data.approverIds.map((id) => ({ userId: new ObjectId(id), email: '', name: '' }))`. No user lookup is performed to populate `email` and `name`. All acceptance records in the database store blank string identity for every approver — only `userId` (ObjectId) is preserved.",
+    "fixEvidence": "Re-verified 2026-08-27: risk.repository.ts:1502-1513 now performs a real `usersCollection.find({_id: {$in: ...}})` lookup and populates `email`/`name` from the matched user documents. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -171,9 +193,11 @@
     "title": "`AcceptanceRequestSchema` enforces `justification: z.string().min(1)` — server-side accepts single-char justification; 50-char advisory is frontend-only",
     "requirement": "cl. 6.1.2(e)(2)",
     "affectedFiles": [
-      "risk-management-service/src/utils/validation.ts"
+      "risk-management-service/src/utils/validation.ts:443,457"
     ],
     "description": "`AcceptanceRequestSchema` defines `justification: z.string().min(1).max(2000)`. The frontend shows an advisory hint of 50 characters minimum, but the backend schema accepts any non-empty string. A one-character justification (`x`) passes Zod validation and is persisted as a documented risk acceptance rationale. `RenewalRequestSchema` has the same gap: `justification: z.string().min(1).max(2000)`.",
+    "fixEvidence": "Re-verified 2026-08-27: validation.ts:443 and :457 both now enforce `justification: z.string().min(50, 'Justification must be at least 50 characters...').max(2000)` server-side. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -187,8 +211,10 @@
     "title": "`getTrends` `$group` stage groups by month only, not month+year — data from different years collapses into the same bucket",
     "requirement": "cl. 10.1",
     "affectedFiles": [
-      "risk-management-service/src/repositories/risk.repository.ts"
+      "risk-management-service/src/services/RiskCenterService.ts:380-426 (getTrendsData)"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: the trends aggregation was relocated from risk.repository.ts to RiskCenterService.ts's `getTrendsData`, which now groups via `$dateToString: {format: '%Y-%m-%d', date: '$createdAt'}` — full date (year+month+day), not month-only. Confirmed fixed (and superseded — even finer-grained than the original fix would have required).",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -202,23 +228,31 @@
     "title": "`riskReduction` NaN when inherentRiskScore = 0 — already guarded with `inherentRiskScore > 0 ? ... : 0` at line ~840",
     "requirement": "cl. 6.1.2(d)",
     "affectedFiles": [
-      "components/risk-center/CreateRiskModal.jsx"
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:823-825"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: `const riskReduction = inherentRiskScore > 0 ? Math.round(...) : 0;` confirmed present (now at line 823-825). Still a genuine false positive.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
     "id": "RR-043",
     "module": "risk-register",
     "severity": "Medium",
-    "status": "fixed",
-    "statusRaw": "✅ FIXED",
+    "status": "regressed",
+    "statusRaw": "🔁 REGRESSED",
     "component": "RiskAcceptanceWorkflow",
     "category": "UX / Data Accuracy",
-    "title": "`new Date(acceptance?.expiryDate).toLocaleDateString()` passes null to `Date()` — displays 1970-01-01 epoch instead of \"No expiry set\"",
+    "title": "`new Date(acceptance?.expiryDate).toLocaleDateString()` passes null/undefined to `Date()` — displays 'Invalid Date' instead of a guarded fallback",
     "requirement": "cl. 7.5.3",
     "affectedFiles": [
-      "components/risk-register/RiskAcceptanceWorkflow.jsx"
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:292 (guarded — fixed)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:379,393 (guarded — fixed)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:889 (UNGUARDED — `new Date(acceptance.expiryDate).toLocaleDateString()` inside the approved/renewed block, no ternary/fallback)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:942 (UNGUARDED — `new Date(acceptance.rejectedAt).toLocaleDateString()` inside the rejected block, no fallback)"
     ],
+    "description": "The specific pattern originally cited was fixed at at least 3 locations (lines 292, 379, 393) with a proper `acceptance?.expiryDate ? new Date(...).toLocaleDateString() : 'No expiry set'` ternary. However, re-verification found the same class of defect still present, unguarded, at two other renders in the same file: line 889 (Valid Until display in the approved/renewed summary block) and line 942 (rejection date in the rejected block). Given the real backend field is `acceptance.validUntil`, not `acceptance.expiryDate` (see RR-048), `acceptance.expiryDate` is undefined for any risk sourced from the real API, so line 889 renders 'Invalid Date' in production on every approved/renewed acceptance view.",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -232,8 +266,53 @@
     "title": "Expiry notifier uses stale risk title snapshot — notifier fetches directly from `risksCollection` (live data), not a snapshot",
     "requirement": "cl. 7.5.3",
     "affectedFiles": [
-      "risk-management-service/src/jobs/acceptance-expiry-notifier.job.ts"
+      "risk-management-service/src/jobs/acceptance-expiry-notifier.job.ts:306"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: `const riskName: string = risk.name || risk.title || riskId;` (line 306) derives from the live `this.risksCollection.find(...)` result fetched fresh each run, not a cached/stale snapshot. Confirmed still a genuine false positive.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-051",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "Accepted Risks Page — API Call Shape",
+    "category": "Data Integrity / Error Handling",
+    "title": "`getAcceptedRisks` omits `projectId` from the query when no project is selected, but the backend route requires it — production requests 400 and silently fall back to an empty list with no error shown",
+    "requirement": "cl. 8.3",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/services/riskService.js:368-378 (getAcceptedRisks — `...(projectId && { projectId })`)",
+      "vibrantix-client-panel/src/app/(private)/risk-center/accepted-risks/page.jsx:235 (calls with `{ projectId: selectedProject?._id }`)",
+      "risk-management-service/src/routes/risk-register.routes.ts:733-760 (`required: ['projectId']`; 400 if missing/invalid)"
+    ],
+    "description": "`riskService.getAcceptedRisks` only includes `projectId` in the querystring when it is truthy (`...(projectId && { projectId })`), and the accepted-risks page calls it with `selectedProject?._id`, which is `undefined` whenever no project is selected. The backend route's querystring schema marks `projectId` as `required`, and the handler explicitly returns `400 { error: 'projectId is required and must be a valid ObjectId' }` when it is missing. In `fetchAcceptedRisks`, this 400 is caught, logged via `console.warn`, and — outside `NODE_ENV === 'development'` — the page simply falls back to an empty `acceptedRisks` array with no user-facing error, so the page silently shows 'No Accepted Risks Found' instead of surfacing that a project needs to be selected. This is a narrower instance of the same 'optional-projectId call shape vs required-projectId backend route' pattern this platform has hit before in other modules.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-050",
+    "module": "risk-register",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "Risk Center — Main Dashboard",
+    "category": "Feature Completeness",
+    "title": "Risk Center's own main dashboard (page.jsx) has no heat map visualization at all — RiskHeatMap.jsx is fully built and correctly fixed (RR-013/RR-021) but is only wired into the SCRC and vCISO Executive Dashboard pages, not into risk-center's own home page",
+    "requirement": "ISO 31000:2018 §6.4",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/risk-center/page.jsx (no 'heat'/'Heat'/'Matrix' reference anywhere in the file)",
+      "vibrantix-client-panel/src/components/risk-center/RiskHeatMap.jsx (built, fixed, but unused here)",
+      "vibrantix-client-panel/src/components/scrc/SCRCDashboard.jsx:254 (actual consumer)",
+      "vibrantix-client-panel/src/app/(private)/vciso/executive-dashboard/page.jsx:1608 (actual consumer)"
+    ],
+    "description": "This module's own architecture notes and Area 7 QA coverage describe 'page.jsx — main dashboard (heat map, KPIs, governance radar, trending stats)' as a current Risk Center feature. Direct inspection of `(private)/risk-center/page.jsx` found zero references to 'heat', 'Heat', or 'Matrix' anywhere in the 1523-line file, and `RiskHeatMap` is not imported. The component itself is a well-built, actively-maintained 634-line component with the RR-013/RR-021 fixes genuinely present — but its only two real call sites in the entire repo are `SCRCDashboard.jsx` and the vCISO `executive-dashboard/page.jsx`, both outside the risk-center module. Users visiting the Risk Center dashboard itself see no 5x5 heat map / risk matrix visualization, despite it being a core ISO 31000 §6.4 risk-visualization expectation for a risk register/center product.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
   }
 ]

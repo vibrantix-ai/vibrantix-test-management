@@ -3,16 +3,22 @@
     "id": "RR-003",
     "module": "risk-register",
     "severity": "High",
-    "status": "fixed",
-    "statusRaw": "✅ FIXED",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
     "component": "CreateRiskModal — Step 4",
     "category": "Compliance Gap",
-    "title": "`validateStep4 = () => true` — risks created with no Annex A control mapping, violating cl. 6.1.3(b)",
+    "title": "`validateStep4` exists and correctly requires Annex A/UCL mapping, but is never invoked before the risk is actually saved — risks are still created with no control mapping",
     "requirement": "cl. 6.1.3(b)",
     "affectedFiles": [
-      "components/risk-center/CreateRiskModal.jsx"
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:886-899 (validateStep4)",
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:916-926 (handleNext / validators array)",
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:1246-1258 (handleSubmit re-validates only Step 1 and Step 3)",
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:3706-3726 (Next vs Save button wiring)"
     ],
-    "description": "`validateStep4` unconditionally returns `true`. Risks are saved with no Annex A control mapping, making it impossible to demonstrate treatment alignment with the control framework. ISO 27001 Clause 6.1.3(b) requires risks to be linked to applicable controls. Risks with no mapping cannot appear in the Statement of Applicability gap analysis. Auditor requesting control-to-risk traceability finds no data.",
+    "description": "`validateStep4` (unconditional `() => true` in the original defect) has genuinely been rewritten to require Annex A/UCL mappings unless `treatmentStrategy === 'Accept'`. However, re-verification found it is architecturally unreachable in practice: `handleNext` calls `validators[currentStep]()` where `validators = [validateStep1, validateStep2, validateStep3, validateStep4]` — this only runs the validator for the step being LEFT when advancing to the NEXT step. Since Mappings is the last step (`currentStep === steps.length - 1`), there is no 'Next' click from it — the wizard shows a 'Save'/'Create' button instead, wired directly to `handleSubmit`. `handleSubmit` itself only re-runs `validateStep1` and `validateStep3` (lines 1248-1258) — it never calls `validateStep2` or `validateStep4`. Net effect: a user can complete the wizard and save a risk with `treatmentStrategy !== 'Accept'` and zero Annex A/UCL control mappings, because the one validator written to prevent that is never executed on the save path. ISO 27001 Clause 6.1.3(b) traceability gap remains real.",
+    "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -26,9 +32,11 @@
     "title": "`hideResolved: true` default filter hides treatment completion evidence — ISO auditor sees only open risks",
     "requirement": "cl. 8.3",
     "affectedFiles": [
-      "app/(private)/risk-register/page.jsx"
+      "vibrantix-client-panel/src/app/(private)/risk-center/risks/page.jsx:220"
     ],
     "description": "Default filter state has `hideResolved: true`. Resolved risks with completed treatment evidence are hidden from the default view an ISO auditor sees when navigating to the risk register. Auditor reviewing the risk register sees only open risks. Cannot demonstrate continual improvement (Clause 10.1) or evidence of completed treatment without manually changing the filter — a non-obvious extra step.",
+    "fixEvidence": "Re-verified 2026-08-27: risks/page.jsx:220 now defaults `hideResolved: false`, with an explicit code comment confirming intent ('defaults to false so resolved risks are visible to auditors'). Confirmed fixed at its new location.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -58,9 +66,12 @@
     "title": "Bulk delete fires `AlertDialog` without checking for active (`status: 'approved'`) acceptance records — creates orphaned accepted-risk entries",
     "requirement": "cl. 8.3",
     "affectedFiles": [
-      "app/(private)/risk-register/page.jsx"
+      "vibrantix-client-panel/src/app/(private)/risk-center/risks/page.jsx (no bulk-select/bulk-delete UI present at all)",
+      "risk-management-service/src/routes/risk-register.routes.ts (no POST /risks/bulk-delete route present at all)"
     ],
     "description": "Bulk delete fires a generic `AlertDialog` without querying whether any selected risks have `status: 'approved'` acceptance records. Deleting an accepted risk creates an orphaned acceptance entry. ISO 27001 Clause 8.3 requires retention of risk treatment records. Bulk delete of accepted risks destroys documented acceptance decisions, violating document control requirements.",
+    "fixEvidence": "Re-verified 2026-08-27: the bulk-delete feature itself no longer exists — grepped risks/page.jsx for bulk/selectedRows/multi-select UI (no matches) and risk-register.routes.ts for a bulk-delete route (no matches; only unrelated module-risk bulk-promote/bulk-dismiss and vendor-risk bulk-add routes exist). The vulnerable code path was removed entirely rather than patched. Not reproducible.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -74,10 +85,12 @@
     "title": "`reviewFrequency` field collected in Step 2 but no background job or scheduler ever acts on the value — ISO cl. 9.1 monitoring not satisfied",
     "requirement": "cl. 9.1",
     "affectedFiles": [
-      "components/risk-center/CreateRiskModal.jsx",
-      "risk-management-service"
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx",
+      "risk-management-service/src/jobs/review-scheduler.job.ts"
     ],
     "description": "Step 2 collects `reviewFrequency` (annual/quarterly/monthly) and stores it on the risk record, but no background job or scheduler in `risk-management-service` reads this field and triggers review notifications or auto-escalations. ISO 27001 Clause 9.1 requires monitoring and measurement of risk. Collecting a frequency value with no automated enforcement is cosmetic compliance — auditors will test the monitoring mechanism and find none.",
+    "fixEvidence": "Re-verified 2026-08-27: review-scheduler.job.ts runs daily, queries risks where `nextReviewDate <= today+7d`, reads `risk.reviewFrequency`, and advances `nextReviewDate` via `computeNextReviewDate(frequency, now)` after notifying. Confirmed genuinely functional, not just present.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -94,6 +107,8 @@
       "components/risk-register/RiskTreatmentPanel.jsx"
     ],
     "description": "Owner dropdown derives exclusively from Redux `state.users?.users`. On direct URL navigation to a risk detail page, the users store is unpopulated and the dropdown renders empty with no fallback fetch inside the panel. Users navigating directly to a risk treatment URL (e.g., from a notification email link) cannot assign or change the treatment owner. Treatment records remain unowned.",
+    "fixEvidence": "Re-verified 2026-08-27: RiskTreatmentPanel.jsx now sources owner options via a dedicated `useProjectMembers(projectId, ...)` hook, not a bare Redux selector — genuinely fetches independent of global store state.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -111,6 +126,8 @@
       "risk-management-service"
     ],
     "description": "Accepted risks show passive row colour-coding only (red = expired). No background job sends proactive 30d/14d/7d/0d expiry alerts to risk owners or approvers. ISO 27001 Clause 6.1.2(e) requires that accepted risks be periodically reviewed. Expired acceptances with no notification may go unnoticed for months. Auditors reviewing accepted risk records will find no re-review evidence.",
+    "fixEvidence": "Re-verified 2026-08-27: acceptance-expiry-notifier.job.ts defines `THRESHOLDS = [30, 14, 7, 0]` and implements real advance-warning + expired-notification logic reading live risk data. Confirmed genuinely functional.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -127,6 +144,8 @@
       "app/(private)/risk-center/governance/page.jsx"
     ],
     "description": "`Documentation = Math.min(100, approvalRate + 5)` — the Documentation governance radar score is the Policy Compliance score plus a constant 5. It is not derived from any independent documentation metric. The governance health radar is misleading — two dimensions that appear independent are completely correlated. Management review reports using this radar make false inferences about documentation quality separate from policy approval.",
+    "fixEvidence": "Re-verified 2026-08-27: governance/page.jsx now computes `documentation` from `risksWithJustification`/`risksWithTreatmentPlan` ratios over governance-endpoint risk buckets — genuinely independent of `policyApprovalRate`.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -143,6 +162,8 @@
       "app/(private)/risk-center/ai-predictions/page.jsx"
     ],
     "description": "Page renders its prediction cards only when the AI service returns non-empty arrays. When the service returns `[]` (e.g., first deployment, AI not yet configured), the page renders completely blank — no explanation, no setup guidance. New customers and auditors visiting the AI Predictions page see a blank screen with no context. Support load increases. Feature appears broken rather than unconfigured.",
+    "fixEvidence": "Re-verified 2026-08-27: ai-predictions/page.jsx:382-392 now has an explicit empty-state branch with heading 'No predictions available yet' and guidance text about the 10-risk minimum. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -160,6 +181,8 @@
       "risk-management-service/src/services/RiskRegisterService.ts"
     ],
     "description": "`processAcceptanceDecision` in the repository computes `newStatus = decision === 'approved' ? 'approved' : 'rejected'` and immediately persists `acceptance.status = newStatus` after any one named approver acts. When an acceptance is submitted with 3 named approvers, the first to call `PUT /risks/:riskId/acceptance/approve` resolves the entire workflow — the remaining approvers' decisions are never solicited or enforced. Multi-approver risk acceptance governance is completely broken. High/Critical risk acceptances designated for director + CISO + board approval can be resolved by any single approver in the list. ISO 27001 Annex A 5.2 and Clause 6.1.2(e)(2) require appropriate authority for risk acceptance decisions; a single-vote quorum undermines this entirely.",
+    "fixEvidence": "Re-verified 2026-08-27 against risk.repository.ts:1550-1600: `processAcceptanceDecision` now records the acting approver's individual decision into `acceptance.approvers[]`, then computes `anyRejected`/`allApproved` across ALL approvers before setting `newStatus` — a single rejection rejects immediately, but approval requires every approver to have decided 'approved'. Genuine quorum logic confirmed present. (Note: the frontend RiskAcceptanceWorkflow.jsx has no UI for a multi-approver array at all — see new record RR-048 for the related but distinct frontend status-vocabulary defect that keeps this workflow unreachable in practice.)",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -173,8 +196,10 @@
     "title": "MongoDB query scoping concern — `$or` arms potentially accessible across org boundaries",
     "requirement": "cl. 6.1.2",
     "affectedFiles": [
-      "risk-management-service/src/repositories/risk.repository.ts"
+      "risk-management-service/src/repositories/risk.repository.ts:1830-1889 (buildFilter)"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: `buildFilter` sets `organizationId` as a top-level sibling key on the filter object (line 1832), outside and independent of the `$or`/`$and` groups built for `search`/`level` (lines 1840-1888). MongoDB implicitly ANDs top-level keys with `$or`/`$and` blocks, so organizationId scoping cannot be bypassed by these clauses. Confirmed false positive.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -188,8 +213,10 @@
     "title": "`likelihood`/`impact` set at top level of risk object instead of inside `inherentRisk` sub-document — schema mismatch corrupts heat map placement",
     "requirement": "cl. 6.1.2",
     "affectedFiles": [
-      "components/risk-center/CreateRiskModal.jsx"
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:1288-1302"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: the submit payload nests `inherentRisk: { likelihood, impact, score, level, justification }` and `residualRisk: { likelihood, impact, justification }` properly, not top-level. Confirmed fixed. (Separately: RiskHeatMap.jsx's own read-side `getRisksInCell` reads `risk.likelihood || risk.riskAssessment?.likelihood`, neither of which is this nested path — see new record RR-050-adjacent note; this did not reproduce a placement bug because the Risk Center dashboard doesn't render RiskHeatMap at all, see RR-050.)",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -203,8 +230,12 @@
     "title": "Delete, bulk-delete, approve, and clone routes missing permission preHandlers — unauthenticated or under-privileged requests not rejected at route layer",
     "requirement": "A.5.3",
     "affectedFiles": [
-      "risk-management-service/src/routes/risk-register.routes.ts"
+      "risk-management-service/src/routes/risk-register.routes.ts:414-424 (DELETE risk.delete)",
+      "risk-management-service/src/routes/risk-register.routes.ts:446-456 (clone risk.create)",
+      "risk-management-service/src/routes/risk-register.routes.ts:902-915 (acceptance/approve risk.approve)"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: DELETE /risks/:riskId requires risk.delete, POST /risks/:riskId/clone requires risk.create, PUT /risks/:riskId/acceptance/approve requires risk.approve — each combined with augmentPermissionsWithProjectGrant PLAC scoping. The bulk-delete route no longer exists at all (feature removed, see RR-006). Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -220,6 +251,7 @@
     "affectedFiles": [
       "risk-management-service/src/jobs/alerts.job.ts"
     ],
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -233,8 +265,10 @@
     "title": "`getGovernanceData` reviewCoverage division-by-zero on empty org — already guarded with `Math.max(stats.total, 1)` at line ~813",
     "requirement": "cl. 9.1",
     "affectedFiles": [
-      "risk-management-service/src/services/RiskCenterService.ts"
+      "risk-management-service/src/services/RiskCenterService.ts:1250"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: guard `const total = Math.max(stats.total, 1);` confirmed present (now at line 1250). Still a genuine false positive.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -248,8 +282,31 @@
     "title": "`runSLABreachCheck` missing orgId scope — already uses per-org iteration via `distinct('organizationId')` loop; correctly scoped",
     "requirement": "cl. 6.1.2",
     "affectedFiles": [
-      "risk-management-service/src/jobs/alerts.job.ts"
+      "risk-management-service/src/jobs/alerts.job.ts:117-130 (checkSLABreaches)"
     ],
+    "fixEvidence": "Re-verified 2026-08-27: the real function is `checkSLABreaches()`, iterating `getOrgProjectPairs()` and calling `checkSLAForOrgProject(organizationId, projectId)` per pair — even more granular (org+project) than the original 'distinct organizationId' description. Confirmed still correctly scoped.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-049",
+    "module": "risk-register",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "Accepted Risks Page",
+    "category": "Data Integrity / Field Mismatch",
+    "title": "accepted-risks page is built entirely against field names that do not exist on the real Risk document — blank approver names, 'Invalid Date' fields, and NaN averages against real backend data",
+    "requirement": "cl. 7.5.3, A.5.2",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/risk-center/accepted-risks/page.jsx:130-338",
+      "risk-management-service/src/types/index.ts:594-663 (real Risk shape: name, inherentRisk, residualRisk, acceptance.approvers[], acceptance.validFrom/validUntil)",
+      "risk-management-service/src/types/index.ts:278-300 (AcceptanceWorkflow — no acceptedDate/reviewDate/acceptanceLevel fields exist)"
+    ],
+    "description": "The page's stats/filter/table logic reads `risk.riskName`, `risk.riskLevel`, `risk.acceptanceLevel`, `risk.approver?.name/title/email` (singular object), `risk.acceptedDate`, `risk.reviewDate`, `risk.expiryDate`, `risk.residualRiskScore`, and `risk.status` with values `'active'|'review_due'|'expired'`. None of these exist on the real `Risk` document: the real fields are `name` (not `riskName`), `inherentRisk.level`/`residualRisk.level` (not top-level `riskLevel`), `acceptance.approvers` (a plural array of `{userId,email,name,decision,decidedAt}`, not a singular `approver` object), `acceptance.validFrom`/`acceptance.validUntil` (not `acceptedDate`/`expiryDate`), no `reviewDate` or `acceptanceLevel` field anywhere in the schema, `residualRisk.score` (not top-level `residualRiskScore`), and `acceptance.status` is one of `not_applicable|pending|approved|rejected|expired` (the list query filters to `'approved'`, never `'active'`/`'review_due'`/`'expired'` as strings the frontend checks for). Consequences against real data: `risk.approver?.name` renders blank/'Unassigned', `formatDate(risk.acceptedDate)` → `new Date(undefined)` → 'Invalid Date' rendered in every date column, `stats.avgResidualScore` sums `undefined` into `NaN`, and every row's status badge falls through to the `default: {color:'gray', label: status}` case showing the raw (wrong) status string. This is masked entirely in local development by a `NODE_ENV === 'development'` mock-data fallback (lines 130-226) that uses the same field names the page expects — so the mismatch is invisible until a real API response actually returns non-empty data in a non-dev environment.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
   }
 ]

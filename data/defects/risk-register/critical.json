@@ -10,9 +10,12 @@
     "title": "`validateStep2 = () => true` — 67% risk reduction with no justification or residual documentation",
     "requirement": "cl. 6.1.2(d)",
     "affectedFiles": [
-      "components/risk-center/CreateRiskModal.jsx"
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:857-864 (validateStep2)",
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:867-884 (validateStep3, current home of the fix)"
     ],
     "description": "`validateStep2` unconditionally returns `true`. Users can claim any residual risk score (e.g., 67% reduction) with zero documentation, justification, or treatment rationale. Risk assessment results are not reproducible or comparable. ISO 27001 Clause 6.1.2(d) requires documented, repeatable criteria. An auditor cannot verify any residual risk score in the system — immediate Stage 2 non-conformity.",
+    "fixEvidence": "Re-verified 2026-08-27: `validateStep2` itself now only checks `impactAreas.length`, but the original intent (require documented rationale when a large risk reduction is claimed) was relocated to `validateStep3`: `if (residualRiskScore < inherentRiskScore * 0.4 && !formData.treatmentDescription?.trim()) newErrors.treatmentDescription = '...'` — i.e. >60% reduction now requires `treatmentDescription` (not `residualNotes`, and 60% not the original 50% threshold). The UI hint at line ~2525 (`riskReduction > 60`) is consistent with this. This is a legitimate re-implementation, not a broken fix — still open/blocking behavior verified absent.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
   {
@@ -30,6 +33,75 @@
       "components/risk-register/RiskAcceptanceWorkflow.jsx"
     ],
     "description": "`RISK_LEVELS.minLevel` authority matrix is defined in code but the approver dropdown is populated from all org users without filtering to the required authority tier. A manager can approve a Critical risk that requires director-level sign-off. Formal risk governance is legally invalid. All existing Critical risk acceptances may have the wrong authorisation tier. ISO 27001 Annex A 5.2 requires defined risk ownership and acceptance authority at the appropriate level.",
+    "fixEvidence": "Re-verified 2026-08-27 against vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:698-703: `RISK_LEVEL_AUTHORITY` maps risk level to a minimum `AUTHORITY_RANK`, and `eligibleApprovers = approvers.filter(u => (AUTHORITY_RANK[u.role?.toLowerCase()] ?? 0) >= requiredRank)` genuinely filters the approver list before rendering. Confirmed fixed.",
+    "lastVerified": "2026-08-27",
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "RR-046",
+    "module": "risk-register",
+    "severity": "Critical",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "RiskAcceptanceWorkflow — AcceptanceRequestForm / ApprovalDecisionForm",
+    "category": "Runtime Crash",
+    "title": "ReferenceError: `projectId` is referenced but never defined/destructured in AcceptanceRequestForm and ApprovalDecisionForm — crashes the acceptance workflow UI on render",
+    "requirement": "cl. 8.3",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:119-126 (AcceptanceRequestForm props — no projectId)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:232 (PermissionHide ... projectId={projectId})",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:255-260 (ApprovalDecisionForm props — no projectId)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:316,328 (PermissionHide ... projectId={projectId})"
+    ],
+    "description": "`AcceptanceRequestForm` destructures its props as `{ acceptance, onChange, onSubmit, isSubmitting, readOnly = false, approvers = [] }` (no `projectId`), yet its JSX at line 232 reads `<PermissionHide permission=\"risk.update\" allowProjectGrant projectId={projectId}>` — `projectId` is not a prop, a local variable, or an import anywhere in this component's scope. Same defect independently in `ApprovalDecisionForm` (props destructured at line 255-260, `projectId` referenced at lines 316 and 328). This throws a genuine `ReferenceError: projectId is not defined` at render time, crashing the enclosing tree. Verified by direct code inspection, not by executing the app.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-047",
+    "module": "risk-register",
+    "severity": "Critical",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "RiskAcceptanceWorkflow — call sites",
+    "category": "Functional Blocker",
+    "title": "`approvers` prop hardcoded to `[]` at both real render call sites of RiskAcceptanceWorkflow — no risk acceptance request can ever be submitted",
+    "requirement": "A.5.2, cl. 6.1.2(e)",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/risk-register/RiskRegisterPageDrawer.jsx:2143-2148",
+      "vibrantix-client-panel/src/components/risk-register/RiskRegisterDrawer.jsx:1133-1138"
+    ],
+    "description": "Both live call sites that render `<RiskAcceptanceWorkflow>` (RiskRegisterPageDrawer.jsx and RiskRegisterDrawer.jsx) pass `approvers={[]}` literally. Since `AcceptanceRequestForm`'s approver `<Select>` is populated entirely from the `approvers` prop, the dropdown is always empty, `acceptance.approverId` can never be set, and the Submit button's `isDisabled` check (`!acceptance.approverId`) permanently blocks submission. The risk acceptance workflow's request step is non-functional in production regardless of RR-002's authority-matrix filtering logic being correct, because the filtered list is always empty to begin with.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-048",
+    "module": "risk-register",
+    "severity": "Critical",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "component": "RiskAcceptanceWorkflow — status vocabulary",
+    "category": "Data Integrity / Functional Blocker",
+    "title": "Frontend acceptance-status vocabulary ('draft'/'pending_approval') does not match the backend's real AcceptanceStatus enum ('not_applicable'/'pending'/'approved'/'rejected'/'expired') — the workflow UI renders no form at all for any risk sourced from the real backend",
+    "requirement": "cl. 6.1.2(e), A.5.2",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:476-492 (initial local state uses 'draft')",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:510-520 (getActiveStep switch)",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:840-868 (main render branches on 'draft'/'pending_approval')",
+      "vibrantix-client-panel/src/components/risk-register/RiskAcceptanceWorkflow.jsx:551 (handleSubmit sets local status 'pending_approval')",
+      "risk-management-service/src/types/index.ts:56-61 (real AcceptanceStatus = 'not_applicable'|'pending'|'approved'|'rejected'|'expired')",
+      "risk-management-service/src/repositories/risk.repository.ts:490 (default acceptance.status = 'not_applicable')",
+      "risk-management-service/src/repositories/risk.repository.ts:1527 (submitAcceptanceRequest sets acceptance.status = 'pending', not 'pending_approval')"
+    ],
+    "description": "The backend's canonical `AcceptanceStatus` type is `'not_applicable' | 'pending' | 'approved' | 'rejected' | 'expired'` and every newly-created risk defaults to `acceptance.status: 'not_applicable'` (confirmed at risk.repository.ts:490 and ModuleRiskService.ts:476). `RiskAcceptanceWorkflow.jsx`'s render logic only shows `AcceptanceRequestForm` when `acceptance.status === 'draft'` and only shows `ApprovalDecisionForm` when `acceptance.status === 'pending_approval'` — neither of which is a real backend value. `submitAcceptanceRequest` in the repository sets the real status to `'pending'`, not `'pending_approval'`. The practical effect: for every risk loaded from the real API (status `'not_applicable'` before any request, or `'pending'` after a real request is submitted), none of this component's status checks match, so it renders nothing — no submit form, no approve/reject form. The component is only reachable via its own locally-optimistic state transitions (e.g. immediately after a client-side `handleSubmit`/`handleApprove` call before any reload), not against real persisted/reloaded data. This makes the entire risk-acceptance workflow UI non-functional for its primary purpose.",
+    "firstDetected": "2026-08-27",
+    "lastVerified": "2026-08-27",
+    "runsOpen": 1,
+    "sourceFile": "Risk_Register_QA_Agent"
   }
 ]
