@@ -4,12 +4,12 @@
     "module": "evidence-management",
     "title": "Hard-delete endpoint (`DELETE /:evidenceId/hard`) has no retention period check, no immutability lock on approved/submitted evidence — two clicks permanently destroys certification evidence; violates A.5.33",
     "severity": "Critical",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
     "category": "Retention",
     "requirement": "ISO 27001 Annex A.5.33",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-08-29",
     "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
     "description": "**Files:** `vibrantix-backend/src/modules/evidence/evidence.controller.js:436-500` (`hardDeleteEvidence` handler)\n**Root Cause:** The `DELETE /:evidenceId/hard` route now DOES block hard-delete unless `evidence.status === 'archived'` (lines 450-466, a fix added since the original finding) — so the original \"any status, two clicks\" claim is narrower than before. However, the core Critical defect remains fully unaddressed: a repo-wide search for `retentionPeriod`, `RETENTION_PERIOD`, `isImmutable`, and `immutab` across the entire evidence module returns **zero matches**. There is no time-based retention enforcement, no minimum-time-since-archive check, and no immutability lock of any kind — once evidence is archived (reachable via the wildcard '* → archived' transition from any non-archived status per `evidence.controller.js`'s `archiveEvidence`), it can be permanently hard-deleted immediately with no grace period.\n**Impact:** Direct violation of ISO 27001:2022 A.5.33. Evidence can still be archived-then-immediately-hard-deleted with no retention window; Stage 2 auditors will find unexplained gaps in the chain of custody.\n**Re-verified 2026-08-27:** STILL OPEN. Status-gate exists (archived-only) but retention-period/immutability-lock — the actual Critical control — is confirmed absent.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-backend/src/modules/evidence/evidence.controller.js — hardDeleteEvidence handler (lines 436-500)\n\n1. Add a `RETENTION_PERIOD_DAYS` env var (default 2555 / 7 years). If the evidence's `archivedAt` (or `updatedAt` at time of archive) is more recent than `now - retentionPeriod`, return 400: \"Evidence is within the retention period and cannot be deleted.\"\n2. Add an `isImmutable` boolean field to the evidence schema; set it true when status has ever reached `closed`/`approved`. Block hard-delete if `isImmutable === true` regardless of current status.\n3. Log every hard-delete attempt (success or rejection) to the audit trail with actor, timestamp, and reason.\n```"
@@ -19,12 +19,12 @@
     "module": "evidence-management",
     "title": "Review decision comment has no minimum length — blank or single-character approval accepted in `EvidenceMyReviewsTab.jsx`; certification body would challenge approvals with no justification; violates ISO 19011:2018 §6.4.9",
     "severity": "Critical",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
     "category": "Audit Trail",
     "requirement": "ISO 19011:2018 §6.4.9",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-08-29",
     "runsOpen": 2,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
     "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/EvidenceMyReviewsTab.jsx:595-644`; `vibrantix-backend/src/modules/workflow/workflowTransition.service.js:99-100`; `vibrantix-backend/src/core/constants/featureWorkflows.js:92`\n**Root Cause:** Still no minimum-length check anywhere — frontend only requires the comment be non-empty after `.trim()` (`isDisabled={!comment.trim()}`, no length threshold). Backend `workflowTransition.service.js:99` also only checks truthiness (`!opts.comment?.trim()`), no Joi/length validation, and the `/:evidenceId/workflow/transition` route has no `validate([...])` middleware at all. Worse than originally documented: `featureWorkflows.js:92`'s `commentRequiredTransitions: [['under_review', 'needs_revision']]` means the backend requires a comment ONLY for Reject — Approve (`under_review → closed`) has no backend comment requirement whatsoever, relying entirely on frontend non-empty enforcement.\n**Impact:** Single-character (or, for Approve, potentially bypassable) approvals still create a legally challengeable audit trail.\n**Re-verified 2026-08-27:** STILL OPEN — confirmed no minimum-length check anywhere, and Approve has no backend comment requirement at all (worse than Reject).\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/EvidenceMyReviewsTab.jsx\n\n1. Replace `isDisabled={!comment.trim()}` with `isDisabled={comment.trim().length < 50}` on Approve/Reject/Start Review buttons.\n2. Show inline helper text: \"Justification must be at least 50 characters ({comment.trim().length}/50)\".\n\nFile: vibrantix-backend/src/core/constants/featureWorkflows.js\n3. Add `['under_review', 'closed']` to `commentRequiredTransitions` so Approve also requires a comment server-side.\n\nFile: vibrantix-backend/src/modules/workflow/workflowTransition.service.js\n4. Replace the truthy check at line 99 with a length check: `if (transitionDef?.commentRequired && (!opts.comment || opts.comment.trim().length < 50))`.\n```"
@@ -46,26 +46,12 @@
     "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/ExportShareContent.jsx`\n**Root Cause (original):** The \"Generate Secure Link\", \"Send via Email\", and \"Portal Access\" action cards rendered with no `onClick` handlers and no backend routes existed for any of these operations. The `staticRecentExports` fallback array contained hardcoded entries dated 2025-12-28 presented as real export history.\n**Status:** FIXED — see fixEvidence."
   },
   {
-    "id": "G-SC-01",
-    "module": "evidence-management",
-    "title": "`organization_id` absent → risk service returns silent `{}` → empty R3/R4 reports",
-    "severity": "Critical",
-    "status": "open",
-    "statusRaw": "🔴 OPEN",
-    "category": "Service Client",
-    "firstDetected": "2026-06-11",
-    "lastVerified": "2026-08-27",
-    "runsOpen": 2,
-    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/service_client.py:335-340` (`get_risk_data`), `:359-364` (`get_risk_treatment`)\n**Re-verified 2026-08-27:** STILL OPEN. Both methods still return `{}` with only a `logger.warning` if `self._organization_id` is falsy — no exception raised, caller receives an empty dict indistinguishable from 'no risks exist'."
-  },
-  {
     "id": "EM-042",
     "module": "evidence-management",
     "title": "Google Drive evidence import is completely non-functional — frontend calls connector-service routes that do not exist, and the BullMQ drive-upload worker is never started",
     "severity": "Critical",
-    "status": "new",
-    "statusRaw": "🆕 NEW",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
     "category": "Non-Functional Feature / Integration",
     "requirement": "ISO 27001:2022 Clause 7.5.3",
     "affectedFiles": [
@@ -76,7 +62,7 @@
       "vibrantix-connector-service/src/index.ts:26-27,312-313"
     ],
     "firstDetected": "2026-08-27",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-08-29",
     "runsOpen": 1,
     "sourceFile": "Evidence_Management_QA_Agent",
     "description": "**Files:** `vibrantix-client-panel/src/services/integrationHubService.js:201-208` (`getDriveFiles`/`getDriveEvidence`/`uploadDriveFile` calling `GET /connectors/:id/drive/files`, `GET /connectors/:id/drive/evidence`, `POST /connectors/:id/drive/upload`); `vibrantix-connector-service/src/routes/*.ts` (all registered route files); `vibrantix-connector-service/src/queues/index.ts:40-45` (`DRIVE_UPLOAD_QUEUE` config); `vibrantix-connector-service/src/workers/drive-upload.worker.ts:42` (`createDriveUploadWorker`); `vibrantix-connector-service/src/index.ts:26-27,312-313` (worker wiring for the two workers that ARE started)\n**Root Cause:** A full-repo read of every route file registered in `vibrantix-connector-service/src/index.ts` (connector, awsIntegration, sync, integrationEvidence, auditLock, mapping, canonicalData, webhook, internalGrandfather, internalProwler routes — 818-line `connector.routes.js` included) confirms none of them registers `GET /connectors/:id/drive/files`, `GET /connectors/:id/drive/evidence`, or `POST /connectors/:id/drive/upload` — the three endpoints `GDriveFileBrowser.jsx`/`GDriveUploadModal.jsx` call via `integrationHubService.js`. A user opening the Google Drive evidence picker in production would receive 404s on every call. Separately, the `drive-upload` BullMQ queue IS instantiated at boot (`queues/index.ts:40-45`, included in `createQueues()`), and a worker file (`workers/drive-upload.worker.ts`) exports `createDriveUploadWorker`, but that function is never imported or invoked anywhere in the codebase — contrast with the two real workers (`createPipelineWorkers`, `createWebhookWorker`) which ARE explicitly started in `index.ts:312-313`. There is also no separate worker entry point/process (`package.json` has no `worker` script). So even if the missing routes existed and somehow enqueued a job, nothing would ever process it.\n**Impact:** The entire Google Drive evidence-import feature is presented in the UI as available but cannot function at all — not a security/CORS risk as previously documented under EM-011, but a complete functional absence. This is worse than a mockup: it looks fully wired (service methods, queue config, worker file all exist) but has a missing link at every layer (routes, worker startup) that only shows up at runtime.\n**Claude Fix Prompt:**\n```\n1. In vibrantix-connector-service, add the three missing routes (drive/files, drive/evidence, drive/upload) to connector.routes.js or a new drive.routes.js, wired to real Google Drive API calls using the connector's stored OAuth credentials.\n2. In src/index.ts, import and call createDriveUploadWorker(...) alongside createPipelineWorkers/createWebhookWorker so jobs enqueued on DRIVE_UPLOAD_QUEUE are actually processed.\n3. Add an integration/E2E test that exercises the full picker → upload → queue → worker → evidence-record path to prevent this regressing silently again.\n```"
@@ -86,8 +72,8 @@
     "module": "evidence-management",
     "title": "Every integration-evidence PDF export prints a hardcoded, non-computed ISO 27001/SOC 2/NIST control-mapping block regardless of the actual evidence — fabricated compliance data presented as genuine in a customer-facing audit artifact",
     "severity": "Critical",
-    "status": "new",
-    "statusRaw": "🆕 NEW",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
     "category": "Data Integrity",
     "requirement": "ISO 27001:2022 Clause 7.5; ISO 27001 Annex A.5.36",
     "affectedFiles": [
@@ -96,7 +82,7 @@
       "vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx:772-784,1133"
     ],
     "firstDetected": "2026-08-27",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-08-29",
     "runsOpen": 1,
     "sourceFile": "Evidence_Management_QA_Agent",
     "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx:225-229` (`COMPLIANCE_BADGES` constant), `:355,419-424` (`generateEvidencePDF` loop that prints it), `:1133` (single call site used generically for every provider's Export PDF action), `:772-784` (`ComplianceBadge` component, confirmed never rendered as JSX anywhere — dead in the live UI)\n**Root Cause:** `COMPLIANCE_BADGES = [{ framework: 'ISO 27001', controls: ['A.5.15','A.8.2','A.12.4.1'] }, { framework: 'SOC 2', controls: ['CC6.1','CC6.2','CC7.2'] }, { framework: 'NIST CSF', controls: ['AC-2','IA-2','DE.AE-3'] }]` is a static, hardcoded array with no relationship to the evidence's actual provider, type, or content. `generateEvidencePDF` (used by all 10 provider renderers — GitHub, Jira, Nessus, OpenVAS, Rapid7, Sentinel, Splunk, SumoLogic, Okta, Generic — via one shared call site) loops over this constant and prints the identical three ISO 27001 control IDs, SOC 2 criteria, and NIST CSF references on every exported PDF, whether the evidence is an Okta MFA policy, a GitHub branch-protection setting, or a Splunk alert. The app DOES have a real, per-evidence control-verdict system (`controlStringId`/`controlTitle`/`verdict` fetched from the backend at lines 899-915, rendered at 1395-1581) — `COMPLIANCE_BADGES` is unrelated leftover/fixture data that only reaches the customer-facing PDF, not the on-screen UI (its React component is confirmed dead code).\n**Impact:** An auditor or customer relying on the exported PDF's \"Maps to: ISO 27001 A.5.15, A.8.2, A.12.4.1...\" line is being shown fabricated compliance data presented as a genuine, evidence-specific mapping — a direct Clause 7.5 / A.5.36 document-integrity violation, in the same class as EM-031's fake export history but arguably worse because it is embedded in an artifact meant to be handed to a certification body.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx\n\n1. Delete the hardcoded COMPLIANCE_BADGES constant (lines 225-229) and its use in generateEvidencePDF (lines 419-424).\n2. In generateEvidencePDF, source control mappings from the SAME real per-evidence verdict data already fetched and rendered on-screen (the controlStringId/controlTitle/verdict list at lines 899-915/1395-1581) — filter to verdict === 'approved' verdicts for this specific evidence item.\n3. If no real control mappings exist for the item being exported, print 'No control mappings recorded for this evidence' rather than any static placeholder.\n4. Add a regression test asserting the PDF's printed control list matches the evidence's actual controlVerdicts, not a fixed constant.\n```"

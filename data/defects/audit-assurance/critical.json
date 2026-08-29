@@ -129,5 +129,19 @@
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "G-SC-01",
+    "module": "audit-assurance",
+    "title": "`organization_id` absent → risk service returns silent `{}` → empty R3/R4 reports",
+    "severity": "Critical",
+    "status": "in_progress",
+    "statusRaw": "🟡 IN_PROGRESS",
+    "category": "Service Client",
+    "firstDetected": "2026-06-11",
+    "lastVerified": "2026-08-29",
+    "runsOpen": 2,
+    "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/service_client.py:335-340` (`get_risk_data`), `:359-364` (`get_risk_treatment`)\n**Re-verified 2026-08-27:** STILL OPEN. Both methods still return `{}` with only a `logger.warning` if `self._organization_id` is falsy — no exception raised, caller receives an empty dict indistinguishable from 'no risks exist'.\n**Fix in progress 2026-08-29:** Applied in a local worktree of `audit-report-generator-service` (`app/services/report_generation/service_client.py`) — both methods now `raise ValueError(...)` instead of returning `{}`, matching this file's existing `validate()` convention. Not yet committed/pushed to the remote — pending review.\n**Recategorized 2026-08-29:** Moved from evidence-management — this defect is entirely within `audit-report-generator-service`'s R3/R4 audit-report generation pipeline (risk data feeding the Audit Assurance report exports), not the Evidence Management module itself. Original ID/sourceFile preserved as historically documented, per this tracker's established convention for cross-source IDs (see this file's own `_meta.json`)."
   }
 ]
