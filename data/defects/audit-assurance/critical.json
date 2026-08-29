@@ -69,5 +69,65 @@
     "runsOpen": 3,
     "fixEvidence": "Re-verified 2026-08-22. Two UI widgets can still change `assessmentStatus` (an inline `<Select>` and the `Audit3WorkflowUpdateModal`), but both now source their option list exclusively from `availableTransitions` fetched from the backend workflow engine (`getAvailableTransitions('audit_scope_item', ...)`) and submit via `auditAssuranceService.triggerTransition(...)` → `POST /api/workflows/audit_scope_item/:id/transition` — `ScopeItemDetailDrawer.jsx:1698-1734` (inline editor), `ScopeItemDetailDrawer.jsx:2617-2632` (modal invocation), `common/Audit3WorkflowUpdateModal.jsx:56-115`. The backend `updateScopeItem` controller now explicitly rejects any direct `assessmentStatus` write on the plain PUT endpoint (`audit-assurance.controller.js:1071-1076`: \"assessmentStatus cannot be changed via this endpoint... Use POST /api/workflows/...\"), so a one-click `not_started → closed` jump is no longer possible — the option list is transition-constrained. Citation corrected from the original 85/2657.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "CD-004",
+    "module": "audit-assurance",
+    "title": "Evidence-attachment status is a frozen local snapshot, never re-verified against live evidence-management state",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "AuditScopeItem.evidenceAttachments[] (audit-scope-item.model.js:210-223) stores only a denormalized evidenceTitle and a locally-set verdict captured at attach time. evidence-status.controller.js:58-112 (the R10 report) computes every scope item's coverageStatus purely from this stored array - it never queries the Evidence collection to check whether the referenced document still exists, is archived, or has been superseded. attachEvidence (audit-assurance.controller.js:1163-1211) resolves the title with Evidence.findById(evidenceId).select('title') (line 1184) with no filter on status or isLatest - an auditor can attach evidence that is already archived. Evidence can later be archived and hard-deleted (evidence.controller.js:433-499, cascade never reaches audit_scope_items), and there is no reverse reference anywhere in the evidence module back to AuditScopeItem.\n\nAuditor-facing breakage: a scope item can show 'Evidence attached / covered' in the R10 report and on the requirement detail page indefinitely after the underlying evidence document has been deleted or superseded, with the frozen evidenceTitle string being the only thing still displayed.",
+    "requirement": "ISO 27001:2022 Clause 7.5.3 documented information must be available; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/audit-assurance/audit-scope-item.model.js:210-223",
+      "vibrantix-backend/src/modules/audit-assurance/controllers/evidence-status.controller.js:58-112",
+      "vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js:1163-1211,1184"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CD-005",
+    "module": "audit-assurance",
+    "title": "The live 'Raise Finding' UI has no way to link a finding to a control/requirement at all - every finding from the primary entry point is unlinked",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "The actually-rendered Findings Register (FindingsRegisterTab.jsx) has an inline FindingFormDrawer (lines 57-158) whose form state is {title, description, findingType, severity, recommendation, evidence, status} - there is no scopeItemId/requirementId/control-picker field anywhere in it. handleSubmit posts this object as-is. On the backend, createFinding (findings.controller.js:167-238) only threads requirementId/scopeItemId through when req.body.scopeItemId or req.body.requirementId is present - since neither is ever sent by this form, every finding raised through this screen is created with requirementId:null, scopeItemId:null. The 'Requirement' column will show '-' for every finding created this way. A second, correctly-linked path exists (tagging a scope-item comment as major_nc/minor_nc/etc auto-raises a linked finding via findingFromComment.js:75-142), but it is not discoverable from the Findings Register itself. A separate unused component (reports/FindingsDrawer.jsx) attempts to add the missing control-picker but is dead code, and would be broken if wired up anyway (populates with the wrong ID type, hitting a validation branch that always rejects it).\n\nAuditor-facing breakage: an auditor's primary entry point for raising a finding produces an orphaned record with no indication that the standalone 'New Finding' button behaves differently from the comment-tag path.",
+    "requirement": "ISO 27001:2022 Clause 9.2 internal audit; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/audit-assurance-2/FindingsRegisterTab.jsx:57-158,280-284",
+      "vibrantix-backend/src/modules/audit-assurance/controllers/findings.controller.js:167-238,189-215",
+      "vibrantix-backend/src/modules/audit-assurance/findingFromComment.js:75-142",
+      "vibrantix-client-panel/src/components/audit-assurance-2/reports/FindingsDrawer.jsx:137-150"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CD-006",
+    "module": "audit-assurance",
+    "title": "A live 'Stop' action closes an audit instantly with zero evidence/findings gate, while the real gated closure workflow has no UI at all",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "Two independent code paths reach Audit.status='closed'. The governed path (audit-closure.service.js) requires a checklist and a segregation-of-duties-checked approval before closing - but no frontend component calls updateChecklistItem/requestApproval/approveClosure/rejectClosure anywhere (grep confirmed zero call sites). The only frontend consumer, post-audit/AuditClosureTab.jsx, is entirely read-only (checkboxes isReadOnly, no action buttons) - it's a report viewer, not a gate. The live, ungated path is ActiveAuditsTab.jsx:136-149's 'Stop' action, which calls updateAudit(auditId,{status:'closed',...}) directly and unconditionally shows 'Audit Closed... successfully'. The backend's updateAudit -> changeStatus (audit.model.js:288-308) performs only state-machine legality checks - no query of AuditScopeItem.evidenceAttachments/assessmentStatus, no query of open AuditNonConformance findings, no warning surfaced.\n\nAuditor-facing breakage: an auditor can close an audit via the 'Stop' button while scope items still show uncovered/partial evidence status and findings remain open, with the platform actively confirming success rather than warning - directly contradicting the same module's own CD-001 fix for exactly this class of gap on a different closure path.",
+    "requirement": "ISO 27001:2022 Clause 9.2.2 nonconformities must be corrected before closure; Clause 8.3",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/audit-assurance-2/ActiveAuditsTab.jsx:136-149",
+      "vibrantix-backend/src/modules/audit-assurance/audit.model.js:279-308",
+      "vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js:704-747",
+      "vibrantix-client-panel/src/components/audit-assurance-2/post-audit/AuditClosureTab.jsx",
+      "vibrantix-backend/src/modules/audit-assurance/services/audit-closure.service.js:88-159"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

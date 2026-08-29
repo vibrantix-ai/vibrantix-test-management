@@ -62,5 +62,44 @@
     ],
     "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-023",
+    "module": "cloud-posture",
+    "severity": "Critical",
+    "status": "open",
+    "component": "/cloud-posture findings <-> /grc-framework controls",
+    "category": "Traceability",
+    "title": "Finding-to-control mapping is display-only, one-directional, with zero click-through in either surface",
+    "description": "`FindingComplianceControls.jsx:70-181` renders framework/requirement/title/description for a finding, but every cell is plain Text/Badge with no Link/href/onClick anywhere in the component - confirmed by full read. `ResourceFindingsPanel.jsx:580-591` does the same. There is no way to jump from a cloud-posture finding to the actual control record in /grc-framework. The reverse direction is also broken: `requirement-resource-resolver.service.js:384-412` builds the `resources[]` array consumed by the GRC control detail drawer - it enumerates evidence/policy/certification/integration/vendor/trust rows but never adds cloud-posture findings as individual rows. `FrameworkComplianceMap.jsx`'s TYPE_COLOR map (lines 606-611) and href router (lines 650-679) have branches for every resource type except 'cloud'. The control-list row only shows a bare aggregate number ('12 automated'), and opening the drawer shows the same resources table with no cloud entries at all.\n\nAuditor-facing breakage: an auditor sampling 'why is control X covered?' sees '12 automated' with no way to see which 12 checks, which resources, pass or fail, or provider - and starting from a specific Prowler finding, there is no way to confirm which control it evidences without manually re-deriving the mapping.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability; ISO 27001:2022 Clause 6.1.3",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/cloud-posture/FindingComplianceControls.jsx:70-181",
+      "vibrantix-client-panel/src/components/cloud-posture/ResourceFindingsPanel.jsx:580-591",
+      "vibrantix-backend/src/modules/compliance-frameworks/requirement-resource-resolver.service.js:384-412",
+      "vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx:606-611,650-679"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CP-024",
+    "module": "cloud-posture",
+    "severity": "Critical",
+    "status": "open",
+    "component": "/grc-framework coverage scoring for controls with cloud-posture evidence",
+    "category": "Traceability",
+    "title": "A control can show 'Covered' while its cloud-posture evidence is 100% FAILing",
+    "description": "Both requirement- and control-level scoring weight 'cloud' as a small minority dimension out of 100 (`client-compliance-sync.service.js:1847-1850`: evidence 25/policy 15/cert 10/risk 10/vendor 10/trust 10/cloud 10/integration 10; control level :2653-2654: evidence 25/policy 15/risk 10/vendor 10/trust 10/cloud 15/integration 15), and `DEFAULT_COVERAGE_THRESHOLDS = {covered:70, partial:30}` (:128) marks anything >=70 'covered'. `onCloudPostureScanCompleted` (:1975-2004) sets `cloudScore = dominantStatus==='FAIL' ? 0 : ...` (line 1982) for a fully-failing control. Arithmetic: evidence+policy+cert+risk+vendor+trust already totals 80 (requirement level) or 70 (control level) with cloud=0 and integration=0 - either total already clears the 70-point 'covered' threshold with every single cloud check FAILing.\n\nAuditor-facing breakage: this is the exact 'satisfied control, open failing finding' scenario an ISO 27001 auditor is trained to catch - the platform actively produces it by design, because cloud evidence is capped at 10-15% of a control's score with no override rule for a FAIL dominant status.",
+    "requirement": "ISO 27001:2022 Annex A.5.3/A.8.3; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:1847-1850,2653-2654,128,1975-2004"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

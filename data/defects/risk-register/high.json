@@ -308,5 +308,43 @@
     "lastVerified": "2026-08-27",
     "runsOpen": 1,
     "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-054",
+    "module": "risk-register",
+    "title": "Risk treatment plans have no structured control/requirement reference - pure free text, unverifiable against the SoA",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "TreatmentPlan/TreatmentMilestone (risk-management-service/src/types/index.ts:225-263) expose only description, notes, and actionItems: Array<string | {name, type, status}> - no controlId/uclId/requirementId field anywhere. Confirmed in the frontend: RiskTreatmentPanel.jsx has zero references to control/requirement/framework/uclControl (grep only matches the Chakra FormControl wrapper).\n\nAuditor-facing breakage: a treatment action reading 'Implement MFA per control X' is unverifiable against the SoA - no id, no cross-reference, an auditor must trust the prose.",
+    "requirement": "ISO 27001:2022 Clause 8.3 risk treatment; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "risk-management-service/src/types/index.ts:225-263",
+      "vibrantix-client-panel/src/components/risk-register/RiskTreatmentPanel.jsx"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "RR-056",
+    "module": "risk-register",
+    "title": "Risk detail page cannot display saved control/framework mappings due to a field-name mismatch, even though the save/sync pipeline that reaches the shared UCL ledger is correctly wired",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "Good news first: the manual mapping UI (CreateRiskModal.jsx:1464-1526, reusing Trust Vault's RequirementControlMapping component) correctly calls riskService.updateUclControls/updateFrameworkMappings, which server-side writes risk.mappings.frameworks/uclControls and calls complianceBridge.notifyMappingSnapshot -> outbox -> onRiskComplianceMappingSnapshot, which correctly updates ClientRequirement.riskIds/ClientControl.riskIds and triggers recomputeCoverage. This part of the chain does propagate to the shared UCL ledger.\n\nThe break is downstream, in the read path: (detail)/risk-register/[id]/page.jsx:151 (const framework = risk.framework || '') and :160 (const controls = risk.controls || []) read top-level fields that don't exist anywhere in the Risk schema - the real data lives at risk.mappings.frameworks/uclControls. riskService.formatRiskForDisplay() spreads ...risk but never derives controls/framework from mappings.*.\n\nAuditor-facing breakage: the page's Controls section and Framework row are permanently blank for every risk - mapped or not. An auditor opening a risk's detail page to verify 'this is the control this risk relates to' sees nothing, even for a risk an analyst carefully mapped through the modal (which, by contrast, correctly re-populates from editItem.mappings on edit - the edit form works, the read-only detail view doesn't).",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(detail)/risk-register/[id]/page.jsx:151,160,337-354,416",
+      "vibrantix-client-panel/src/services/riskService.js:777-896",
+      "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:543-561,1464-1526",
+      "risk-management-service/src/services/RiskRegisterService.ts:1656-1786"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

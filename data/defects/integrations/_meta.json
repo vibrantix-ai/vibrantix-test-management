@@ -1,0 +1,8 @@
+{
+  "slug": "integrations",
+  "name": "Integrations",
+  "scope": "feature",
+  "qaAgent": "Integrations_QA_Agent",
+  "sourceTrackers": [],
+  "description": "No QA_Tracker/*.md live tracker was ever created for this module (confirmed absent on disk). This is the module's first JSON-native defect store, bootstrapped 2026-08-29 during a cross-module ISO 27001 auditor-UX traceability review."
+}

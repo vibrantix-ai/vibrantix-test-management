@@ -145,5 +145,81 @@
     ],
     "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-025",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/grc-framework CSV export (control evidence rollup)",
+    "category": "Traceability",
+    "title": "No cross-module 'all evidence for control X' export includes actual cloud scan finding-level detail",
+    "description": "The CSV export (`exportCSV`, `FrameworkComplianceMap.jsx:55-178`) is the platform's only 'evidence for control X' rollup. Its Section 2 'Resource Detail' (lines 120-141) is built from `getRequirementAssets`, which structurally excludes cloud findings (see CP-023) - zero cloud finding rows ever appear. Section 1 'Control Summary' (lines 90-118) exports only two integers, Cloud Pass/Cloud Fail (lines 94, 113-114) - no check ID, resource ARN, severity, or scan reference. The backend does compute a per-requirement cloudRow aggregate (`requirement-resource-resolver.service.js:414-424,470`), but it is consumed only by audit-assurance and intelligent-audit controllers - never by the GRC Framework compliance-map endpoint or export the auditor actually uses.\n\nAuditor-facing breakage: an evidence-sampling export for a control shows 'Cloud Pass: 8, Cloud Fail: 2' with no way to identify which two checks failed, on which resource, in which cloud account - not sufficient as audit evidence on its own.",
+    "requirement": "ISO 27001:2022 Clause 7.5.3 documented information must be available",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx:55-178",
+      "vibrantix-backend/src/modules/compliance-frameworks/requirement-resource-resolver.service.js:414-424,470"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CP-026",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/grc-framework coverage view (cloud dimension staleness)",
+    "category": "Traceability",
+    "title": "Stuck/failed/abandoned scans leave stale control coverage with no staleness indicator",
+    "description": "`ClientControl`'s `cloudPostureSchema` (`client-control.model.js:3-8`) stores only {dominantStatus, passCount, failCount, totalFindings} - no timestamp field of any kind. `scan-reconciler.job.js:11-62` flips stuck scans to status:'abandoned' but never calls into `client-compliance-sync.service.js` and never touches any ClientControl document - so the last successfully-synced pass/fail numbers from a prior (possibly much older) scan remain displayed as current indefinitely, with no expiry or 'stale' flag anywhere in the schema or UI.\n\nAuditor-facing breakage: if the most recent scan for a project silently gets abandoned, the GRC Framework coverage view keeps showing the old cloud pass/fail counts as if they were live, with nothing telling the auditor the underlying scan hasn't actually run successfully in however long.",
+    "requirement": "ISO 27001:2022 Clause 9.1 monitoring and measurement",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/compliance-frameworks/client-control.model.js:3-8",
+      "vibrantix-backend/src/modules/cloud-posture/scan-reconciler.job.js:11-62"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CP-027",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/cloud-posture scan trigger + compliance sync (entitlement cap)",
+    "category": "Traceability",
+    "title": "Entitlement-capped ('over-limit') cloud assets are not actually excluded from compliance scoring, and the cap is invisible in the GRC view",
+    "description": "`CloudResource` has `overLimit`/`overLimitSince` fields (`cloud-resource.model.js:202-203`), and `_applyAssetCap` (`scan.controller.js:107-134`) flags excess resources `evaluationExcluded:true` - but only after Prowler has already scanned them and written Finding documents. The compliance-sync path, `_fireCloudPostureComplianceSync` (`scan.controller.js:142-230`), queries findings with no filter at all on overLimit/evaluationExcluded (lines 152-163) - so findings from resources the platform itself marked 'excluded from compliance evaluation' still feed the control score. The user-facing warning text at scan trigger ('Assets beyond the cap will be stored but excluded from compliance evaluation', line 273) is therefore false for the compliance-scoring pipeline. No component under vibrantix-client-panel/src/components/grc/ references overLimit/evaluationExcluded at all.\n\nAuditor-facing breakage: there is no 'N assets over your plan's cap were unscanned/excluded' note anywhere in the compliance view, and the one enforcement mechanism that exists doesn't actually reach the scoring code that reads it.",
+    "requirement": "ISO 27001:2022 Clause 9.1; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/cloud-posture/cloud-resource.model.js:202-203",
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:107-134,142-230,273"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "CP-028",
+    "module": "cloud-posture",
+    "severity": "High",
+    "status": "open",
+    "component": "/grc-framework coverage view (multi-cloud aggregation)",
+    "category": "Traceability",
+    "title": "Multi-cloud aggregation blends providers, hiding a single-cloud failure behind a passing majority",
+    "description": "`_fireCloudPostureComplianceSync` builds `checkStats` keyed by `${provider}:${checkId}` (`scan.controller.js:171-179`) and then, when rolling up to `uclStats` (lines 217-230), sums stats.pass/stats.fail into uclStats[uclId] with the provider key discarded entirely. `dominantStatus` (line 240) is computed purely from the blended totals (fail > pass ? 'FAIL' : pass > 0 ? 'PASS' : 'SKIP') before being passed to `onCloudPostureScanCompleted`. `ClientControl.cloudPostureSchema` has no per-provider field to reconstruct this later.\n\nAuditor-facing breakage: if AWS passes a check 10 times and Azure fails the equivalent check 3 times for the same UCL control, the blended result is dominantStatus:PASS (10 > 3) - the control's cloud dimension reads 100/PASS with the Azure gap completely invisible in the compliance view, even though the cloud-posture module's own per-provider dashboard could show the truth if the auditor happened to cross-check it manually.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/cloud-posture/scan.controller.js:171-230,240-249",
+      "vibrantix-backend/src/modules/compliance-frameworks/client-control.model.js:3-8"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

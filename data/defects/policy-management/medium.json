@@ -310,5 +310,41 @@
       "vibrantix-backend/src/modules/policy/policy.controller.js:1108-1128 (setUclMappings sync block)"
     ],
     "description": "**Files:** `vibrantix-backend/src/modules/policy/policy.controller.js` — the `setRequirementMappings` handler's `setImmediate(...)` block (lines 1058-1090) and the `setUclMappings` handler's `setImmediate(...)` block (lines 1108-1128)\n**Root Cause:** Both handlers respond to the client (`res.json(...)`) BEFORE running the UCL sync, inside a fire-and-forget `setImmediate(async () => { ... })`. In the `setRequirementMappings` path, every `complianceSync.onPolicyMappingCreated(...)`/`onPolicyMappingRemoved(...)` call (lines 1072, 1080-1082, 1087) is chained with a bare `.catch(() => {})` — a failure is silently discarded with no `logger.warn`/`logger.error` call at all, and the enclosing `try { ... } catch { /* non-critical */ }` (line 1089) would swallow it a second time even if it weren't already caught. The sibling `setUclMappings` path is slightly better — its single `complianceSync.onPolicyUclMappingChanged(...)` call (line 1119) does have a `.catch(err => logger.warn(...))` — but neither path has any retry, dead-letter queue, or reconciliation job to actually repair the drift once logged.\n**Impact:** Whenever the UCL sync call transiently fails (DB blip, downstream validation error, timeout) — which is entirely plausible since this runs post-response with no user-visible feedback — the org-wide UCL verdict ledger (`ucl-control.model.js` / `client-compliance` layer, the same system GRC_Framework_QA_Agent's coverage view and this module's own FrameworkMapping UI both read from) silently diverges from the policy's own `PolicyControlMapping`/requirement-mapping state. The policy-management UI will show a mapping as present/removed while the cross-module UCL coverage report (and anything downstream of it, e.g. audit SoA views) does not reflect it — a genuine SoA data-integrity gap with no operator-visible signal for the `setRequirementMappings` path, and only a log line (no alert/retry) for `setUclMappings`. This is the same defect class Vendor_Management_QA_Agent already flagged for its own vendor→UCL sync (VM-026, 'confirmed-lossy fire-and-forget event').\n**Claude Fix Prompt:**\n```\n1. In policy.controller.js's setRequirementMappings sync block (~line 1058-1090), replace every\n   bare `.catch(() => {})` on complianceSync.onPolicyMappingCreated/onPolicyMappingRemoved with\n   `.catch(err => logger.warn('[complianceSync] policy requirement-mapping sync failed', { error: err.message, policyId: req.params.policyId, requirementId: rid }))`\n   at minimum, matching the logging already present in setUclMappings.\n\n2. Add a durable retry mechanism (BullMQ job with backoff, or a periodic reconciliation pass\n   comparing PolicyControlMapping/requirement-mapping state against the UCL ledger for the\n   affected policyId) rather than relying on best-effort in-process fire-and-forget calls for\n   data that feeds compliance/SoA reporting.\n```"
+  },
+  {
+    "id": "PM-062",
+    "module": "policy-management",
+    "title": "FrameworkMapping.jsx's coverage-gap drill-down always renders the literal placeholder 'Multiple controls' - PM-011 is not actually fixed",
+    "severity": "Medium",
+    "status": "open",
+    "category": "Traceability",
+    "description": "policy.repository.js::coverageGaps (lines 695-702) builds each gap entry with missingControls:[] hardcoded to an empty array, never populated from the actual uncovered-control set. FrameworkMapping.jsx:493-496 renders {gap.missingControls?.join(', ') || 'Multiple controls'} - since the array is always empty, [].join(', ') returns '' (falsy), so this line ALWAYS falls through to the literal string 'Multiple controls', for every domain, every framework, every time.\n\nAuditor-facing breakage: the QA tracker marked PM-011 'fixed' because a drawer UI and a 'View Details' button now exist, but the actual per-gap content behind 'Missing: ...' was never wired to real data - every single gap entry reads 'Missing: Multiple controls' verbatim. An auditor trying to sample the Statement-of-Applicability-shaped gap gets a UI that visually implies drill-down capability but delivers zero additional information beyond the aggregate percentage already shown on the stats card.",
+    "requirement": "ISO 27001:2022 Clause 6.1.3 Statement of Applicability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/policy/policy.repository.js:695-702",
+      "vibrantix-client-panel/src/components/policy-management/FrameworkMapping.jsx:493-496"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap", "reopens:PM-011"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "PM-063",
+    "module": "policy-management",
+    "title": "Policy lifecycle transitions never trigger a UCL recompute; coverage status can be stale relative to real-world policy state",
+    "severity": "Medium",
+    "status": "open",
+    "category": "Traceability",
+    "description": "workflowTransition.service.js has zero references to complianceSync/recomputeControlCoverage anywhere in the file. policy.controller.js calls complianceSync.* only from setRequirementMappings and setUclMappings - never from the transition handler (the only path that changes policy.status).\n\nAuditor-facing breakage: when a policy that already carries mappings (attached while draft) is finally approved (under_review -> active), nothing re-triggers recomputeControlCoverage for its mapped controls - the UCL ClientControl.coverageScore stays stale at its prior (likely gap) value until an unrelated event happens to touch the same control. The same is true in reverse when a policy is archived/retired: the UCL score doesn't drop until something else coincidentally recomputes it. For an auditor sampling evidence on a specific date, /grc-framework's coverage view can lag the real, current state of the policy register with no visible 'last recalculated' indicator tying the two together.",
+    "requirement": "ISO 27001:2022 Clause 9.1 monitoring and measurement",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js",
+      "vibrantix-backend/src/modules/policy/policy.controller.js"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

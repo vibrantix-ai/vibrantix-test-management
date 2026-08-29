@@ -252,5 +252,41 @@
     "sourceFile": "Evidence_Management_QA_Agent",
     "fixEvidence": "First formally persisted to the JSON store this run (previously documented only in this agent's own 'Known Confirmed Defects' narrative, never written to a severity file). Verified FIXED in code as of 2026-08-27: `evidence-control-verdicts.controller.js:135-165` (`reportControlVerdicts`, the AI-upload 'completed' callback) still does a full-array replace of `evidence.controlVerdicts` (line 139: `evidenceUpdate.controlVerdicts = verdicts.map(...)`), but it now explicitly builds a `priorByCode` lookup (lines 135-137) and, for any `uclCode` whose prior `reviewStatus` was not `'pending'` (i.e. previously `'approved'` or `'rejected'`), carries forward `reviewStatus`/`reviewedBy`/`reviewedAt`/`rejectionReason` from the prior record instead of resetting to `'pending'` (lines 141, 157-162). An inline comment (lines 123-134) explicitly documents this as a deliberate fix for exactly this bug: \"A human review decision must survive a re-run of the pipeline. This used to hard-code reviewStatus:'pending' for every incoming verdict...\". Confirmed via `git log` that this file has received targeted fix commits. No dedicated regression test exists yet for this specific preserve-on-rerun behavior — worth adding, but the production code path is confirmed correct.",
     "description": "**Files:** `vibrantix-backend/src/modules/evidence/evidence.model.js` (`controlVerdicts[]` schema); `evidence-control-verdicts.controller.js` (AI-upload callback); `evidence-verdict-rejection.model.js` (append-only rejection log)\n**Root Cause (original, as documented in this agent's architecture notes 2026-08-16):** Rejecting an AI-suggested control verdict flipped `evidence.controlVerdicts[].reviewStatus` to `'rejected'` in place, but the next AI-upload callback for that evidence item replaced the entire `controlVerdicts[]` array wholesale, silently discarding the rejection.\n**Status:** FIXED — see fixEvidence. This record is being persisted to the JSON store for the first time in this run; it was previously described only in this agent's narrative documentation, never logged as a JSON defect."
+  },
+  {
+    "id": "EM-044",
+    "module": "evidence-management",
+    "title": "Evidence can be uploaded and saved with zero requirement/control/UCL mapping, and nothing in the UI flags it as unmapped",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`createEvidence` (`vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:343-551`) only requires `title`, `evidenceType`, and a file. `requirementMappings`/`directUclMappings` (lines 353-354) are optional and default to `[]`; if empty, no `EvidenceRequirementMapping`/`EvidenceUclMapping` row is ever written, yet the document is saved as real, filed evidence. Coverage is correctly computed only from evidence IDs already present in `ClientRequirement.evidenceIds`/`ClientControl.evidenceIds`, so unmapped evidence is correctly excluded from coverage math - but there is no compensating signal anywhere in the UI: `EvidenceTable.jsx` and the evidence-management component tree have no 'unmapped'/'no controls linked' badge or filter.\n\nAuditor-facing breakage: an org can accumulate evidence that looks 'filed' in Evidence Management indefinitely with no control behind it, and nothing on the list screen tells the auditor which items these are.",
+    "requirement": "ISO 27001:2022 Clause 7.5.2 documented information must indicate its nature",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence/evidence-upload.controller.js:343-551"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "EM-046",
+    "module": "evidence-management",
+    "title": "No true single-pane 'evidence by control across every source' view even within Evidence Management itself; two structurally separate mapping systems both partial",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "The one control-centric evidence view in Evidence Management, `ControlDetailsDrawer.jsx:73-98`, calls only `evidenceService.getMappingsByControl(lookupId)`, which reads solely from the LEGACY `EvidenceControlMapping` collection. It does not query `EvidenceUclMapping`/`EvidenceRequirementMapping` (the newer, AI-verdict-fed system), nor integration evidence, cloud-posture, vendor, or policy evidence - those live on `ClientControl`'s separate `integrationEvidenceIds`/`vendorControlIds`/`policyIds`/`certificationIds`/`scannerCheckIds` arrays, which have no exposed aggregate read endpoint reachable from this drawer.\n\nAuditor-facing breakage: two structurally separate evidence-mapping systems coexist, and the only 'view evidence for this control' screen in Evidence Management shows just one of them - an auditor picking a control here can be shown an incomplete evidence set while believing it's exhaustive.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/evidence-management/control-mapping/ControlDetailsDrawer.jsx:73-98",
+      "vibrantix-backend/src/modules/evidence/evidence-mapping.controller.js:569-649",
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:2613-2666"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

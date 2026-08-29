@@ -164,5 +164,40 @@
     "runsOpen": 1,
     "fixEvidence": "Run #2 fix — pcl controller hasAssets now includes `+ cloud.length + integrationsOut.length`",
     "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "GRC-025",
+    "module": "grc-framework",
+    "title": "Framework-catalog coverage % is a silently-stale 1-hour cache with zero visible timestamp, inconsistent with the live detail page for the same framework",
+    "severity": "Medium",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`getFrameworkList` (used by the /grc-framework catalog tiles) serves a `ClientComplianceSummary` doc cached for up to 1 hour, and its cached branch never returns any freshness field (`client-compliance-aggregation.service.js:444-463`). By contrast `getProjectSummary`'s cached branch does return `lastSyncAt`/`lastSyncDurationMs` (:295-320), but a repo-wide search of the client-panel found zero references to `lastSyncAt`/`lastRefreshedAt` anywhere in the compliance/grc-framework frontend. Meanwhile `getFrameworkCoverage` — used by the Compliance Map detail page — is fully live, no cache at all (:227-271).\n\nAuditor-facing breakage: the catalog tile's % and the detail page's % for the SAME framework can legitimately disagree (one cached up to an hour, one live) with no indication to the auditor of why, or that either number carries an age.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/compliance-frameworks/client-compliance-aggregation.service.js:444-463",
+      "vibrantix-backend/src/modules/compliance-frameworks/client-compliance-aggregation.service.js:227-271"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "GRC-026",
+    "module": "grc-framework",
+    "title": "Coverage recompute can silently no-op when Redis is unavailable, leaving the score stale relative to what evidence/policy/vendor modules just wrote",
+    "severity": "Medium",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`recomputeControlCoverage` requires a Redis distributed lock and, if Redis is unavailable, skips recomputation entirely and returns with no error surfaced anywhere: `client-compliance-sync.service.js:2589-2610` logs `logger.warn('recomputeControlCoverage — Redis unavailable, skipping...')` and returns. Failures on the actual compute path are written to a `compliance_sync_dead_letters` collection rather than surfaced to any UI — there is no 'N controls have a pending recompute failure' banner anywhere in /grc-framework.\n\nAuditor-facing breakage: a control's evidence/policy/vendor/risk attachment can be written correctly by its owning module while the Compliance Map's score for that control silently never updates — indistinguishable, from the UI, from a control that genuinely has no new evidence.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:2589-2610"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

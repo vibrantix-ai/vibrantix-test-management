@@ -1,0 +1,22 @@
+[
+  {
+    "id": "INTG-003",
+    "module": "integrations",
+    "title": "Real compliance-mapping endpoint exists but the evidence-detail UI never calls it; only failing controls ever show a name",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "The backend computes a correct, data-backed control mapping: `vibrantix-connector-service/src/services/ComplianceMappingService.ts::buildComplianceMapping` (lines 249-324) walks `integration_check_master -> ucl_master_v2 -> requirement_ucl_mapping_v2 -> framework_requirements`, correlated with real verdicts, exposed at `GET /integration-evidence/:evidenceId/compliance-mapping` (`integration-evidence.routes.ts:312-409`). A frontend service wrapper exists (`getIntegrationEvidenceComplianceMapping` in `integrationHubService.js`), but `IntegrationEvidenceDetailPage.jsx` never imports or calls it (confirmed via repo-wide grep for `ComplianceMapping` in that file - zero matches). The page only calls `getIntegrationEvidenceRiskMapping`, which surfaces only FAILED/PARTIAL controls in an 'Identified Risks' panel; passing controls are reduced to an anonymous count badge (e.g. '5 checks / 1 failed') with no control names, titles, or framework identifiers ever rendered for passes.\n\nAuditor-facing breakage: even for the one provider (Okta) with real, populated verdicts, an auditor reviewing a piece of PASSING evidence cannot see which specific control(s) it satisfies anywhere in the product UI - only a bare pass/fail count. The only place control names ever appear is the failure table, which is backwards from an audit-evidence standpoint: auditors need to see what evidence proves, not just what it failed to prove.",
+    "requirement": "ISO 27001:2022 Annex A.5.19 / A.5.20 supplier & integration risk controls; ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-connector-service/src/services/ComplianceMappingService.ts:249-324",
+      "vibrantix-connector-service/src/routes/integration-evidence.routes.ts:312-409",
+      "vibrantix-client-panel/src/services/integrationHubService.js",
+      "vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  }
+]

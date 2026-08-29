@@ -103,5 +103,62 @@
     "lastVerified": "2026-08-27",
     "runsOpen": 1,
     "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-052",
+    "module": "risk-register",
+    "title": "Auto-promoted compliance-coverage risks carry no structured link to the UCL control/requirement whose coverage degraded - only free text",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "ComplianceCoverageRiskIntegrationService.handleCoverageDegraded (risk-management-service/src/services/ComplianceCoverageRiskIntegrationService.ts:60-93) has clientRequirementId, requirementCode, requirementTitle, frameworkId, frameworkName in hand, but only burns them into free-text title/description (lines 62, 107-127) and into an opaque sourceExternalId string - it never sets mappings.uclControls/mappings.frameworks on the risk it creates. BaseIntegrationService.createRiskFromEvent (BaseIntegrationService.ts:300) defaults mappings to empty arrays whenever the caller doesn't supply them. This is systemic across all 9 auto-promotion services: only VendorRiskIntegrationService.ts:467 sets mappings at all, and even that uses a stale field shape that doesn't match the current RiskMappings interface. Prowler, Evidence, Policy, Connector, Trust Vault, and Audit integration services never touch mappings.\n\nAuditor-facing breakage: opening an auto-promoted risk (e.g. '[COMPLIANCE] Coverage degraded - Access Control Policy (ISO 27001)') gives a human-readable title but no clickable/structured pointer to the specific UCL control or client_requirements document - the real ID only survives inside a raw DB string field an auditor has no UI to inspect.",
+    "requirement": "ISO 27001:2022 Clause 6.1.2(e)/A.5.2; ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "risk-management-service/src/services/ComplianceCoverageRiskIntegrationService.ts:60-93",
+      "risk-management-service/src/services/BaseIntegrationService.ts:300",
+      "risk-management-service/src/types/index.ts:306-382",
+      "risk-management-service/src/services/VendorRiskIntegrationService.ts:467"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "RR-053",
+    "module": "risk-register",
+    "title": "Risk evidence is siloed and one-directional; never feeds the linked control's evidence coverage dimension in /grc-framework",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "Two separate evidence paths exist on a risk (RiskEvidencePanel.jsx): direct upload (lines 809-836) writes into risk-management-service's own RiskEvidence collection, S3-backed and entirely separate from vibrantix-backend's Evidence model - this evidence can never appear in /evidence-management, there is no shared record at all. Repository-linked evidence (lines 864-879) just appends an existing Evidence _id to risk.evidence[] via riskService.updateRisk - vibrantix-backend's evidence module has zero riskIds/linkedRisks field anywhere, so the Evidence document itself never learns it's referenced by a risk; viewing that same evidence item from /evidence-management shows no cross-reference back to the risk. Consequence for coverage scoring: recomputeCoverage (client-compliance-sync.service.js:1784) only pulls evidenceIds from ClientRequirement/ClientControl documents - never from a linked risk's own evidenceIds. RiskComplianceBridgeService only has event types for requirement/UCL mapping changes - none for evidence.\n\nAuditor-facing breakage: evidence attached to a risk never contributes to that control's 'evidence' coverage dimension, even when the risk itself is correctly UCL-mapped, and is invisible from the evidence register entirely for the direct-upload path.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/risk-register/RiskEvidencePanel.jsx:809-836,864-879",
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:1784",
+      "risk-management-service/src/services/RiskComplianceBridgeService.ts:12-15"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "RR-055",
+    "module": "risk-register",
+    "title": "Coverage's 'risk' dimension is a flat existence flag blind to status/treatment - a fully-treated risk gets the same credit as an untreated one, and can leave a control 'uncovered' despite full remediation",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "recomputeCoverage/recomputeControlCoverage score the risk dimension as binary: risk: (validated ? validated.riskDocs.length : riskIds.length) ? 100 : 0 (client-compliance-sync.service.js:1839, mirrored for controls at :2659). The underlying query (resource-hydration.util.js:196-204) filters only isArchived !== true - its own comment states every open phase AND the terminal closure phase still count as a real, currently-tracked risk. Weight is WEIGHTS.risk = 10 out of 100 (:1848). Both directions confirmed: an open, untreated risk contributes the exact same +10 'risk' credit as a fully treated/closed risk; a control whose only signal is a fully treated/closed risk, with no evidence/policy/vendor/trust attached, still scores 10/100 -> statusFromScore classifies it 'gap' - so a control can show 'uncovered' in /grc-framework even though its associated risk has been fully remediated. No event type exists for risk status/treatment/phase changes anywhere in the outbox.\n\nAuditor-facing breakage: an auditor cannot tell from the coverage view whether a linked risk is still live or resolved, and remediated risks can paradoxically make a control look worse (still 'gap') than one with no risk history at all once other dimensions are weak.",
+    "requirement": "ISO 27001:2022 Clause 8.3 risk treatment implementation; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:1839,2659,1848",
+      "vibrantix-backend/src/modules/compliance-frameworks/resource-hydration.util.js:196-204"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

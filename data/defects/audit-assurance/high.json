@@ -198,5 +198,24 @@
     "runsOpen": 2,
     "fixEvidence": "Re-verified 2026-08-22. `audit-assurance.controller.js`'s `createAudit()` (lines 294-332) wraps each import mode (`intelli_audit`, `requirements`, `template`) in a try/catch that logs via `logger.error(...)` (not `console.error`), rolls back by deleting the just-created audit document (`AuditAssurance.deleteOne({_id: audit._id})`), and returns `res.status(500).json({ error: 'Scope import failed', detail: err.message })` — never a silent fall-through to 201. Citation corrected from the original 188-230.",
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "H-008",
+    "module": "audit-assurance",
+    "title": "Cross-module evidence linkage is one-directional, and the alternate 'Attach Evidence' entry point is a non-functional stub that fakes a success toast",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "Evidence attached from within an audit (attachEvidence, audit-assurance.controller.js:1163-1211) only writes to AuditScopeItem.evidenceAttachments - the Evidence model has no field referencing back to the audit/scope item, and evidence-management's components have no 'used in Audit X' cross-reference anywhere. Separately and more acutely: RequirementFullView.jsx renders EvidenceSection.jsx, whose 'Attach Evidence' modal calls auditV3Service.attachEvidenceToRequirement - a stub that does console.warn('...not available yet') and returns {success:false, message:'Feature not available yet'}. handleAttachEvidence in EvidenceSection.jsx never checks the returned success flag - it unconditionally shows a green 'Success - Evidence attached successfully' toast, closes the modal, and calls onUpdate(), even though nothing was persisted.\n\nAuditor-facing breakage: an auditor using this page believes they have linked evidence to a requirement when the platform silently discarded the action - a genuinely deceptive UX.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js:1163-1211",
+      "vibrantix-client-panel/src/components/audit-assurance-2/EvidenceSection.jsx:94-129",
+      "vibrantix-client-panel/src/services/auditV3Service.js:223-231"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

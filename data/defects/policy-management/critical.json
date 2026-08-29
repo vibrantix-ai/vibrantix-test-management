@@ -62,5 +62,24 @@
     "sourceFile": "QA_Tracker/POLICY_MANAGEMENT_QA_LIVE_TRACKER.md",
     "description": "**Files:** `vibrantix-client-panel/src/components/policy-management/PolicyDetailView.jsx`\n**Root Cause:** Policy content rendered as raw HTML: `<div dangerouslySetInnerHTML={{ __html: policy.content }} />` with no sanitization. Any user with `policy.write` access can embed executable JavaScript visible to all readers.\n**Impact:** Stored XSS (OWASP A03:2021). Malicious scripts execute in all viewers' browsers including executives and external auditors. During an ISO Stage 2 audit conducted on-screen, the auditor's browser session is at risk.\n**Claude Fix Prompt:**\n`npm install dompurify`. In `PolicyDetailView.jsx`: `import DOMPurify from 'dompurify';`. Change render to: `<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(policy.content, { USE_PROFILES: { html: true } }) }} />`.",
     "fixEvidence": "Verified every `dangerouslySetInnerHTML` call site across the entire `policy-management/` component tree now routes through `DOMPurify.sanitize()`: `PolicyDetailView.jsx:151,1718` (`DOMPurify.sanitize(html, { USE_PROFILES: { html: true } })`), `PolicyDetailsDrawer.jsx:161,1076`, `PolicyEdit.jsx:165,1694` (sanitized inside the shared `markdownToHtml()` helper), and `ReviewDetail.jsx:5,949` (`DOMPurify.sanitize(policy.content || '')`). No remaining raw/unsanitized `dangerouslySetInnerHTML` usage found anywhere in `vibrantix-client-panel/src/components/policy-management/`."
+  },
+  {
+    "id": "PM-060",
+    "module": "policy-management",
+    "title": "Coverage-percentage math in /policy-management never checks the mapped policy's lifecycle status - draft/archived/rejected policies count identically to active ones",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`policy.service.js::getComplianceScore` (lines 295-323) and `getComplianceGaps` (lines 365-377) fetch `Policy.findOne({policyId,isLatest:true}).select('version')` only to read `.version` - `policy.status` is never read or filtered on. `policy.repository.js::frameworkMappingStats` (lines 603-609, the query behind FrameworkMapping.jsx) filters only `PolicyControlMapping.status:'active'`, with its own comment admitting 'PolicyControlMapping soft-delete flag, not policy status' - no join back to Policy.status exists anywhere in the function. The org dashboard `frameworkCoverage` aggregate (lines 502-551) has the same gap. This directly contradicts the UI's own documented methodology: `PolicyComplianceDashboard.jsx:233-237`'s tooltip states the score is 'Percentage of active framework controls covered by at least one active policy' - false for the actual computation.\n\nBecause `setRequirementMappings`/`createControlMapping` have no status gate either, a policy can acquire framework/control mappings while still draft (this is exactly what the AI-Reader 'Adopt Policy & Triage Gaps' flow does in one step). That draft policy's mappings are then counted at full weight in the org-wide 'Avg Coverage %' stat, the per-framework coverage bars, and the individual policy's own compliance score.\n\nAuditor-facing breakage: an auditor sampling the dashboard's '73% covered' claim, or a specific policy's compliance score, is looking at a number partly built from documents that have never been approved - not limited to AI-generated policies, any draft policy of any origin inflates the number the same way.",
+    "requirement": "ISO 27001:2022 Clause 5.2 policy must be reviewed and approved; ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/policy/policy.service.js:295-323,365-377",
+      "vibrantix-backend/src/modules/policy/policy.repository.js:603-609,502-551",
+      "vibrantix-client-panel/src/components/policy-management/PolicyComplianceDashboard.jsx:233-237"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

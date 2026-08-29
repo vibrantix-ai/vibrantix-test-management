@@ -100,5 +100,42 @@
     "runsOpen": 1,
     "sourceFile": "Evidence_Management_QA_Agent",
     "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx:225-229` (`COMPLIANCE_BADGES` constant), `:355,419-424` (`generateEvidencePDF` loop that prints it), `:1133` (single call site used generically for every provider's Export PDF action), `:772-784` (`ComplianceBadge` component, confirmed never rendered as JSX anywhere — dead in the live UI)\n**Root Cause:** `COMPLIANCE_BADGES = [{ framework: 'ISO 27001', controls: ['A.5.15','A.8.2','A.12.4.1'] }, { framework: 'SOC 2', controls: ['CC6.1','CC6.2','CC7.2'] }, { framework: 'NIST CSF', controls: ['AC-2','IA-2','DE.AE-3'] }]` is a static, hardcoded array with no relationship to the evidence's actual provider, type, or content. `generateEvidencePDF` (used by all 10 provider renderers — GitHub, Jira, Nessus, OpenVAS, Rapid7, Sentinel, Splunk, SumoLogic, Okta, Generic — via one shared call site) loops over this constant and prints the identical three ISO 27001 control IDs, SOC 2 criteria, and NIST CSF references on every exported PDF, whether the evidence is an Okta MFA policy, a GitHub branch-protection setting, or a Splunk alert. The app DOES have a real, per-evidence control-verdict system (`controlStringId`/`controlTitle`/`verdict` fetched from the backend at lines 899-915, rendered at 1395-1581) — `COMPLIANCE_BADGES` is unrelated leftover/fixture data that only reaches the customer-facing PDF, not the on-screen UI (its React component is confirmed dead code).\n**Impact:** An auditor or customer relying on the exported PDF's \"Maps to: ISO 27001 A.5.15, A.8.2, A.12.4.1...\" line is being shown fabricated compliance data presented as a genuine, evidence-specific mapping — a direct Clause 7.5 / A.5.36 document-integrity violation, in the same class as EM-031's fake export history but arguably worse because it is embedded in an artifact meant to be handed to a certification body.\n**Claude Fix Prompt:**\n```\nFile: vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx\n\n1. Delete the hardcoded COMPLIANCE_BADGES constant (lines 225-229) and its use in generateEvidencePDF (lines 419-424).\n2. In generateEvidencePDF, source control mappings from the SAME real per-evidence verdict data already fetched and rendered on-screen (the controlStringId/controlTitle/verdict list at lines 899-915/1395-1581) — filter to verdict === 'approved' verdicts for this specific evidence item.\n3. If no real control mappings exist for the item being exported, print 'No control mappings recorded for this evidence' rather than any static placeholder.\n4. Add a regression test asserting the PDF's printed control list matches the evidence's actual controlVerdicts, not a fixed constant.\n```"
+  },
+  {
+    "id": "EM-045",
+    "module": "evidence-management",
+    "title": "Evidence requests can be marked 'fulfilled' without ever actually mapping a control - three disconnected manual steps stand between 'evidence exists' and 'control is covered'",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`EvidenceRequest` (`vibrantix-backend/src/modules/evidence-request/evidence-request.model.js`) only moves to `fulfilled` via the explicit `linkEvidence` action (`evidence-request.controller.js:311-357`), which the requester/assignee/admin must trigger by hand from `FulfillEvidenceRequestModal.jsx`. There is no code path anywhere in the upload controllers (`createEvidence`, `uploadAI`, `uploadAIBulk`, `confirmAI`) that looks up or auto-links an `EvidenceRequest` - confirmed by grep: zero references to `EvidenceRequest` anywhere under `modules/evidence/` or `core/`. Worse, the modal's own info box (`FulfillEvidenceRequestModal.jsx:338-340`) states plainly: 'This will attach the evidence to this request for review. The requester will review and accept it to attach to the requirement/check' - i.e., even marking the request `fulfilled` does NOT itself create the `EvidenceRequirementMapping`/`EvidenceUclMapping` needed for coverage; that is yet a third, separate manual action via the mapping UI.\n\nAuditor-facing breakage: a requester can request evidence for Control X, someone can upload matching evidence and mark the request 'fulfilled,' and the control can still show 0% coverage because nobody separately performed the mapping step - three disconnected manual actions stand between 'evidence exists' and 'control is covered,' with no automation and no reconciliation check between them.",
+    "requirement": "ISO 27001:2022 Clause 7.5.3 documented information must be available; ISO/IEC 27007:2019 §6.3.2",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence-request/evidence-request.controller.js:311-357",
+      "vibrantix-client-panel/src/components/evidence-management/FulfillEvidenceRequestModal.jsx:338-340"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "EM-047",
+    "module": "evidence-management",
+    "title": "Evidence version replacement does not force re-review; the coverage gate checks Evidence _id/status, not the version an approved mapping was actually created against",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`EvidenceVersionService.createVersionedUpdate` (`evidence-version.service.js:30-118`) bumps `version` but keeps the SAME `_id` for the new (latest) content (lines 96-98); the old content is snapshotted to a new `_id` with `isLatest:false`. `updateEvidence` (`evidence.controller.js:238-269`) does not force `status` back to a re-review state unless the caller's request body explicitly includes it - if a user replaces the file on an already-`closed` evidence record, the record's status silently stays `closed`. The real coverage gate, `recomputeCoverage`/`recomputeControlCoverage`, validates evidence purely by `{_id, status:'closed', isLatest:true}` (`client-compliance-sync.service.js:1805-1811,2634-2639`) - it never checks which `version` the original approved `EvidenceRequirementMapping`/`EvidenceUclMapping` (keyed by {evidenceId, version, requirementId/uclId}) was created against. Since the `_id` never changes across a version bump, a mapping approved for v1's content continues to satisfy coverage the instant v2's completely different file lands, with no re-review triggered.\n\nAuditor-facing breakage: an auditor clicks 'evidence covering Control X,' opens the file, and is shown the CURRENT file - which may be an entirely different document than the one a reviewer actually assessed and approved - with the platform still reporting the control as 'closed'/satisfied.",
+    "requirement": "ISO 27001:2022 Clause 7.5.2(b) change history must be maintained; Clause 9.1",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/evidence/evidence-version.service.js:30-118",
+      "vibrantix-backend/src/modules/evidence/evidence.controller.js:238-269",
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:1805-1811,2634-2639"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

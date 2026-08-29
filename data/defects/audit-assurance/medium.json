@@ -265,5 +265,23 @@
     "lastVerified": "2026-08-22",
     "runsOpen": 3,
     "sourceFile": "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "M-013",
+    "module": "audit-assurance",
+    "title": "Coverage/gap data is a frozen creation-time snapshot from the same UCL source as /grc-framework, with no ongoing reconciliation mechanism",
+    "severity": "Medium",
+    "status": "open",
+    "category": "Traceability",
+    "description": "AuditScopeItem.pclContext is populated at audit-creation time by requirement-resource-resolver.service.js, the same compliance-frameworks module that backs /grc-framework's live coverage view - so the two views are not calculating from divergent data sources at the moment of audit creation. However, audit-scope-item.model.js:15-30 documents that the snapshot is then frozen (lock.isLocked=true, lockedBy:'creation_snapshot') and explicitly described as what the audit shows going forward, even if the underlying resource's status later changes. The automated drift-detection service that used to flag such changes (pclSyncService) has been deleted, so new pcl_change locks are no longer created - the model's own comment calls the replacement 'dormant' and real drift-management 'future work'.\n\nAuditor-facing breakage: for the life of any audit (often weeks to months), the coverage badges shown inside audit-assurance can silently diverge from the same control's live coverage in /grc-framework, and the platform has no running mechanism to detect or surface that divergence to the auditor.",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/audit-assurance/audit-scope-item.model.js:15-30",
+      "vibrantix-backend/src/modules/compliance-frameworks/requirement-resource-resolver.service.js"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

@@ -88,5 +88,42 @@
     "runsOpen": 1,
     "fixEvidence": "Run #2 verified — complianceService.js line 39: `/compliance-frameworks/?limit=500&status=active`",
     "sourceFile": "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+  },
+  {
+    "id": "GRC-023",
+    "module": "grc-framework",
+    "title": "Orphaned/deprecated UCL mappings produce unidentifiable 'Unknown Control' coverage rows",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "Step 4 of `activateFramework` builds a `ClientControl` for every distinct `uclId` found via `RequirementUclMapping`, without filtering to only ids that resolved to a live `UclControl` doc (`vibrantix-backend/src/core/client-compliance-sync.service.js:230-264`): `meta = uclMeta[uclId.toString()] || {}` silently falls back to `{}` if the mapping is stale/orphaned. `UclControl` genuinely supports lifecycle churn (`status: enum ['active','deprecated']`, plus a `supersedes` self-reference), so a `RequirementUclMapping` pointing at a since-deprecated or since-superseded UCL id is a real, reachable state. The resulting `ClientControl` is created with `uclCode`/`domain`/`domainName` all undefined. On read, `listControls` (`client-compliance.controller.js:196-202`) falls back to `title: d.uclId?.name ?? d.uclCode ?? 'Unknown Control'`.\n\nAuditor-facing breakage: an auditor sees a coverage-contributing control literally labelled 'Unknown Control' with no domain, no description, and no way to tell what requirement it is supposed to be proving.",
+    "requirement": "ISO 27001:2022 Clause 6.1.3 Statement of Applicability; Annex A.5.3",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:230-264",
+      "vibrantix-backend/src/modules/compliance-frameworks/client-compliance.controller.js:196-202"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "GRC-024",
+    "module": "grc-framework",
+    "title": "Cross-framework coverage sharing works at the data layer but is completely invisible in the UI; the one visible crosswalk feature is a disconnected legacy system",
+    "severity": "High",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`recomputeRequirementsForControls` (`vibrantix-backend/src/core/client-compliance-sync.service.js:2562-2578`) correctly recomputes every `ClientRequirement` linked to a `ClientControl` regardless of which framework it belongs to — so evidence attached under ISO 27001 genuinely does raise a SOC 2 requirement's coverage too when they share a UCL control. But nothing in the UI ever tells the auditor this happened: `getRequirementWithAssets` returns which UCL control a resource came through, but never the sibling FrameworkRequirement on another framework sharing that control (confirmed absent in `ControlDetailDrawer`, `FrameworkComplianceMap.jsx:408-604`). The one crosswalk feature that exists, `cross-framework-control-mapping.controller.js` (mounted at `/control-mappings`), is a parallel, disconnected legacy system keyed off a different catalog model (`FrameworkControl`, not `FrameworkRequirement`/`UclControl`) with no relationship to `ClientControl`/`RequirementUclMapping` — it can only say two control codes are related in principle, never 'this evidence already covers both.' Its only consumer is the Executive Dashboard's Framework Board, a different module entirely from /grc-framework.\n\nAuditor-facing breakage: an auditor on the Compliance Map has to leave the module, go to a different dashboard, and cross-reference two disjoint systems manually to answer 'does this evidence count for both frameworks.'",
+    "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:2562-2578",
+      "vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx:408-604",
+      "vibrantix-backend/src/modules/compliance-frameworks/cross-framework-control-mapping.controller.js"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "GRC-022",
+    "module": "grc-framework",
+    "title": "Framework activation can produce a hollow Statement of Applicability with no error, indistinguishable from a legitimate empty state",
+    "severity": "Critical",
+    "status": "open",
+    "category": "Traceability",
+    "description": "`activateFramework()` seeds `client_requirements`/`client_controls` from `FrameworkRequirement` rows. If the framework's requirement catalog was never authored (zero `isLeaf:true, status:'active'` rows), the function does NOT throw - it logs a warning and returns quietly: `vibrantix-backend/src/core/client-compliance-sync.service.js:168-176` returns `{clientRequirements:0, clientControls:0}` with only a `logger.warn`. The caller (`client-frameworks.controller.js:151-171`) only surfaces an error on a thrown exception, so this path returns 201 success with `ClientFramework.status:'active'` already committed. `FrameworksManager.jsx:421-443` then renders the tile as Active, '0 controls', and a CircularProgress at 0% - visually identical to a legitimately-activated framework that simply has no coverage yet.\n\nAuditor-facing breakage: an auditor sampling a framework's Statement of Applicability cannot distinguish 'this org has done nothing yet' from 'this framework's catalog was never actually populated in the platform.' There is no '0 requirements seeded - activation may have failed' state anywhere in the frontend.",
+    "requirement": "ISO 27001:2022 Clause 6.1.3 Statement of Applicability must identify all necessary controls",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/client-compliance-sync.service.js:168-176",
+      "vibrantix-backend/src/modules/compliance-frameworks/client-frameworks.controller.js:151-171",
+      "vibrantix-client-panel/src/components/grc/FrameworksManager.jsx:421-443"
+    ],
+    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "firstDetected": "2026-08-29",
+    "lastVerified": "2026-08-29",
+    "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  }
+]
