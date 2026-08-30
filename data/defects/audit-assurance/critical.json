@@ -135,13 +135,13 @@
     "module": "audit-assurance",
     "title": "`organization_id` absent → risk service returns silent `{}` → empty R3/R4 reports",
     "severity": "Critical",
-    "status": "in_progress",
-    "statusRaw": "🟡 IN_PROGRESS",
+    "status": "open",
+    "statusRaw": "🔴 OPEN (flipped back from in_progress — no fix ever landed)",
     "category": "Service Client",
     "firstDetected": "2026-06-11",
-    "lastVerified": "2026-08-29",
-    "runsOpen": 2,
+    "lastVerified": "2026-08-30",
+    "runsOpen": 3,
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
-    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/service_client.py:335-340` (`get_risk_data`), `:359-364` (`get_risk_treatment`)\n**Re-verified 2026-08-27:** STILL OPEN. Both methods still return `{}` with only a `logger.warning` if `self._organization_id` is falsy — no exception raised, caller receives an empty dict indistinguishable from 'no risks exist'.\n**Fix in progress 2026-08-29:** Applied in a local worktree of `audit-report-generator-service` (`app/services/report_generation/service_client.py`) — both methods now `raise ValueError(...)` instead of returning `{}`, matching this file's existing `validate()` convention. Not yet committed/pushed to the remote — pending review.\n**Recategorized 2026-08-29:** Moved from evidence-management — this defect is entirely within `audit-report-generator-service`'s R3/R4 audit-report generation pipeline (risk data feeding the Audit Assurance report exports), not the Evidence Management module itself. Original ID/sourceFile preserved as historically documented, per this tracker's established convention for cross-source IDs (see this file's own `_meta.json`)."
+    "description": "**Files:** `audit-report-generator-service/app/services/report_generation/service_client.py:335-340` (`get_risk_data`), `:359-364` (`get_risk_treatment`)\n**Re-verified 2026-08-27:** STILL OPEN. Both methods still return `{}` with only a `logger.warning` if `self._organization_id` is falsy — no exception raised, caller receives an empty dict indistinguishable from 'no risks exist'.\n**2026-08-29 note superseded:** The 'fix in progress' note claiming a local-worktree fix (raise ValueError instead of returning {}) was never actually committed/pushed — re-verified 2026-08-30 directly against the checked-out repo (`git pull` on `feature/dev` returned 'Already up to date', no fast-forward in the reflog — confirmed this repo genuinely received no new commits, unlike the sibling repos in this same re-verification pass) and the code is completely unchanged: both methods still silently `return {}`.\n**Re-verified 2026-08-30:** STILL OPEN, no code change landed.\n**Status flipped 2026-08-30:** `in_progress` was never accurate for this record — the only 'progress' ever claimed (a local-worktree edit) was confirmed twice never to have reached the repository. Flipped back to `open` to reflect that zero code change has ever landed for this defect.\n**Recategorized 2026-08-29:** Moved from evidence-management — this defect is entirely within `audit-report-generator-service`'s R3/R4 audit-report generation pipeline (risk data feeding the Audit Assurance report exports), not the Evidence Management module itself. Original ID/sourceFile preserved as historically documented, per this tracker's established convention for cross-source IDs (see this file's own `_meta.json`)."
   }
 ]
