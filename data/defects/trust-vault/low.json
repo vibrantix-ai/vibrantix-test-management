@@ -48,14 +48,15 @@
     "module": "trust-vault",
     "title": "`publicSummary` Textarea has no character counter or maximum length enforcement — `IncidentForm` shows placeholder text only; no `maxLength`; no minimum content warning when `trustNetworkEnabled` is false; single-character entry valid; violates Annex A 5.26",
     "severity": "Low",
-    "status": "in_progress",
-    "statusRaw": "Fixed — added maxLength={500} to the Textarea (IncidentForm.jsx) and made the character counter always visible: shows X/50 progress toward the sharing minimum when Trust Network sharing is on, X/500 toward the cap otherwise. Pending verification in the running app.",
+    "status": "fixed",
+    "statusRaw": "FIXED — verified 2026-09-02. IncidentForm.jsx's publicSummary Textarea now has maxLength={500}, and the counter is always visible: X/50 toward the sharing minimum when trustNetworkEnabled is on, X/500 toward the cap otherwise.",
     "category": "Data Validation",
     "description": "Files: vibrantix-client-panel/src/components/trust-vault/IncidentForm.jsx\n\nRoot Cause: `publicSummary` Textarea shows placeholder text only. No `maxLength`, no character counter, no minimum content warning when `trustNetworkEnabled` is active.\n\nClaude Fix Prompt: Add `maxLength={500}` to Textarea. Display counter: `<span className=\"text-xs text-muted-foreground\">{publicSummary.length}/500</span>`. When `trustNetworkEnabled`: `{publicSummary.length < 50 && <p className=\"text-xs text-destructive\">Minimum 50 characters required when sharing with partners ({50 - publicSummary.length} more needed)</p>}`.",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-06-12",
+    "lastVerified": "2026-09-02",
     "runsOpen": 1,
     "requirement": "Annex A 5.26",
-    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md"
+    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md",
+    "fixEvidence": "`IncidentForm.jsx` — `maxLength={500}` on the Textarea, counter always rendered (X/50 when sharing enabled, X/500 otherwise), confirmed on 2026-09-02 (client-panel HEAD 0b8712ce). No regression found."
   }
 ]

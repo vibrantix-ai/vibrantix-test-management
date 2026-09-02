@@ -19,15 +19,16 @@
     "module": "trust-vault",
     "title": "Revoking a certification captures no mandatory reason — `WorkflowActionPanel` `revoke` action key has no `modal: 'note'` prop; calls `transitionCertification` directly with no note parameter; revocation has no documented rationale; violates ISO 27001:2022 Annex A 5.33",
     "severity": "Critical",
-    "status": "in_progress",
-    "statusRaw": "Added modal:'note' to the revoke action (WorkflowActionPanel.jsx), gave the note dialog its own Revoke copy/color (RevisionModal.jsx), and wired the missing onNote handler + note modal in CertificationCard.jsx (it had none, so the dialog would not have opened there). Pending verification in the running app.",
+    "status": "fixed",
+    "statusRaw": "FIXED — verified 2026-09-02 against the checked-out feature/dev (client-panel HEAD 0b8712ce). WorkflowActionPanel.jsx:67 has `modal: 'note'` on the revoke action; the handler at line 219 routes it to onNote; CertificationCard.jsx:76,352,450-459 has the previously-missing noteModal state, onNote wiring, and a second RevisionModal instance for the note dialog; RevisionModal.jsx gives revoke its own title/color/copy and requires a non-empty reason (isRevoke branch, meetsMinLength = noteLength > 0) sent as { note } to POST /certifications/:id/transition, which the backend persists.",
     "category": "Workflow Integrity",
     "description": "Files: vibrantix-client-panel/src/components/trust-vault/WorkflowActionPanel.jsx\n\nRoot Cause: The `revoke` action key in `CERT_STATUS_ACTIONS` has no `modal: 'note'` prop. `transitionCertification` is called directly with only `targetState: 'revoked'` — no reason string is ever sent to the API.\n\nImpact: Revocation records contain no documented rationale. ISO 27001:2022 Annex A 5.33 requires documented handling of certification changes. Auditors reviewing revocations will find blank reason fields throughout.\n\nClaude Fix Prompt: In `CERT_STATUS_ACTIONS`, add to the `revoke` entry: `modal: 'note', noteRequired: true, noteMinLength: 50, notePlaceholder: 'Reason for revocation (required — minimum 50 characters)'`. Wire `transitionNote` through `onTransition(targetState, note)` → `POST /certifications/:id/revoke` with `{reason: note}`.",
     "firstDetected": "2026-05-20",
-    "lastVerified": "2026-09-01",
+    "lastVerified": "2026-09-02",
     "runsOpen": 1,
     "requirement": "ISO 27001:2022 Annex A 5.33",
-    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md"
+    "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md",
+    "fixEvidence": "`WorkflowActionPanel.jsx:67,219` (modal:'note' + onNote routing) + `CertificationCard.jsx:76,352,450-459` (noteModal state/wiring that was previously entirely absent) + `RevisionModal.jsx:62-64,80,98` (revoke-specific copy/color, mandatory non-empty reason, sent as {note} to the generic transition endpoint) — traced end-to-end and confirmed working on 2026-09-02. **Minor deviation from the fix prompt, not blocking:** revoke requires only a non-empty reason, not the suggested 50-character minimum (that threshold is applied only to the 'close'/Approve action, MIN_CLOSE_NOTE_LENGTH=30). The core defect — revocation previously sent zero reason at all — is closed; a stricter length floor for revoke specifically would be a reasonable follow-up, not a fix gap. No regression found — the shared RevisionModal correctly branches behavior by targetState across close/revoke/needs_revision without breaking the pre-existing flows."
   },
   {
     "id": "TV-003",
