@@ -1,0 +1,40 @@
+[
+  {
+    "id": "VCISO-001",
+    "module": "vciso",
+    "title": "Third-Party Risk sub-page ignores project-level scoping — vendor-service returns full org-wide vendor data even when a projectId filter is requested",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Area 5 — Third-Party Risk Data Consistency",
+    "affectedFiles": [
+      "vciso-service/src/routes/third-party-risk.routes.ts:218-227"
+    ],
+    "firstDetected": "2026-09-02",
+    "lastVerified": "2026-09-02",
+    "runsOpen": 1,
+    "sourceFile": "vCISO_QA_Agent",
+    "description": "**Files:** `vciso-service/src/routes/third-party-risk.routes.ts:218-227`\n**Root Cause:** The route correctly resolves the caller's project-accessible `projectIds` via `filterAccessibleProjectIds` and forwards them to `crossService.fetchVendorDashboardRaw`/`fetchVendorAnalyticsRaw`/`fetchVendorReviewsDueRaw` as an outbound query param. The route's own code comment admits the gap directly: `// NOTE: projectIds is forwarded to vendor-service as an outbound query param ... but vendor-service's own route handlers are a separate repo/out of scope here — until it adds support for the param, these calls still return org-wide data.` So a user restricted to a subset of an org's projects (via PLAC) who opens the vCISO Third-Party Risk sub-page sees vendor risk data for every project in the organization, not just their own — the vciso-service-side scoping logic is correct but functionally inert because vendor-service (a separate repo) never honors the parameter.\n**Impact:** A within-org, cross-project data over-exposure. On a platform where Project-Level Access Control (PLAC) is an actively-enforced isolation boundary elsewhere (evidence, risk, audit, trust-vault all PLAC-scope their own data), this sub-page silently bypasses that boundary for vendor/third-party risk data. Not a cross-organization leak, but a real project-isolation gap for any customer relying on PLAC to segment projects within one org.\n**Claude Fix Prompt:**\n```\nThis fix spans two repos:\n\n1. In vendor-service (separate repo — locate its dashboard/analytics/reviews-due route handlers): accept and apply an optional `projectIds` query param (comma-separated or repeated), filtering the underlying vendor query by `projectId: { $in: projectIds }` when supplied — mirroring how vciso-service's own CrossServiceIntegration.ts already sends the param.\n2. Once vendor-service honors the param, no vciso-service change is needed — third-party-risk.routes.ts already forwards projectIds correctly; just remove the stale NOTE comment (lines 218-222) once verified.\n3. Add an integration test: as a user restricted to Project A only, call GET the third-party-risk summary route and assert the returned vendor counts/scores match only Project A's vendors, not the org total.\n```"
+  },
+  {
+    "id": "VCISO-003",
+    "module": "vciso",
+    "title": "No-project-selected state shows a fully zeroed layout with no proactive guidance across 5 of 7 vCISO sub-pages — two (Compliance Oversight, Third-Party Risk) give zero feedback of any kind, two (Strategic Planning, Risk Intelligence) only explain via a reactive toast after a failed action, only Executive Dashboard was originally checked",
+    "severity": "Medium",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Area 9 — Fresh Tenant Empty States",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/vciso/executive-dashboard/page.jsx:207-232",
+      "vibrantix-client-panel/src/app/(private)/vciso/compliance-oversight/page.jsx:131",
+      "vibrantix-client-panel/src/app/(private)/vciso/third-party-risk/page.jsx:201",
+      "vibrantix-client-panel/src/app/(private)/vciso/strategic-planning/page.jsx:269,338,3027-3041",
+      "vibrantix-client-panel/src/app/(private)/vciso/risk-intelligence/page.jsx:168,401-402"
+    ],
+    "firstDetected": "2026-09-02",
+    "lastVerified": "2026-09-02",
+    "runsOpen": 1,
+    "sourceFile": "vCISO_QA_Agent",
+    "description": "**Files:** all 5 listed above -- this was originally logged (in an earlier, less thorough pass this same run) as an Executive-Dashboard-only Low defect; re-verified and broadened after checking the other sub-pages, which share the identical originating code comment `// No project selected — show empty/zeroed state instead of the organization-wide aggregate` almost verbatim (found in Executive Dashboard, Compliance Oversight, Third-Party Risk, Strategic Planning x2, Risk Intelligence -- clearly a copy-pasted pattern, not 5 independent implementations).\n**Root Cause, by page:**\n- Executive Dashboard (`page.jsx:216-227`): sets every metric to null/0/[] with zero corresponding UI message anywhere in the 2198-line file.\n- Compliance Oversight (`page.jsx:131`) and Third-Party Risk (`page.jsx:201`): same zeroing pattern; a repo-wide grep for \"select a project\"/\"choose a project\" across both files returns zero matches -- no message exists anywhere, proactive or reactive.\n- Strategic Planning (`page.jsx:269,338`): same zeroing pattern, but at least tracks a `noProjectSelected` boolean used to visually disable certain action buttons (opacity 0.5, cursor not-allowed) -- better than nothing, but the only actual explanatory text is a reactive toast (\"Select a project first\", line ~3032) shown only after the user clicks the disabled-look budget-allocation button; nothing is shown proactively on page load.\n- Risk Intelligence (`page.jsx:168`): identical to Strategic Planning -- a reactive toast (\"Select a project first\", line 401-402) only on attempting to create a FAIR scenario, nothing proactive.\n- Board Reporting and AI Strategy Advisor: no instance of this comment/pattern found -- not confirmed to have the same gap, and not confirmed to be clean either; not deep-audited this run.\n**Impact:** A fresh tenant, or any user who hasn't picked a project, sees what looks like real (and in 2 of 5 cases, alarmingly bad -- a literal 0 security score) computed data with no explanation across the majority of this module's primary pages, rather than an honest \"Select a project to view this data\" state. This is exactly the failure mode this module's own QA checklist calls out. Severity raised from Low to Medium given the breadth (5 of 7 sub-pages affected, not one).\n**Claude Fix Prompt:**\n```\n1. Build one small shared component, e.g. <NoProjectSelectedState /> or a hook useProjectRequiredState(), that renders a consistent proactive banner: \"Select a project above to view this data\" (or \"Set up your first project to get started\" for a genuinely project-less fresh tenant) -- do not reimplement this per page a 6th and 7th time.\n2. Wire it into Executive Dashboard, Compliance Oversight, and Third-Party Risk first (currently zero feedback of any kind).\n3. Upgrade Strategic Planning and Risk Intelligence from reactive-toast-only to also show the same proactive banner on page load, keeping the existing toasts as a secondary reinforcement on blocked actions.\n4. Verify Board Reporting and AI Strategy Advisor for the same gap -- not yet checked.\n```"
+  }
+]

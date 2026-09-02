@@ -75,6 +75,11 @@
       "slug": "integrations",
       "name": "Integrations",
       "scope": "feature"
+    },
+    {
+      "slug": "vciso",
+      "name": "vCISO",
+      "scope": "feature"
     }
   ]
 }

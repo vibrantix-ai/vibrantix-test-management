@@ -1,0 +1,8 @@
+{
+  "slug": "vciso",
+  "name": "vCISO",
+  "scope": "feature",
+  "qaAgent": "vCISO_QA_Agent",
+  "sourceTrackers": [],
+  "description": "Defects found by vCISO_QA_Agent's QA review."
+}

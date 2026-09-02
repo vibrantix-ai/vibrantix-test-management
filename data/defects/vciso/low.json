@@ -1,0 +1,21 @@
+[
+  {
+    "id": "VCISO-002",
+    "module": "vciso",
+    "title": "A repeated pattern across 3 repositories: unscoped `getXById(id)` methods with no organizationId filter sit next to their properly-scoped `getXByIdAndOrg` siblings — all 3 currently unreachable dead code, but real cross-org IDOR footguns",
+    "severity": "Low",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Area 10 — FAIR Financial Risk Quantification / General Code Hygiene",
+    "affectedFiles": [
+      "vciso-service/src/repositories/riskQuantification.repository.ts:180-201",
+      "vciso-service/src/repositories/initiative.repository.ts:238-252",
+      "vciso-service/src/repositories/report.repository.ts:702-710"
+    ],
+    "firstDetected": "2026-09-02",
+    "lastVerified": "2026-09-02",
+    "runsOpen": 1,
+    "sourceFile": "vCISO_QA_Agent",
+    "description": "**Files:** `riskQuantification.repository.ts:180-201` (`getScenarioById` vs. `getScenarioByIdAndOrg`); `initiative.repository.ts:238-252` (`getInitiativeById` vs. `getInitiativeByIdAndOrg`); `report.repository.ts:702-717` (`getScheduledById` vs. `getScheduledByIdAndOrg`)\n**Root Cause:** This is a repeated pattern across the codebase, not an isolated slip: each of the three repositories defines a convenience `getXById(id)` that queries `{ _id: id }` with no `organizationId` at all, immediately next to a correctly-scoped `getXByIdAndOrg(id, organizationId)` that every real call site actually uses. Confirmed via a repo-wide search that all three unscoped methods -- `getScenarioById`, `getInitiativeById`, `getScheduledById` -- have zero call sites anywhere in `vciso-service/src`. All three are dead code today, not active vulnerabilities. (`report.repository.ts` additionally has a `getReportById(reportId)` and a `getTemplateById(templateId, organizationId?)` that ARE called without full org enforcement -- those are tracked separately: the `getReportById` call sites were traced and confirmed benign re-fetches after an already-org-validated fetch in the same function; the `getTemplateById` gap is a distinct, more serious functional bug tracked as VCISO-004.)\n**Impact:** No current exploitability for any of the three (unreachable). But each looks like a normal, safe accessor sitting right next to its org-scoped sibling -- a future route handler or refactor reaching for \"the simple one\" (fewer required args) would introduce a genuine cross-organization IDOR on FAIR risk-quantification scenarios, strategic initiatives, or scheduled board reports, with no code-review signal beyond noticing the missing parameter. The fact that this exact shape recurs three times independently suggests it may stem from a shared scaffold/template used when generating these repository classes -- worth checking for further instances beyond these three.\n**Claude Fix Prompt:**\n```\nFiles: riskQuantification.repository.ts, initiative.repository.ts, report.repository.ts\n\n1. Delete all three unscoped methods (getScenarioById, getInitiativeById, getScheduledById) since each has zero call sites -- or, if a genuinely org-agnostic internal use case is anticipated for any of them, rename to something that can't be mistaken for a safe public accessor (e.g. _getScenarioByIdUnsafeInternalOnly) with a code comment explaining why it must never be called from a route handler.\n2. Grep the rest of vciso-service's repositories for any other getXById(id) (single-arg, no organizationId) method to check whether this pattern recurs beyond these three instances.\n3. Add a lint rule or repo convention (e.g. a comment block at the top of each repository file) flagging any exported method that takes an _id but not organizationId, to catch this class of bug before merge in future PRs.\n```"
+  }
+]

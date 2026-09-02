@@ -1,0 +1,21 @@
+[
+  {
+    "id": "VCISO-004",
+    "module": "vciso",
+    "title": "Board report generation and download silently fail for every report built from a custom (non-system) template — `getTemplateById()` called without the available `organizationId`, which restricts the lookup to system templates only",
+    "severity": "High",
+    "status": "open",
+    "statusRaw": "🔴 OPEN",
+    "category": "Area 6 — Board Report Generation",
+    "affectedFiles": [
+      "vciso-service/src/services/ReportGeneratorService.ts:223",
+      "vciso-service/src/services/ReportGeneratorService.ts:348",
+      "vciso-service/src/repositories/report.repository.ts:452-465"
+    ],
+    "firstDetected": "2026-09-02",
+    "lastVerified": "2026-09-02",
+    "runsOpen": 1,
+    "sourceFile": "vCISO_QA_Agent",
+    "description": "**Files:** `vciso-service/src/services/ReportGeneratorService.ts:223` (`generateReport`), `:348` (`generateReportForStream`); `vciso-service/src/repositories/report.repository.ts:452-465` (`getTemplateById`)\n**Root Cause:** `getTemplateById(templateId, organizationId?)`'s own docstring explains the contract precisely: `organizationId` is \"required for IDOR prevention\" — when provided, it allows the org's own custom templates OR system templates; when OMITTED, it deliberately falls back to `{ _id: templateId, isSystemTemplate: true }`, i.e. **system templates only**. Both call sites that actually generate/stream a report — `generateReport` (line 223: `this.reportRepo.getTemplateById(report.templateId)`) and `generateReportForStream` (line 348: identical call) — invoke this method with only one argument, silently dropping the `organizationId` that is already in scope as a parameter of both enclosing functions (used elsewhere in the same function for `collectReportData`). Confirmed via a repo-wide search: these are the only two call sites feeding actual report generation/download, and neither passes org context.\n**Impact:** For any report whose `templateId` points at a custom, org-created template (`isSystemTemplate: false` — a real, reachable feature via `BoardReportingService.createTemplate`/the frontend's `TemplateEditorModal.jsx`), the lookup always returns `null` (it only matches system templates), so both `generateReport` and `generateReportForStream` immediately fail with `'Template not found'` / return `null`. Practically: any organisation that creates its own custom board-report template can never actually generate or download a report built from it — the feature silently breaks for the exact customization path it exists to support, while reports built from the built-in system templates work fine, making this easy to miss in a superficial test pass. This is the highest-risk artifact in the module per this agent's own severity guidance.\n**Claude Fix Prompt:**\n```\nFile: vciso-service/src/services/ReportGeneratorService.ts\n\n1. Line 223 (generateReport): change `this.reportRepo.getTemplateById(report.templateId)` to `this.reportRepo.getTemplateById(report.templateId, new ObjectId(organizationId))` — organizationId is already a parameter of generateReport, in scope at this line.\n2. Line 348 (generateReportForStream): change `this.reportRepo.getTemplateById(report.templateId)` to `this.reportRepo.getTemplateById(report.templateId, new ObjectId(organizationId))` — same fix, organizationId is already a parameter of generateReportForStream.\n3. Add a regression test: create a custom (non-system) template for org A, create a report referencing it, call generateReport/generateReportForStream, assert the template is found and generation succeeds — this exact scenario currently fails silently and would have caught the bug.\n4. Grep the rest of the codebase for any other getTemplateById(x) single-argument call sites that should be generating/streaming real org content (as opposed to a genuinely org-agnostic system-template-only lookup) and apply the same fix.\n```"
+  }
+]
