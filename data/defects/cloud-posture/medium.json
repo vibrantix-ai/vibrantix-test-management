@@ -121,5 +121,44 @@
     ],
     "lastVerified": "2026-08-24",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+  },
+  {
+    "id": "CP-CHK-001",
+    "module": "cloud-posture",
+    "title": "5 of 6 cloud-posture pages have zero permission gating — the entire provider drill-down hierarchy, service-level views, security-checks list, scan detail (951 lines), and check detail (255 lines) pages render with no `PermissionGate`/`usePermission` anywhere; only the top-level `/cloud-posture` page is gated",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/cloud-posture/[provider]/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/cloud-posture/[provider]/[service]/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/cloud-posture/[provider]/[service]/security-checks/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/cloud-posture/scans/[scanId]/page.jsx",
+      "vibrantix-client-panel/src/app/(detail)/cloud-posture/[provider]/checks/[checkId]/page.jsx",
+      "vibrantix-client-panel/src/components/cloud-posture/CloudProviderDashboard.jsx"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action, not just the top-level page-level read gate.\n**Files:** `(private)/cloud-posture/page.jsx` correctly wraps its content in `<PermissionGate permission=\"scan.read\" allowProjectGrant>`. Every other page in the module — `[provider]/page.jsx` (renders `CloudProviderDashboard` directly, no gate, confirmed absent in the component too), `[provider]/[service]/page.jsx`, `[provider]/[service]/security-checks/page.jsx`, `scans/[scanId]/page.jsx` (951 lines), and the `(detail)` route's `checks/[checkId]/page.jsx` (255 lines) — has zero `PermissionGate`/`usePermission` import of any kind, confirmed by direct inspection of each file (not just a grep miss on a wrapper).\n**Root Cause:** Only the entry page received a gate when the module was built; the deep-linkable provider/service/scan/check detail pages were never given their own, relying entirely on the top-level page's gate even though Next.js route segments are independently navigable/bookmarkable and don't inherit a sibling route's client-side gate.\n**Impact:** Not a data exposure — the backend enforces `scan.*` permissions extensively (48 `requirePermission('scan.*')` call sites confirmed across the cloud-posture backend module). But any authenticated user who navigates directly to a scan or check detail URL (bookmarked, shared, or guessed) with no `scan.read` at all sees the page attempt to load — including, on the scan/check detail pages, potentially sensitive cloud security finding details — before the underlying API calls fail, rather than an immediate access-denied matching the main page's behavior.\n**Claude Fix Prompt:**\nWrap each of the 5 pages in `<PermissionGate permission=\"scan.read\" allowProjectGrant>`, matching the main `page.jsx`'s existing pattern — either individually per page, or by adding a shared `layout.jsx` at `(private)/cloud-posture/` (this module currently has none) that applies the gate once for the whole route tree, plus one at `(detail)/cloud-posture/` for the check-detail route group."
+  },
+  {
+    "id": "CP-CHK-002",
+    "module": "cloud-posture",
+    "title": "No notification dispatch anywhere in the cloud-posture backend module — a scan completing, failing, or being auto-cancelled/stuck never notifies anyone; `notificationEmail` exists only as an unused config field",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/cloud-posture/cloud-posture-config.model.js:82"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline.\n**Files:** A repo-wide grep for `notificationService`/`dispatch(` across `vibrantix-backend/src/modules/cloud-posture/` returns zero matches. The only 'notification'-adjacent artifact in the entire module is `cloud-posture-config.model.js:82`'s `notificationEmail: { type: String }` schema field — a config value with no code anywhere that ever reads or sends to it.\n**Root Cause:** Scan lifecycle events (queued→running→completed/failed, and the scan-reconciler job's stuck/stale-scan cleanup) were never wired to the platform's notification dispatch pipeline; the `notificationEmail` field suggests email notification was planned but never implemented.\n**Impact:** Given this module supports scheduled/recurring scans (`cloud.scan_schedules.active`, `cloud.custom_schedule.enabled` per this module's own entitlement gating) that can run unattended, a user has no way to learn a scheduled scan completed, failed, or got stuck/cancelled except by manually revisiting the dashboard — there is no push signal for what is explicitly a background, asynchronous, potentially long-running operation.\n**Claude Fix Prompt:**\nIn the scan-completion/failure handler (wherever `scan.controller.js`/`prowler.service.js` finalizes a scan's terminal status) and in `scan-reconciler.job.js` (for stuck/stale-scan cleanup), add a `notificationService.dispatch({...})` call analogous to the pattern already used in `workflowTransition.service.js` for other modules — notifying the scan's initiating user (and optionally the `notificationEmail` recipient, if that field is meant to be honored) on completion, failure, or reconciler-forced cancellation."
   }
 ]

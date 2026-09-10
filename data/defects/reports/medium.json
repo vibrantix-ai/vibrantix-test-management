@@ -1,0 +1,23 @@
+[
+  {
+    "id": "REPT-CHK-001",
+    "module": "reports",
+    "title": "`/reports` and `/reports/:reportId` pages gate on `compliance.read`, but `ReportsListContent.jsx` actually calls `reportService` methods that map to `report.routes.js`/`reportGeneration.routes.js` endpoints gated on `audit.read`/`audit.update`/`audit.create`/`audit.delete` — third confirmed instance of this permission-string mismatch this session (see AA-CHK-004, IA-CHK-003)",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/reports/page.jsx:10",
+      "vibrantix-client-panel/src/app/(private)/reports/[reportId]/page.jsx:11",
+      "vibrantix-client-panel/src/components/reports/ReportsListContent.jsx:426-429,632,672",
+      "vibrantix-backend/src/modules/reports/report.routes.js:31-40",
+      "vibrantix-backend/src/modules/reports/reportGeneration.routes.js:39-45"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action, consistent with what the backend actually enforces.\n**Files:** Both `/reports` pages wrap their content in `<PermissionGate permission=\"compliance.read\" allowProjectGrant>`. But `ReportsListContent.jsx` (the component both pages render) calls `reportService.listReports`/`updateReport`/`downloadReport`/`deleteReport` (lines 426-429, 632, 672) — these map to `report.routes.js`'s `GET /reports/`, `PATCH /reports/:reportId`, `DELETE /reports/:reportId`, and `reportGeneration.routes.js`'s `GET /:reportId/download`, all of which are gated on `requirePermission('audit.read'|'audit.update'|'audit.create'|'audit.delete')` (`report.routes.js:31-40`, `reportGeneration.routes.js:39-45`) — not `compliance.read`. A third, genuinely `compliance.read`-gated route file (`reports.routes.js`, a separate summary/findings/export API scoped to `/projects/:projectId/...`) exists in the same module but isn't what this page's real component calls.\n**Root Cause:** Same class of gap as `AA-CHK-004` (audit-assurance) and `IA-CHK-003` (intelli-audit) — the frontend gate was built against a plausible-sounding permission string that doesn't match what the actual backend route family the page calls requires. With three independent confirmations now (audit-assurance, intelli-audit, and this standalone reports module — all three of which are audit-report-adjacent surfaces), this looks like a systemic naming-drift pattern specifically around `audit.*` vs `compliance.*`, not three unrelated one-off mistakes.\n**Impact:** A user with `audit.read` (the permission this page's real API calls require) but not `compliance.read` is blocked at the page gate from ever seeing `/reports` at all, despite being fully authorized against every endpoint underneath. A `compliance.read`-only, `audit.read`-less user sees the page render past the gate, only to have every list/download/delete call fail.\n**Claude Fix Prompt:**\nChange `permission=\"compliance.read\"` to `permission=\"audit.read\"` in both `page.jsx:10` and `[reportId]/page.jsx:11`, matching what `report.routes.js`/`reportGeneration.routes.js` actually enforce. Given this is now a 3-for-3 pattern, it's worth a dedicated sweep across the rest of the frontend for any other page gating on `compliance.read` while its component's real service calls hit `audit.*`-gated routes, rather than fixing these three in isolation."
+  }
+]

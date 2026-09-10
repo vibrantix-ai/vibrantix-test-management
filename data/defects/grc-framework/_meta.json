@@ -4,7 +4,9 @@
   "scope": "feature",
   "qaAgent": "GRC_Framework_QA_Agent",
   "sourceTrackers": [
-    "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md"
+    "QA_Tracker/GRC_FRAMEWORK_QA_LIVE_TRACKER.md",
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
   ],
-  "description": "Defects converted from the GRC Framework live defect registry."
+  "checklistIdPrefix": "GRC",
+  "description": "Defects converted from the GRC Framework live defect registry, plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against GRC Framework."
 }

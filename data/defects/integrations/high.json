@@ -1,5 +1,23 @@
 [
   {
+    "id": "INT-CHK-001",
+    "module": "integrations",
+    "title": "Webhook signature verification uses plain `===` string comparison instead of a timing-safe comparison, across all 4 connector-type branches (GitHub, Jira/Atlassian, Slack, generic) — on endpoints whose own code comment states they are 'UNAUTHENTICATED — security is enforced via connector-specific signature verification'",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §13.1 — Security Hardening",
+    "requirement": "CWE-208 Observable Timing Discrepancy; OWASP ASVS 6.2.2",
+    "affectedFiles": [
+      "vibrantix-connector-service/src/routes/webhook.routes.ts:1-92"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §13.1 — Input validation & sanitization / general security hardening of externally-reachable endpoints.\n**Files:** `webhook.routes.ts`'s own header comment (lines 1-6) states: \"Receives inbound webhook payloads from third-party services (GitHub, Jira, etc.). These endpoints are UNAUTHENTICATED — security is enforced via connector-specific signature verification.\" `verifyWebhookSignature()` (lines 32-92) implements HMAC-SHA256 verification correctly for all 4 branches (`github`, `jira`/`atlassian`, `slack`, and a generic default) — computing the expected HMAC correctly in every case — but every single comparison uses plain string equality: `return signature === expected;` (lines 49, 61, 78) and `return signature === expected || signature === \\`sha256=${expected}\\`;` (line 89). None uses `crypto.timingSafeEqual`, even though the exact same platform correctly uses it elsewhere (e.g. `risk-management-service/src/routes/internal-tasks.routes.ts`'s `validateToken()`).\n**Root Cause:** The HMAC computation itself was implemented carefully and correctly, but the final comparison step — the part that actually matters for timing-attack resistance — was written with ordinary JavaScript `===`, which short-circuits on the first mismatched byte and is measurably (if subtly) faster to reject an early-byte mismatch than a late one.\n**Impact:** Because these endpoints are explicitly unauthenticated by design (per the file's own comment) and rely entirely on signature verification as their sole security boundary, a timing side-channel here is unusually consequential: an attacker with enough network samples to statistically distinguish response-time differences could, in principle, forge a valid signature byte-by-byte without ever knowing the shared secret, and inject a forged webhook payload (fake GitHub/Jira/Slack/generic-connector event) that the platform would treat as genuine — potentially creating fabricated integration evidence or triggering unintended sync/automation actions.\n**Claude Fix Prompt:**\nIn `webhook.routes.ts`, replace every `signature === expected` (and the generic branch's OR) with a length-checked `crypto.timingSafeEqual` comparison, e.g.: `function safeCompare(a: string, b: string): boolean { const bufA = Buffer.from(a); const bufB = Buffer.from(b); return bufA.length === bufB.length && timingSafeEqual(bufA, bufB); }` (importing `timingSafeEqual` from `crypto`, already imported elsewhere in the file via dynamic `import('crypto')`), then use `safeCompare(signature, expected)` in all 4 branches, including the generic branch's two-variant check."
+  },
+  {
     "id": "INTG-003",
     "module": "integrations",
     "title": "Real compliance-mapping endpoint exists but the evidence-detail UI never calls it; only failing controls ever show a name",

@@ -1,0 +1,11 @@
+{
+  "slug": "ai-assistant",
+  "name": "AI Assistant",
+  "scope": "feature",
+  "qaAgent": "AI_Assistant_QA_Agent",
+  "sourceTrackers": [
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
+  ],
+  "checklistIdPrefix": "AIA",
+  "description": "Defects found by running Architecture/MODULE_FEATURE_CHECKLIST.md against the AI Assistant (/assistant). First defect entity ever created for this module — no prior QA run of any kind (JSON or markdown) had been recorded for it on disk before this run."
+}

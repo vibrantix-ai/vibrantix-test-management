@@ -1,0 +1,58 @@
+[
+  {
+    "id": "IA-CHK-002",
+    "module": "intelli-audit",
+    "title": "No rate limiting on authenticated AI-trigger endpoints — `retry-tactical`, `phase/2/recommendations/retry`, and `phase/4/analyze` each call the external pre-audit-python-service and reserve AI credits with zero request-rate middleware",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §13.3 — Security Hardening",
+    "requirement": "OWASP API4:2023 Unrestricted Resource Consumption",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.routes.js:66,70,116"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §13.3 — Rate limiting on public/expensive endpoints: public template endpoints, AI-generation triggers, share-link access are rate-limited.\n**Files:** `intelligent-audit.routes.js` — repo-wide grep for `rateLimit`/`Limiter`/`slowDown` inside `vibrantix-backend/src/modules/intelligent-audit/` returns no middleware usage anywhere. `POST /:auditId/phase/1/retry-tactical` (line 66, re-triggers the external tactical-question AI generation), `POST /:auditId/phase/2/recommendations/retry` (line 70, re-triggers the IACR/QRE control-recommendation engine), and `POST /:auditId/phase/4/analyze` (line 116, runs the gap-analysis engine) all carry `augmentAuditProject` + `requirePermission('audit.update')` but no per-route or per-user rate limiter, despite each one making a real external HTTP call to the `pre-audit-python-service` and — per the module's own `aiCreditsPerSession`/`sessionsPerYear` gating found in `createIntelligentAudit` — being a metered, credit-consuming operation once a session already exists.\n**Root Cause:** Same class of gap already found and logged against policy-management (`PM-CHK-004`) and, by the same reasoning, likely present wherever this module's other AI-triggering actions live — no rate-limiting middleware was ever added to this route file at all, for any endpoint.\n**Impact:** An authenticated user (or a scripted/compromised session) holding `audit.update` on a project can burst-call `retry-tactical`/`recommendations/retry`/`phase/4/analyze` far faster than the AI pipeline or a human reviewer could reasonably use them, creating unnecessary load on the external Python microservice with no platform-side throttle, and — since these retries operate on an already-created session rather than the one-time `aiCreditsPerSession` reservation at audit creation — there is no visible cap in this file on how many retries a single session can trigger.\n**Claude Fix Prompt:**\nAdd a rate limiter (the same reusable factory recommended for `PM-CHK-004`, or `express-rate-limit` directly) keyed by `req.userId` + `req.params.auditId`, e.g. `const aiRetryLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })`, and apply it to all three routes in `intelligent-audit.routes.js`: `router.post('/:auditId/phase/1/retry-tactical', augmentAuditProject, requirePermission('audit.update'), aiRetryLimiter, ctrl.retryTacticalGeneration)` (and likewise for the other two)."
+  },
+  {
+    "id": "IA-CHK-003",
+    "module": "intelli-audit",
+    "title": "All 3 Intelli Audit pages gate on `pre_audit.read` — a permission string zero backend routes in `intelligent-audit.routes.js` (or anywhere else) ever check — while an action inside the same page correctly uses `audit.create`, the permission the backend actually enforces",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/intelli-audit/page.jsx:301",
+      "vibrantix-client-panel/src/app/(private)/intelli-audit/[frameworkId]/page.jsx:258,327",
+      "vibrantix-client-panel/src/app/(private)/intelli-audit/[frameworkId]/[auditId]/page.jsx:507",
+      "vibrantix-backend/src/modules/intelligent-audit/intelligent-audit.routes.js"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action, consistent with what the backend actually enforces.\n**Files:** All three page routes wrap their content in `<PermissionGate permission=\"pre_audit.read\" allowProjectGrant>` (`page.jsx:301`, `[frameworkId]/page.jsx:327`, `[frameworkId]/[auditId]/page.jsx:507`). But `intelligent-audit.routes.js` — the real backend module for this feature, confirmed exhaustively in this module's prior checklist run — gates every single route on `requirePermission('audit.read'|'audit.create'|'audit.update'|'audit.delete')`; a repo-wide grep for `requirePermission('pre_audit` returns zero matches anywhere in `vibrantix-backend`. `pre_audit` exists only as a module-name string in `config/permissions.js`, `config/featureAccessMap.js`, and `PROJECT_ADMIN_MODULES` (`augmentPermissionsWithProjectGrant.js`) — never as an actual permission a real route checks. Tellingly, `[frameworkId]/page.jsx:258` — inside the SAME page whose outer gate is `pre_audit.read` — correctly wraps its 'Start New Audit' button in `<PermissionHide permission=\"audit.create\" allowProjectGrant>`, matching the real backend check on `POST /intelligent-audit/` (`intelligent-audit.routes.js:50`).\n**Root Cause:** The page-level gates were built against `pre_audit.read` (plausibly assuming a dedicated 'pre_audit' permission namespace would back this module, matching the `PROJECT_ADMIN_MODULES` catalog entry) but the backend was actually implemented entirely on the `audit.*` permission family — the two were never reconciled, and the one action-level gate added later (`audit.create` on the New Audit button) was built correctly against the real backend, exposing the mismatch.\n**Impact:** Same two-directional inconsistency already logged as `AA-CHK-004` for audit-assurance: a user with a Custom Project Role granting `audit.read`/`audit.create` (the permissions this module's own backend actually requires) but not `pre_audit.read` is blocked at the page gate from ever seeing `/intelli-audit` at all, despite being fully authorized against every real endpoint underneath — while a hypothetical `pre_audit.read`-only, `audit.read`-less user would see the page shell but every data call would 403.\n**Claude Fix Prompt:**\nChange `permission=\"pre_audit.read\"` to `permission=\"audit.read\"` in all three `<PermissionGate>` wrappers (`page.jsx:301`, `[frameworkId]/page.jsx:327`, `[frameworkId]/[auditId]/page.jsx:507`), matching the already-correct `audit.create` gate on the same page's 'Start New Audit' button and the backend's real `requirePermission('audit.read')` checks throughout `intelligent-audit.routes.js`."
+  },
+  {
+    "id": "IA-CHK-004",
+    "module": "intelli-audit",
+    "title": "Zero automated test coverage for RBAC/PLAC enforcement across a 70+ route, PLAC-gated backend module — the only 2 existing test files cover PCL-migration and assignment-filtering business logic, neither exercises permission/project-scope enforcement",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §14.1 — Testing & Regression Safety",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/intelligent-audit/tests/intelligent-audit.controller.pcl-live.test.js",
+      "vibrantix-backend/tests/modules/intelligent-audit-recommendation-payload.test.js"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §14.1 — Automated test coverage for permission enforcement: RBAC + PLAC checks for this module have real backend tests (mongodb-memory-server or equivalent), not just a code-review pass.\n**Files:** `intelligent-audit.routes.js` wires `augmentPermissionsWithProjectGrant`/`requirePermission` on every one of its 70+ routes (confirmed thoroughly in this module's first checklist run — the best-hardened PLAC surface found across all modules audited this session). But the module's entire test suite is exactly 2 files: `intelligent-audit.controller.pcl-live.test.js` (3 `it()` blocks, all about PCL-migration data-source correctness) and `intelligent-audit-recommendation-payload.test.js` (payload-shape logic). Neither file contains a single test asserting a cross-org user is denied, a non-project-member is denied, or that `augmentPermissionsWithProjectGrant` actually grants the right permission set for a project-role holder — a repo-wide grep for `organizationId`/`cross-org`/`cross-tenant`/`403` across both files shows only incidental `organizationId` field values in test fixtures, never an assertion about access denial.\n**Root Cause:** Test effort was invested in the module's genuinely complex business logic (the PCL→UCL migration, custom-question assignment routing) but never extended to verifying the authorization layer that same effort so carefully built.\n**Impact:** Not a live vulnerability — the code itself was independently verified correct in this module's earlier checklist runs — but there is no regression safety net: a future refactor of `intelligent-audit.routes.js` or `getAuditProjectId` could silently drop a `requirePermission`/`augmentPermissionsWithProjectGrant` call (exactly the class of gap this checklist exists to catch) and nothing in CI would catch it before a manual review did.\n**Claude Fix Prompt:**\nAdd `vibrantix-backend/src/modules/intelligent-audit/tests/intelligent-audit.plac.test.js` using the platform's existing mongodb-memory-server test harness pattern (mirror `evidence/tests/`'s or `compliance-frameworks/tests/client-compliance.controller.cross-tenant.test.js`'s setup). Minimum cases: (1) a user from Org B requesting Org A's `:auditId` gets 403/404, (2) a user in the same org but not a member of the audit's project, with no org-wide `audit.read`, gets 403 on `GET /:auditId`, (3) a project member whose ProjectRole grants `audit.read` but not `audit.update` can read but not `PATCH /:auditId/phase/:phaseNumber`, (4) `?force=true` on `DELETE /:auditId` for a completed audit still requires `audit.delete` (regression guard for `IA-CHK-001`'s eventual fix)."
+  }
+]

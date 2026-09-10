@@ -263,5 +263,43 @@
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "PM-CHK-002",
+    "module": "policy-management",
+    "title": "Policy reject/needs-revision/archive transitions require no justification — `policy` has no `commentRequiredTransitions` entry in `featureWorkflows.js`, unlike `evidence`'s equivalent transitions",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §4.5 — Audit Logging & Traceability",
+    "requirement": "ISO 27001:2022 Clause 7.5 / Annex A.5.33; ISO 19011:2018 §6.4.9",
+    "affectedFiles": [
+      "vibrantix-backend/src/core/constants/featureWorkflows.js:31-45,104-124",
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:88-106,378-417"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §4.5 — Justification required on destructive/terminal actions: closing, revoking, or rejecting a record requires a mandatory note/reason, not a bare status flip.\n**Files:** `featureWorkflows.js:31-45` (the `policy` workflow definition) has no `commentRequiredTransitions` array at all. Compare `featureWorkflows.js:104-124` (the `evidence` definition, sitting immediately below it), which defines `commentRequiredTransitions: [['under_review', 'needs_revision'], ['under_review', 'closed']]` with an explicit code comment: \"Reject/request-revision and Approve must both carry a substantive justification ... an approval with no real justification is a challengeable audit trail under ISO 19011:2018 §6.4.9 just as much as an unexplained rejection.\" `WorkflowTransitionService._getDefinition()` (`workflowTransition.service.js:378-417`) builds `def.transitionDefs` exclusively from each entity type's `commentRequiredTransitions` array; since policy's is absent, `def.transitionDefs` is empty for policy and `transitionDef?.commentRequired` (checked at `workflowTransition.service.js:99-106`) is never true for any policy transition.\n**Root Cause:** The `commentRequiredTransitions` design pattern was applied to `evidence` but never carried over to `policy` when the shared `WorkflowTransitionService` was built — an omission, not a deliberate choice (nothing in the codebase or commit comments suggests policy was intentionally exempted).\n**Impact:** `POST /policies/:policyId/transition` accepts `under_review → rejected`, `under_review → needs_revision`, and `active → archived` (as well as `expired → archived`) with no `comment`/note of any length. A reviewer can reject a policy, send it back for revision, or an admin can archive a live, in-force policy with zero recorded rationale. This is the same class of gap PM-003 already flags for pre-approval checklist enforcement, but here it's the *decision* itself (why was this rejected / why was this archived) that leaves no audit trail — directly undermining ISO 27001 Clause 7.5's documented-decision requirement and Annex A.5.33 (protection of records) for exactly the terminal/destructive actions the checklist calls out by name.\n**Claude Fix Prompt:**\nIn `vibrantix-backend/src/core/constants/featureWorkflows.js`, add to the `policy` workflow definition (alongside `transitions`): `commentRequiredTransitions: [['under_review', 'rejected'], ['under_review', 'needs_revision'], ['active', 'archived'], ['expired', 'archived']]`. No change needed in `workflowTransition.service.js` — `_getDefinition()` already turns this array into `transitionDefs` with `commentRequired: true`, and the existing `MIN_COMMENT_LENGTH = 25` check at line ~100 will then apply automatically. Update `PolicyDetailView.jsx`'s `handleArchive` and any reject/needs-revision UI to collect and pass a `comment` in the `POST /transition` body before submitting, consistent with how `ReviewDetail.jsx` already collects a comment for its own actions."
+  },
+  {
+    "id": "PM-CHK-006",
+    "module": "policy-management",
+    "title": "`ai_policy_generator_python` accepts every request from `vibrantix-backend` with zero authentication — no `X-Internal-Token` (or any header at all) is sent, and the FastAPI service's only middleware is CORS + correlation-ID logging",
+    "severity": "High",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §10.2 — API & Cross-Service Contract",
+    "requirement": "ISO 27001:2022 Annex A.8.20 (network security) / A.8.26 (application security requirements)",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/policy/policy-ai-proxy.service.js:105-132,177-195,247-248",
+      "ai_policy_generator_python/app/main.py:63-101"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §10.2 — Internal microservice auth: any service-to-service call uses `X-Internal-Token`, not an unauthenticated internal route.\n**Files:** `policy-ai-proxy.service.js`'s three request helpers all build their outgoing `headers` with no auth field: the JSON path (`_request`, line 114-116) sends only `{'Content-Type': 'application/json'}`; the multipart path (`_requestFormData`, line 179) sends `{}`; the streaming/download path (line 247-248) sends `headers: {}`. A repo-wide grep for `X-Internal-Token`/`internalToken`/`INTERNAL_TOKEN` anywhere in this file returns nothing. On the receiving side, `ai_policy_generator_python/app/main.py:63-101` registers exactly two middlewares — `CORSMiddleware` and a request-correlation/logging middleware (`correlation_and_request_logging`) — neither performs any authentication or token check; there is no `Depends()`-based auth dependency on any route either (confirmed: no `X-Internal-Token`/token-verification hit anywhere under `ai_policy_generator_python/app/`).\n**Root Cause:** Unlike the platform's other internal microservices (vendor-service, risk-management-service, trust-vault-service, vciso-service, assistant-service, connector-service — all of which the RBAC/security QA agents confirm enforce `X-Internal-Token` on their internal routes), this Python service was never brought into that same internal-auth convention.\n**Impact:** Any actor able to reach this service's network address (docker-compose default networking, a misconfigured ingress, or lateral movement from another compromised container) can call every one of its routes directly — trigger AI policy generation/refinement, consume LLM cost/quota, or invoke whatever data-bearing endpoints it exposes — completely bypassing `vibrantix-backend`'s `authenticate`/`requirePermission`/PLAC/entitlement-reservation layers this checklist run confirmed are otherwise well-enforced (`policy-ai.routes.js`). Since the service has no auth concept at all, it also has no way to distinguish or scope requests by organization on its own — whatever org/project context arrives in the request body is trusted as-is.\n**Claude Fix Prompt:**\nIn `policy-ai-proxy.service.js`, add `'X-Internal-Token': process.env.AI_POLICY_GENERATOR_INTERNAL_TOKEN` to the `headers` object in all three request helpers (`_request` line 114, `_requestFormData` line 179, and the streaming call at line 247). In `ai_policy_generator_python/app/main.py`, add a FastAPI dependency (e.g. `verify_internal_token` checking `request.headers.get('x-internal-token')` against the same env var) applied via `dependencies=[Depends(verify_internal_token)]` on the app or router level (excluding `/health`, `/metrics`, `/api/openapi.json`), matching the `X-Internal-Token` convention already used by every other internal microservice on this platform."
   }
 ]

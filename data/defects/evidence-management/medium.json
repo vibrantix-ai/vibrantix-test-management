@@ -357,5 +357,78 @@
     "sourceFile": "QA_Tracker/EVIDENCE_MANAGEMENT_QA_LIVE_TRACKER.md",
     "description": "**Files:** `vibrantix-client-panel/src/components/evidence-management/control-mapping/MapControlModal.jsx:532-536`, `ControlMappingTable.jsx:129`\n**Root Cause (original):** `evidenceVersion`/`selectedEvidence.version` was used purely to build the API submit payload — no positive display of the resolved evidence version existed anywhere.\n**Status:** FIXED — re-verified 2026-08-30 after pulling latest `vibrantix-client-panel` (`feature/dev`, fast-forwarded 9a5bac4f→d400be5a). `MapControlModal.jsx:532-536` now renders \"Mapping evidence version: v{selectedEvidence?.version ?? evidenceVersion}\" whenever a version is resolved. `ControlMappingTable.jsx:129` now shows \"v{version}\" as a secondary line per mapping row. The fix prompt's superseded-version warning Alert was not added, but the core defect (version silently never shown) is closed. No regression found.",
     "fixEvidence": "`MapControlModal.jsx:532-536` (\"Mapping evidence version: v{n}\" display) + `ControlMappingTable.jsx:129` (per-row version display) — both confirmed present on 2026-08-30 after pulling the latest `feature/dev` (client-panel HEAD now d400be5a)."
+  },
+  {
+    "id": "EM-CHK-001",
+    "module": "evidence-management",
+    "title": "`firstEvidenceAt` onboarding milestone is a dead field — declared on `OnboardingState` schema but never written by any evidence upload path and never read by `setup-health.service.js`'s score computation",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §12.1 — Onboarding & Discoverability",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/onboarding/onboarding-state.model.js:25",
+      "vibrantix-backend/src/modules/onboarding/setup-health.service.js:13-40"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §12.1 — Getting-started checklist integration: if the module is a first-run milestone (first framework, first evidence, first audit), it's wired into the onboarding wizard/checklist, with completion persisted.\n**Files:** `onboarding-state.model.js:25` declares `firstEvidenceAt: { type: Date, default: null }` on the `OnboardingState` schema, clearly intended to mirror the working `firstScanAt` milestone (cloud posture's first scan). `setup-health.service.js`'s `compute()` function (lines 13-40) only ever reads `state.firstScanAt` (line 35, `if (state.firstScanAt) score += 25;`) — `firstEvidenceAt` is never referenced in the scoring logic at all. A repo-wide search for `firstEvidenceAt` (`grep -rn firstEvidenceAt vibrantix-backend/src`) turns up exactly one hit — the schema declaration itself; no controller or service anywhere in the evidence upload path (`evidence-upload.controller.js`, `evidence.controller.js`) ever sets it.\n**Root Cause:** The onboarding data model anticipated evidence upload as a trackable first-run milestone (matching the cloud-posture pattern) but the wiring was never finished on either end — nothing populates the field on first upload, and the score formula never consults it even if it were populated.\n**Impact:** A brand-new org's very first evidence upload — one of the platform's own named critical E2E milestones ('new org onboarding → framework activation → first evidence upload → first audit → first report') — produces no persisted onboarding-completion signal and contributes nothing to `setupHealthScore`. Any future onboarding checklist/dashboard UI that wants to show 'you've uploaded your first evidence ✓' has no live data to read; the schema promises this milestone is tracked and it silently is not.\n**Claude Fix Prompt:**\nIn `vibrantix-backend/src/modules/evidence/evidence-upload.controller.js` (and/or `evidence.controller.js`'s plain `create`/import path), after the first successful `Evidence.create()` for an org, add: `const OnboardingState = require('../onboarding/onboarding-state.model'); const state = await OnboardingState.findOne({ orgId: req.orgId }); if (state && !state.firstEvidenceAt) { state.firstEvidenceAt = new Date(); await state.save(); const { compute } = require('../onboarding/setup-health.service'); await compute(req.orgId); }`. In `setup-health.service.js`'s `compute()`, add a weighted bonus alongside the existing `firstScanAt` check, e.g. `if (state.firstEvidenceAt) score += 10;` (adjusting `WEIGHTS`/the 100-point ceiling so the total still caps correctly)."
+  },
+  {
+    "id": "EM-CHK-002",
+    "module": "evidence-management",
+    "title": "Evidence workflow transitions share the same unguarded `WorkflowTransitionService._updateEntityStatus` — concurrent reviewer actions on the same evidence record can silently last-write-wins with no optimistic lock",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §6.4 — Workflow / State Machine Integrity",
+    "requirement": "ISO 27001:2022 Clause 8.1 operational planning and control",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:50-86,418-463",
+      "vibrantix-backend/src/modules/evidence/evidence.controller.js:763"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §6.4 — Race conditions on concurrent transitions handled: two actors transitioning the same record concurrently don't produce a corrupted or double-applied state (optimistic locking / version check / atomic update).\n**Files:** `evidence.controller.js:763` (`transitionWorkflow`) delegates directly to the shared `WorkflowTransitionService.transition('evidence', ...)`. That service reads `currentState` via a separate, non-atomic lookup (`workflowTransition.service.js:50-86`) well before its final write, then calls `_updateEntityStatus()` (lines 418-463), which executes `Evidence.updateOne({ _id: entityId }, { $set: { status: modelValue } })` with no `status: currentState` (or version) precondition in the filter — the write is unconditional.\n**Root Cause:** Same root cause as the policy-management module's identical gap (see `policy-management`'s `PM-CHK-003`, filed against the same shared service) — no optimistic-concurrency mechanism exists anywhere in this shared read-check-write sequence, for any `entityType` it drives, evidence included.\n**Impact:** Two concurrent `POST /evidence/:evidenceId/workflow/transition` calls while a record is `under_review` (e.g. an assigned reviewer approving at the same moment an org admin — who can override the assigned-reviewer check — rejects) can both pass the allowed-transition check against the same stale `currentState`, both create a `WorkflowEntry`, and both call `_updateEntityStatus` — the later write silently wins with no conflict signal to either caller. The result is a `WorkflowEntry` audit trail entry that doesn't match the evidence's real, final `status` — an auditor sampling the workflow history could see a transition recorded that the entity's current state contradicts.\n**Claude Fix Prompt:**\nFix once in the shared service rather than per-module: in `WorkflowTransitionService._updateEntityStatus` (`workflowTransition.service.js:418-463`), add the precondition to the filter and check the result: `const result = await Model.updateOne({ _id: entityId, [field]: currentState }, { $set: { [field]: modelValue } }); if (result.matchedCount === 0) { const err = new Error(entityType + ' state changed concurrently — please refresh and retry'); err.statusCode = 409; throw err; }` — this requires threading `currentState` into the call at line 167. Fixing it here closes the gap for `evidence`, `policy`, and every other `entityType` this service drives in one place."
+  },
+  {
+    "id": "EM-CHK-003",
+    "module": "evidence-management",
+    "title": "Action-level permission gating is essentially absent across the entire evidence-management component tree — only 1 of 114 components (`EvidenceManagementContent.jsx`, gating just the Upload button) uses `PermissionHide`/`PermissionGate`; `EvidenceCard.jsx`'s Archive and Hard-Delete buttons render for every viewer regardless of `evidence.update`/`evidence.delete`",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/evidence-management/EvidenceCard.jsx:77,197,205",
+      "vibrantix-client-panel/src/components/evidence-management/EvidenceManagementContent.jsx:745"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action: every create/update/delete/approve button is wrapped in `PermissionGate`/`usePermission`, not just the page-level read gate.\n**Files:** A repo-wide grep for `PermissionHide`/`PermissionGate` across `vibrantix-client-panel/src/components/evidence-management/` (114 `.jsx` files) returns exactly one hit: `EvidenceManagementContent.jsx:745`, wrapping only the 'Upload Evidence' button in `<PermissionHide permission=\"evidence.create\" allowProjectGrant>`. Every other write surface in the module — confirmed concretely in `EvidenceCard.jsx`, the component rendering every evidence card in every list view — has no gating at all: `handleArchive` (line 197's `onClick`) and `handleDelete` (line 205's `onClick`, calling `evidenceService.hardDeleteEvidence` at line 77) render unconditionally for any viewer who can see the card, i.e. anyone passing the module's blanket `(private)/evidence-management/layout.jsx` gate (`evidence.read` — a read permission, not `evidence.update`/`evidence.delete`).\n**Root Cause:** The module relies on a single layout-level `evidence.read` gate for page access and otherwise leaves virtually all write/destructive-action gating to the backend alone — the one exception (Upload) suggests action-level gating was a one-off addition, not a pattern applied consistently across the component tree.\n**Impact:** Not a data exposure — this module's backend routes (confirmed extensively in this module's earlier checklist run) correctly require `evidence.update`/`evidence.delete` server-side. But any user with mere `evidence.read` (a realistic grant for a read-only project role, e.g. an external auditor account) sees fully clickable Archive and permanent-delete-triggering buttons on every evidence card, which will fail with a raw error only after they click — the same inconsistent-UX pattern already logged for other modules this session (`PM-CHK-001`, `AA-CHK-003`), but here affecting the module's single most common interaction surface rather than one secondary page.\n**Claude Fix Prompt:**\nIn `EvidenceCard.jsx`, wrap the Archive action in `<PermissionHide permission=\"evidence.update\" allowProjectGrant>` and the Delete/hard-delete action in `<PermissionHide permission=\"evidence.delete\" allowProjectGrant>` (soft-delete/archive uses `evidence.delete` per `evidence.routes.js`'s `DELETE /:evidenceId` route — verify which of Archive/Delete maps to which permission against that route file before applying). Do a pass over the rest of the 114-file component tree for other unguarded `evidence.update`/`evidence.delete`/`evidence.create` actions (e.g. control-mapping approve, evidence-request creation, comment/version actions) using this same fix — this one file is the highest-traffic confirmed instance, not necessarily the only one."
+  },
+  {
+    "id": "EM-CHK-004",
+    "module": "evidence-management",
+    "title": "Evidence workflow notifications cover assignment only — approval/rejection/needs-revision review decisions never notify the evidence owner; second confirmed instance of the same shared-service gap already logged as PM-CHK-005 for policy-management",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:226-271",
+      "vibrantix-backend/src/modules/evidence/evidence.controller.js:763"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline, not an ad hoc or silent path.\n**Files:** `evidence.controller.js:763` (`transitionWorkflow`) delegates to the shared `WorkflowTransitionService.transition('evidence', ...)`. A repo-wide grep for `notif`/`Notif` in `evidence.controller.js` itself returns nothing — evidence has no notification logic of its own. The shared service's only dispatch (`workflowTransition.service.js:226-271`) is gated to `if (['assigned', 're-assign'].includes(targetState) && opts.assignedTo)` — evidence's own `under_review → closed` (approved) and `under_review → needs_revision` (rejected) transitions (per `featureWorkflows.js`'s `evidence` definition) fall through this check entirely. This is the same root cause already logged as `PM-CHK-005` for policy-management — filed separately here because it's evidence's own review-decision surface that's silent, not a duplicate of that finding.\n**Root Cause:** Same as `PM-CHK-005` — only the assignment event was ever wired to the notification pipeline in the shared `WorkflowTransitionService`; the approval-decision event was never added for any entity type it drives.\n**Impact:** An evidence uploader is notified when a reviewer is assigned to their submission, but never learns — except by manually reopening the record — that their evidence was approved or rejected/sent back for revision. For evidence specifically, this also means a rejected upload (which per this module's own review cycle needs the uploader to act, e.g. resubmit) generates no prompt to do so.\n**Claude Fix Prompt:**\nSame fix as `PM-CHK-005` — one shared-service fix closes both. In `workflowTransition.service.js`, add a decision-notification dispatch alongside the existing assignment one, covering `evidence`'s `closed`/`needs_revision` targets the same way it would cover `policy`'s `active`/`rejected`/`needs_revision`/`archived` — see `PM-CHK-005`'s fix prompt for the exact patch (a generic `_getEntityOwnerId(entityType, entityId)` helper keyed off each entity's `MODEL_MAP` already reused by `_updateEntityStatus`)."
   }
 ]

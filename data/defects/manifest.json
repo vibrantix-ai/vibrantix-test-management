@@ -80,6 +80,21 @@
       "slug": "vciso",
       "name": "vCISO",
       "scope": "feature"
+    },
+    {
+      "slug": "intelli-audit",
+      "name": "Intelli Audit",
+      "scope": "feature"
+    },
+    {
+      "slug": "ai-assistant",
+      "name": "AI Assistant",
+      "scope": "feature"
+    },
+    {
+      "slug": "reports",
+      "name": "Reports",
+      "scope": "feature"
     }
   ]
 }

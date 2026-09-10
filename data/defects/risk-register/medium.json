@@ -314,5 +314,23 @@
     "lastVerified": "2026-08-27",
     "runsOpen": 1,
     "sourceFile": "Risk_Register_QA_Agent"
+  },
+  {
+    "id": "RR-CHK-001",
+    "module": "risk-register",
+    "title": "`NotificationService.notifyApprovalRequest` is fully implemented but has zero callers anywhere in the service — no risk-acceptance/approval action ever notifies an approver, consistent with the already-known broken acceptance workflow (RR-046/047/048)",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "risk-management-service/src/services/NotificationService.ts:386-433",
+      "risk-management-service/src/routes/risk-register.routes.ts"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline.\n**Files:** `NotificationService.ts` implements a genuinely comprehensive set of dispatch methods — `notifyRiskAssignment` (called on create/reassign, confirmed working in `RiskRegisterService.ts:250,450,462`), `notifyEscalation` (called in `risk-register.routes.ts:1216`), `notifySLABreach`/`notifyAcceptanceExpiry`/`notifyTreatmentOverdue` (all called from the scheduled `jobs/alerts.job.ts`) — but `notifyApprovalRequest` (lines 386-433) has zero callers anywhere in `risk-management-service/src/`, confirmed by a repo-wide grep matching only its own definition.\n**Root Cause:** This lines up exactly with the already-logged `RR-046`/`RR-047`/`RR-048` findings — the risk-acceptance workflow's actual submission/approval code path (`AcceptanceRequestForm`/`ApprovalDecisionForm` and their backend handlers) is confirmed broken (a `projectId` ReferenceError, `approvers` hardcoded to `[]`, a frontend/backend status-vocabulary mismatch) — so the one call site that should invoke `notifyApprovalRequest` (when a risk-acceptance request is actually submitted to a real approver) was either never written or never reached, leaving the notification method itself an orphaned, untested stub.\n**Impact:** Independent of RR-046/047/048's functional bugs, this is a checklist-specific gap worth tracking on its own: even once the acceptance workflow's submission path is fixed, nothing currently calls `notifyApprovalRequest` to alert the assigned approver that a decision is waiting on them — the fix for RR-047 (populating `approvers`) does not, by itself, guarantee this notification gets wired in.\n**Claude Fix Prompt:**\nWhen fixing `RR-047` (populating `approvers` in `AcceptanceRequestForm`/`ApprovalDecisionForm`'s backend handler), add a call to `notificationService.notifyApprovalRequest(...)` for each approver once the acceptance request is actually created/submitted — mirroring the same `notifyRiskAssignment` call-site pattern already working in `RiskRegisterService.ts:250`. Add a regression test asserting `notifyApprovalRequest` is called with the correct approver list when a risk-acceptance request is submitted."
   }
 ]

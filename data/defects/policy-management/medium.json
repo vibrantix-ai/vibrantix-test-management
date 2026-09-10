@@ -346,5 +346,76 @@
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "PM-CHK-001",
+    "module": "policy-management",
+    "title": "`PolicyDetailView.jsx` has zero permission gating on any action button — Archive/Restore/Edit/Export/Share/Clone all render unconditionally regardless of `policy.approve`/`policy.admin`/`policy.update`",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "requirement": "ISO 27001:2022 Annex A.5.3",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/components/policy-management/PolicyDetailView.jsx"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action: every create/update/delete/approve button in the frontend is wrapped in `PermissionGate`/`usePermission`, not just the page-level read gate.\n**Files:** `PolicyDetailView.jsx` — repo-wide grep for `PermissionGate`/`PermissionHide`/`usePermission` inside this file returns zero matches. The Archive button (line ~1321, opens the confirm modal at line ~2364, calls `handleArchive` at line 611 which POSTs `/:policyId/transition` with `targetState:'archived'`), the Restore button (line ~2416, calls `handleRestore`), the Edit button (lines 1255/1619/1845), Export menu (1272-1281), Share (1290), and Clone (1305) are all rendered to any user who can reach the detail page (i.e. anyone holding `policy.read`, including via a project grant) with no permission-based hide/disable of any kind.\n**Root Cause:** PM-023's prior fix (see that record's `fixEvidence`) verified the *backend* route guards (`policy.approve` on `/transition`, `policy.admin` on `/restore`, `policy.delete` on soft-delete) and verified `PolicyList.jsx`'s bulk-action `PermissionHide` wrapping and `ReviewDetail.jsx`'s `isReviewer`-flag gating — but never checked `PolicyDetailView.jsx` itself, which has a materially different (and effectively ungated) action surface from either of those two files.\n**Impact:** Not an authorization bypass — the backend still rejects an unauthorized Archive/Restore call server-side (per PM-023) — but any `policy.read`-only viewer (e.g. a project member with a read-only Custom Project Role, or an external auditor account scoped to read access) sees fully clickable Archive/Restore/Edit controls that will fail with a raw error toast on click, a confusing and inconsistent UX that also makes it impossible to tell from the UI alone who is actually authorized to perform these actions on a given policy.\n**Claude Fix Prompt:**\nIn `PolicyDetailView.jsx`, import `PermissionHide` (same component already used in `PolicyList.jsx`) and wrap: the Archive `MenuItem`/button in `<PermissionHide permission=\"policy.approve\" allowProjectGrant projectId={policy.projectId}>` (Archive goes through `/transition`, gated by `policy.approve` server-side), the Restore button in `<PermissionHide permission=\"policy.admin\">` (no project-grant equivalent — `policy.admin` is a SUPERADMIN-only org-wide permission per `augmentPermissionsWithProjectGrant.js`'s `PROJECT_ADMIN_MODULE_PERMISSIONS`, which does not include `admin`), and the Edit button/menu item in `<PermissionHide permission=\"policy.update\" allowProjectGrant projectId={policy.projectId}>` (matching the pattern already at `PolicyList.jsx:1587,1621`)."
+  },
+  {
+    "id": "PM-CHK-003",
+    "module": "policy-management",
+    "title": "Policy workflow transitions have no optimistic-lock/precondition guard — `WorkflowTransitionService._updateEntityStatus` does an unconditional `updateOne` with no `status: currentState` filter, so concurrent transitions can silently last-write-wins",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §6.4 — Workflow / State Machine Integrity",
+    "requirement": "ISO 27001:2022 Clause 8.1 operational planning and control",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:50-86,418-463"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §6.4 — Race conditions on concurrent transitions handled: two actors transitioning the same record concurrently don't produce a corrupted or double-applied state (optimistic locking / version check / atomic update).\n**Files:** `WorkflowTransitionService.transition()` (`workflowTransition.service.js:50-86`) reads `currentState` via a separate, non-atomic lookup (`_getEntityCurrentStatus` / latest `WorkflowEntry`) well before the eventual write, validates `targetState` is in `def.transitions[currentState]`, then later (line 167) calls `_updateEntityStatus()`, which (lines 418-463) executes `Model.updateOne({ _id: entityId }, { $set: { status: modelValue } })` — no `status: currentState` (or any version field) is included in the query filter, so the write is unconditional.\n**Root Cause:** No optimistic-concurrency mechanism (a `status`-matching filter, a `__v` version check, or a Mongo transaction) exists anywhere in this read-check-write sequence for `policy` (or any other entity type driven by this same shared service).\n**Impact:** Two concurrent `POST /:policyId/transition` calls against the same policy while it is `under_review` (e.g. two reviewers/admins independently reading the same starting state) can both pass the allowed-transition check against the same stale `currentState`, both `WorkflowEntry.create()` a transition record, and both call `_updateEntityStatus` — the later write silently wins with no conflict signal to either caller, no rejection, and no reconciliation. The result: a `WorkflowEntry` audit-trail entry exists recording a transition (e.g. to `rejected`) that was never actually reflected in the policy's real `status` field because a later concurrent call (e.g. to `active`) overwrote it — a workflow-integrity/traceability gap where the audit log and the entity's real state can silently diverge.\n**Claude Fix Prompt:**\nIn `WorkflowTransitionService._updateEntityStatus` (`workflowTransition.service.js:418-463`), add the precondition to the filter and check the result: `const result = await Model.updateOne({ _id: entityId, [field]: currentState }, { $set: { [field]: modelValue } }); if (result.matchedCount === 0) { const err = new Error('Policy state changed concurrently — please refresh and retry'); err.statusCode = 409; throw err; }`. This requires threading `currentState` into `_updateEntityStatus`'s call at line 167 (it's already in scope in `transition()`). Apply the same fix to the `evidence`/`vendor`/etc. call sites since this is a shared service — out of scope for this policy-management-focused run, but worth flagging to those modules' owners."
+  },
+  {
+    "id": "PM-CHK-004",
+    "module": "policy-management",
+    "title": "No rate limiting on authenticated AI-generation-trigger endpoints — `POST /policy-ai/generate`, `/bulk-generate`, and `/generations/:id/refine` have zero request-rate middleware",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §13.3 — Security Hardening",
+    "requirement": "OWASP API4:2023 Unrestricted Resource Consumption",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/policy/policy-ai.routes.js:76-94,146-153"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §13.3 — Rate limiting on public/expensive endpoints: public template endpoints, AI-generation triggers, share-link access are rate-limited.\n**Files:** `policy-ai.routes.js` — repo-wide grep for `rateLimit`/`Limiter`/`slowDown` inside `vibrantix-backend/src/modules/policy/` returns no middleware usage anywhere. `POST /generate` (line 76-83), `POST /bulk-generate` (line 88-94), and `POST /generations/:id/refine` (line 146-153) carry `authenticate`, `tierContext`, `accessGuard`, `requirePermission('policy.create'|'policy.update')`, and `requireProjectMembership` — but no per-route or per-user rate limiter.\n**Root Cause:** This is a distinct gap from PM-034 (already fixed — that defect was specifically about the *unauthenticated* public template routes, `GET /templates*`, which are now behind `authenticate` and no longer need a rate limiter per that record's own `fixEvidence`, which explicitly notes 'No dedicated per-route rate limiter was added on top of authentication' as a residual, lower-priority concern). The AI generation endpoints are a different, higher-cost surface: each call triggers a real external HTTP round-trip to the `ai_policy_generator_python` microservice and reserves AI credits via `policy-ai-metering.service.js`.\n**Impact:** An authenticated user (or a compromised/scripted session) can burst-call `/generate`/`/bulk-generate`/`/refine` far faster than a human would, which (a) creates unnecessary load against the external AI microservice with no platform-side throttle, and (b) — per the already-open PM-058 (credit reservation not released on client-abandoned polling) — widens the window in which concurrent/rapid generation requests could reserve credits that are never cleanly reconciled. Distinct from PM-058 itself: that defect is about reservation/release bookkeeping after a request is accepted; this one is about nothing bounding how many such requests can be fired in the first place.\n**Claude Fix Prompt:**\nAdd an `express-rate-limit` (or the platform's existing rate-limit middleware factory, if one exists — check `vibrantix-backend/src/middleware/` for a reusable limiter used elsewhere, e.g. evidence upload) instance keyed by `req.userId` + `req.orgId`, e.g. `const aiGenerationLimiter = createRateLimiter({ windowMs: 60_000, max: 5 })`, and apply it to `router.post('/generate', aiGenerationLimiter, ...)`, `router.post('/bulk-generate', aiGenerationLimiter, ...)`, and `router.post('/generations/:id/refine', aiGenerationLimiter, ...)` in `policy-ai.routes.js`."
+  },
+  {
+    "id": "PM-CHK-005",
+    "module": "policy-management",
+    "title": "Policy workflow notifications cover assignment only — approval/rejection/needs-revision decisions and any other status change never notify the policy owner, even though the shared dispatch pipeline is real and already wired for the assignment case",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:226-271"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline, not an ad hoc or silent path.\n**Files:** `WorkflowTransitionService.transition()` (`workflowTransition.service.js:226-271`) does contain a real, working notification dispatch via `notificationService.dispatch()` (correctly module/label/deep-link-mapped for `entityType: 'policy'` per `_entityTypeToModule`/`_entityTypeLabel`/`_buildNavigateTo`) — but the dispatch is gated behind a single condition: `if (['assigned', 're-assign'].includes(targetState) && opts.assignedTo)` (line 227). Every other transition a policy can make — `under_review → active` (approved), `under_review → rejected`, `under_review → needs_revision`, `active → archived`/`expired → archived` — falls through this same function with no notification call at all; the `if` block is skipped entirely and nothing else in `transition()` dispatches one.\n**Root Cause:** Only the assignment event was ever wired to the notification pipeline; the approval-decision and status-change events the checklist separately calls out were never added, even though the same function already has everything it needs (actor, entity, previous/new state) to dispatch them.\n**Impact:** A policy author/owner who submits for review is notified when a reviewer is assigned, but never learns — except by manually reopening the policy — that their policy was approved, rejected, or sent back for revision. For a document-control workflow where the whole point is timely review completion (ISO 27001 Clause 7.5.2), the one event that actually matters to the author (the decision) is silent.\n**Claude Fix Prompt:**\nIn `workflowTransition.service.js`, after the existing assignment-notification block (after line 271, still inside `transition()`), add a second dispatch for decision/status-change transitions, e.g.: `if (['active', 'rejected', 'needs_revision', 'archived', 'expired'].includes(targetState)) { const notificationService = require('../notification/notification.service'); const ownerId = await this._getEntityOwnerId(entityType, entityId); if (ownerId) { notificationService.dispatch({ targetUserId: ownerId, organizationId: opts.organizationId?.toString(), notificationType: 'review_decision', sourceModule: _entityTypeToModule(entityType), entityId: entityId?.toString(), entityType, message: `Your ${_entityTypeLabel(entityType)} was ${targetState}`, actorId: userId?.toString(), navigateTo: _buildNavigateTo(entityType, entityId, opts), priority: 'medium' }).catch(err => logger.error({ err }, '[WorkflowTransition] decision notification dispatch failed')); } }` — add a small `_getEntityOwnerId(entityType, entityId)` helper that reads `createdBy`/`owner` off the right model per `entityType` (reusing the existing `MODEL_MAP` from `_updateEntityStatus`)."
   }
 ]

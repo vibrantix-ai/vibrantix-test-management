@@ -199,5 +199,59 @@
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "GRC-CHK-002",
+    "module": "grc-framework",
+    "title": "No notification dispatched on framework activation, deactivation, or license-revocation cascade — only an activity log / business-event log entry is written",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/compliance-frameworks/client-frameworks.controller.js:108-220,265-285",
+      "vibrantix-backend/src/modules/organization/organization.controller.js"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline (BullMQ → Socket.IO), not an ad hoc or silent path.\n**Files:** `client-frameworks.controller.js` — `addToProject` (framework activation, lines 108-193), `archiveFromProject`/`archiveByFrameworkId` (deactivation, lines 196-220/265-285) contain zero references to the notification dispatch pipeline (no `notification.service`/`dispatchNotification` import or call anywhere in the file) — the only trace either action leaves is a plain `logger.info` business-event log line. Separately, `organization.controller.js`'s `updateLicensedFrameworks` (the license-revocation cascade referenced in `archiveFromProject`'s own code comment as setting `status: 'license_revoked'` on affected `ClientFramework` records) likewise has no notification call anywhere in its body.\n**Root Cause:** Framework lifecycle actions were wired straight to the database + a structured log line, with no integration into the platform's standard BullMQ→Socket.IO notification pipeline used elsewhere (e.g. policy/evidence workflow transitions).\n**Impact:** When a framework is deactivated (voluntarily, or involuntarily via a license-revocation cascade the acting user may not even have triggered directly — e.g. a billing admin downgrading a plan), no one else in the org — including whoever is responsible for that framework's ongoing compliance posture — receives any real-time or persistent notification that scope just changed. They would only discover it by opening `/grc-framework` and noticing the framework is now missing/archived, or by directly querying `activity_logs`.\n**Claude Fix Prompt:**\nIn `client-frameworks.controller.js`, after the `cf.save()` calls in `archiveFromProject`/`archiveByFrameworkId` and after a successful activation in `addToProject`, dispatch a notification via the platform's standard helper (e.g. `require('../notification/notification.service').dispatch({ organizationId: req.orgId, projectId, type: 'framework_deactivated'|'framework_activated', title, message, recipients: <project members with compliance.read>, metadata: { frameworkId, clientFrameworkId: cf._id } })` — match the exact call signature already used by the policy/evidence modules' workflow notification dispatch). Add the same dispatch to `organization.controller.js`'s `updateLicensedFrameworks` for the `license_revoked` cascade, scoped to every affected project's members."
+  },
+  {
+    "id": "GRC-CHK-003",
+    "module": "grc-framework",
+    "title": "Compliance-map resource drill-down page lets any `compliance.read` holder archive a linked Trust Vault report or certification directly from GRC Framework, with zero client-side permission gate on the Archive action itself",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/grc-framework/[frameworkId]/compliance-map/resource/[type]/[id]/page.jsx:124-247,249-348,418"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action, not just the page-level read gate.\n**Files:** `[type]/[id]/page.jsx` wraps its entire content in one page-level `<PermissionGate permission=\"compliance.read\" allowProjectGrant>` (line 418) — correct for a drill-down that's mostly read-only. But `TrustReportResourceContent` (lines 124-247) and `TrustCertResourceContent` (lines 249-348) each render an `onDelete={() => deleteDialog.onOpen()}` wired to an `AlertDialog` whose confirm button calls `trustVaultService.archiveReport(reportId)` / `trustVaultService.archiveCertification(certId)` directly (`POST /reports/:id/archive`, `DELETE /certifications/:id` against `trust-vault-service`) — with no `PermissionGate`/`PermissionHide` of any kind around the Archive button or dialog. The sibling `PolicyResourceContent` and `VendorResourceContent` handlers (lines 41-122) don't have this issue — they only route to Edit pages that are separately gated, with no direct destructive action inline.\n**Root Cause:** This page surfaces resources that live in a different module's data store (Trust Vault certifications/reports) inline for convenience, but only carried over the page's own `compliance.read` gate — a read permission for a different module (GRC Framework/client-compliance) entirely — without adding a Trust-Vault-appropriate write-permission gate on the one action (Archive) that mutates that other module's data.\n**Impact:** Not necessarily an authorization bypass — `trust-vault-service`'s own backend routes for archiving reports/certifications are Trust_Vault_QA_Agent's domain and were not re-verified here, but per this checklist's own pattern (frontend gate should match the real permission, not be assumed), any `compliance.read`-only user browsing the GRC Framework compliance map sees a live, clickable 'Archive' button for a Trust Vault record with no client-side indication that doing so requires (or should require) a Trust Vault write permission they may not hold.\n**Claude Fix Prompt:**\nWrap the Archive `Button` (and ideally the whole `onDelete`-triggering affordance) in both `TrustReportResourceContent` and `TrustCertResourceContent` in `<PermissionHide permission=\"trust_vault.update\" allowProjectGrant>` (or whichever permission string `trust-vault-service`'s own archive routes actually enforce — confirm against `Trust_Vault_QA_Agent`'s findings before picking the exact string) rather than leaving it gated only by the page's `compliance.read`."
+  },
+  {
+    "id": "GRC-CHK-004",
+    "module": "grc-framework",
+    "title": "Onboarding's Framework Picker (step-2) is cosmetic — it lets the user pick from a hardcoded list of framework names and only records the selection as onboarding metadata; it never calls the real framework-activation endpoint, so a completed onboarding leaves `/grc-framework` with zero frameworks actually active",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §12.1 — Onboarding & Discoverability",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/onboarding/step-2/page.jsx:10,22",
+      "vibrantix-client-panel/src/services/onboardingService.js:16",
+      "vibrantix-backend/src/modules/compliance-frameworks/client-frameworks.controller.js:108-193"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §12.1 — Getting-started checklist integration: if the module is a first-run milestone (first framework, first evidence, first audit), it's wired into the onboarding wizard/checklist, with completion persisted.\n**Files:** `onboarding/step-2/page.jsx:10` defines `const FRAMEWORKS = ['ISO 27001', 'SOC 2', 'PCI DSS', 'HIPAA', 'NIST CSF', 'SOX', 'GDPR', 'FedRAMP']` — a hardcoded name list, not fetched from the real `ComplianceFramework` catalog (`GET /compliance-frameworks/` or even the backend's own separate `GET /v1/onboarding/frameworks` endpoint, which the frontend never calls either). On submit (line 22), the page calls only `onboardingService.completeStep('step-2', { frameworks: selected })` — which POSTs to the generic `/v1/onboarding/steps/step-2/complete` endpoint and stores the selection as opaque step-completion metadata. Neither this call nor anything in `onboarding.controller.js`'s step-completion handling ever calls `client-frameworks.controller.js`'s `addToProject` (the real, only path that creates a `ClientFramework` activation record — confirmed in this module's earlier checklist runs) or any other compliance-frameworks endpoint.\n**Root Cause:** The onboarding wizard's Framework Picker was built as a standalone, disconnected UI step — it captures the user's stated intent but was never wired to the real framework-activation flow it's visually presenting itself as.\n**Impact:** A new organization completing onboarding earns the 20 setup-health points for 'step-2' (per `setup-health.service.js`'s `WEIGHTS['step-2'] = 20`) and believes they've set up their compliance framework(s) — but `/grc-framework`'s Active Frameworks list is genuinely empty afterward, with no `ClientFramework` record ever created. The user must independently discover and repeat framework activation manually, with zero connection between what they picked during onboarding and any real system state — undermining the entire purpose of a first-run 'this is now set up' milestone. Also means the onboarding step offers frameworks (SOX, FedRAMP, etc.) that may not even exist in, or may not match the real names of, the actual `ComplianceFramework` catalog, since it was never cross-checked against it.\n**Claude Fix Prompt:**\nIn `onboarding/step-2/page.jsx`, replace the hardcoded `FRAMEWORKS` array with a real fetch — either the backend's own `GET /v1/onboarding/frameworks` (already exposed via `onboardingService.getFrameworks()` but currently unused) if that's meant to mirror the real catalog, or `GET /compliance-frameworks/` directly. On submit, in addition to `completeStep('step-2', ...)`, call `POST /compliance-frameworks/projects/:projectId/frameworks` (the real `addToProject` endpoint) once per selected framework — using the project created/selected in `step-1` — so the onboarding selection actually results in real `ClientFramework` activation records a user will see reflected in `/grc-framework` immediately after finishing onboarding."
   }
 ]

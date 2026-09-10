@@ -262,5 +262,24 @@
     "requirement": "Annex A 5.26",
     "sourceFile": "QA_Tracker/TRUST_VAULT_QA_LIVE_TRACKER.md",
     "fixEvidence": "`trust-vault-service/src/jobs/expiryCheck.ts` — `runIncidentEscalation()` (hourly, `INCIDENT_ESCALATION_HOURS=72`, queries severity:critical + status open/investigating + createdAt<cutoff + no escalatedAt yet, sends assignment notification, stamps escalatedAt) + `src/models/incident.schema.ts` (`escalatedAt?: Date`) + `src/index.ts:338-342` (job registered via `initializeJobsManager`, `enableIncidentEscalation` defaults true since the option isn't explicitly disabled) — confirmed the job genuinely starts, not just defined. Frontend `IncidentCard.jsx` — SLA badge mirroring the same 72h threshold, confirmed on 2026-09-02 (client-panel HEAD 0b8712ce, trust-vault-service HEAD 12b4103). No regression found."
+  },
+  {
+    "id": "TV-CHK-001",
+    "module": "trust-vault",
+    "title": "Two of the module's three built email notification templates — `share_link_created` and `certification_uploaded` — are fully rendered/wired functions with zero callers anywhere in the request-handling code; only the expiry-alert path (a different, scheduled-job pipeline) actually fires",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §5.1 — Notifications & Real-Time Updates",
+    "affectedFiles": [
+      "trust-vault-service/src/services/EmailTemplateService.ts:120-141",
+      "trust-vault-service/src/templates/emails/share_link_created.hbs",
+      "trust-vault-service/src/templates/emails/certification_uploaded.hbs"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §5.1 — Key lifecycle events dispatch a notification: assignment, due-date approaching/overdue, approval requested, approval decision, status change — each fires through the standard dispatch pipeline.\n**Files:** `EmailTemplateService.ts` exports `renderShareLinkCreatedEmail` (line 134-141, renders the `share_link_created` template) and `renderCertificationUploadedEmail` (line 120-128, renders `certification_uploaded`) — both fully implemented. A repo-wide grep for either function name across `trust-vault-service/src/` returns matches only in `EmailTemplateService.ts` itself and the `services/index.ts` barrel re-export — no route, controller, or job ever calls either one. By contrast, the module's third template (`certification_expiry_alert`) IS genuinely wired: `ExpiryAlertService.ts`'s scheduled job calls `sendToBackend()` to dispatch a real notification for expiring certifications (independently confirmed working, per this module's own `TV-*` fix history for incident escalation using the same job-based pattern).\n**Root Cause:** The email templates and rendering functions for 'a share link was created' and 'a certification was uploaded' were built but the actual call sites — in the share-link creation route (`trust-vault-share-link.routes.ts`) and the certification upload route — were never added.\n**Impact:** No one is notified when a certification is uploaded (e.g. a compliance manager wouldn't know a new certification needs their review) or when a share link is created for their organization's certification (e.g. an admin auditing outbound sharing has no proactive signal, only the reactive per-access audit trail already tracked separately in this module's existing `TV-*` records). This is dead-but-functional code sitting one call site away from working — a materially cheaper fix than most notification gaps found this session, since the render/template layer is already done.\n**Claude Fix Prompt:**\nIn the share-link creation handler (`trust-vault-share-link.routes.ts`'s `POST /certifications/:id/share-links`-equivalent route — find via grep for where `ShareLink` documents are created), call `EmailTemplateService.renderShareLinkCreatedEmail({...})` and dispatch it via the same `BackendApiClient`/`sendToBackend`-style path `ExpiryAlertService` already uses. Do the same for the certification upload route, calling `renderCertificationUploadedEmail`. Both functions already have the right signature — this is purely a missing invocation, not new logic to write."
   }
 ]

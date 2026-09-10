@@ -4,7 +4,9 @@
   "scope": "feature",
   "qaAgent": "Audit_Assurance_QA_Agent",
   "sourceTrackers": [
-    "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md"
+    "QA_Tracker/AUDIT_ASSURANCE_QA_LIVE_TRACKER.md",
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
   ],
-  "description": "Defects converted from the Audit Assurance live defect registry. Source IDs use mixed prefixes (CD-/D-/H-/M-) segmented by severity rather than one module prefix — all assigned module='audit-assurance', original IDs preserved as-is."
+  "checklistIdPrefix": "AA",
+  "description": "Defects converted from the Audit Assurance live defect registry (source IDs use mixed prefixes CD-/D-/H-/M-/G-* segmented by severity rather than one module prefix — all assigned module='audit-assurance', original IDs preserved as-is), plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against Audit Assurance (new findings use the AA-CHK-NNN prefix)."
 }

@@ -3,6 +3,9 @@
   "name": "vCISO",
   "scope": "feature",
   "qaAgent": "vCISO_QA_Agent",
-  "sourceTrackers": [],
-  "description": "Defects found by vCISO_QA_Agent's QA review."
+  "sourceTrackers": [
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
+  ],
+  "checklistIdPrefix": "VCISO",
+  "description": "Defects found by vCISO_QA_Agent's QA review, plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against vCISO (new findings use the VCISO-CHK-NNN prefix)."
 }

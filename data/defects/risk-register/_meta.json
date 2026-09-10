@@ -4,7 +4,9 @@
   "scope": "feature",
   "qaAgent": "Risk_Register_QA_Agent",
   "sourceTrackers": [
-    "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
+    "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md",
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
   ],
-  "description": "Defects converted from the Risk Register live defect registry. Source uses an alternate column schema (Priority/Component/ISO Ref/Affected Files, no Sev/Runs-Open/Fix-Evidence columns)."
+  "checklistIdPrefix": "RR",
+  "description": "Defects converted from the Risk Register live defect registry (source uses an alternate column schema — Priority/Component/ISO Ref/Affected Files, no Sev/Runs-Open/Fix-Evidence columns), plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against Risk Register (new findings use the RR-CHK-NNN prefix, distinct from the flat RR-NNN sequence)."
 }

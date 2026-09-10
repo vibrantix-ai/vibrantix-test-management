@@ -4,7 +4,9 @@
   "scope": "feature",
   "qaAgent": "Vendor_Management_QA_Agent",
   "sourceTrackers": [
-    "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md"
+    "QA_Tracker/VENDOR_MANAGEMENT_QA_LIVE_TRACKER.md",
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
   ],
-  "description": "Defects converted from the Vendor Management live defect registry."
+  "checklistIdPrefix": "VM",
+  "description": "Defects converted from the Vendor Management live defect registry, plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against Vendor Management (new findings use the VM-CHK-NNN prefix, distinct from the flat VM-NNN sequence)."
 }

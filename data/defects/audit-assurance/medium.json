@@ -283,5 +283,67 @@
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
+  },
+  {
+    "id": "AA-CHK-002",
+    "module": "audit-assurance",
+    "title": "Audit-assurance's scope-item/evidence/policy/vendor-review workflow transitions share the same unguarded `WorkflowTransitionService._updateEntityStatus` — third confirmed instance of the same platform-wide race condition",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §6.4 — Workflow / State Machine Integrity",
+    "requirement": "ISO 27001:2022 Clause 8.1 operational planning and control",
+    "affectedFiles": [
+      "vibrantix-backend/src/modules/audit-assurance/audit-assurance.controller.js",
+      "vibrantix-backend/src/modules/workflow/workflowTransition.service.js:50-86,418-463"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §6.4 — Race conditions on concurrent transitions handled: two actors transitioning the same record concurrently don't produce a corrupted or double-applied state.\n**Files:** `audit-assurance.controller.js` calls the shared `WorkflowTransitionService` for scope-item resource-workflow, evidence-review, and policy/vendor-review transitions — the same service already found (this run and in prior runs) to build its final write via `_updateEntityStatus()` (`workflowTransition.service.js:418-463`), an unconditional `Model.updateOne({ _id }, { $set: { status } })` with no precondition on the `currentState` read earlier in `transition()` (lines 50-86). This is the third module-level confirmation of the exact same shared-service gap already logged as `PM-CHK-003` (policy-management) and `EM-CHK-002` (evidence-management) — filed separately here because it's this module's own concurrent-reviewer surface (e.g. two auditors independently transitioning the same `audit_evidence_review`/`audit_policy_review` entry) that is exposed to it, not a duplicate of either prior finding.\n**Root Cause:** Same as `PM-CHK-003`/`EM-CHK-002` — no optimistic-concurrency mechanism exists anywhere in `WorkflowTransitionService`'s shared read-check-write sequence, for any `entityType` it drives.\n**Impact:** Two auditors (or an auditor and an admin override) concurrently transitioning the same scope-item's evidence/policy/vendor review can both pass the allowed-transition check against the same stale state and both write — the later call silently wins with no conflict signal, leaving a `WorkflowEntry` audit-trail entry that doesn't match the record's real final status.\n**Claude Fix Prompt:**\nSame fix as `PM-CHK-003`/`EM-CHK-002` — this is one shared-service bug with three confirmed call sites, not three separate bugs. Fix once in `WorkflowTransitionService._updateEntityStatus` (`workflowTransition.service.js:418-463`): add the `currentState` precondition to the `updateOne` filter and reject with a 409 on a matched-count of zero (see the other two records' fix prompts for the exact patch) — this closes the gap for `policy`, `evidence`, `audit_scope_item`, `audit_evidence_review`, `audit_policy_review`, `audit_vendor_review`, and every other `entityType` this service drives, in one place."
+  },
+  {
+    "id": "AA-CHK-003",
+    "module": "audit-assurance",
+    "title": "Five audit-assurance pages have zero permission gating of any kind — no page-level `PermissionGate`, no component-level `usePermission` check — relying entirely on the backend to fail closed",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/[id]/configured/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/[id]/reports/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/[id]/reports/ai/[reportId]/page.jsx",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/configure/[auditId]/page.jsx",
+      "vibrantix-client-panel/src/app/(detail)/audit-assurance/[id]/scope-items/[itemId]/page.jsx",
+      "vibrantix-client-panel/src/components/audit-assurance-2/ConfiguredRequirementsContent.jsx"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action: every create/update/delete/approve button — and per this checklist's broader intent, every page a permission model exists for — is wrapped in `PermissionGate`/`usePermission`, not left to the backend alone.\n**Files:** Unlike the module's other 4 pages (`page.jsx`, `new-template/page.jsx`, `programme/page.jsx`, `templates/[templateId]/page.jsx`, each wrapped in a `<PermissionGate>`), these five render their content components directly with no `PermissionGate`, no `usePermission` hook, and no `layout.jsx` anywhere in `(private)/audit-assurance/` or `(detail)/audit-assurance/` providing a blanket gate — confirmed by grep for `PermissionGate`/`usePermission` returning zero matches in all five files and in `ConfiguredRequirementsContent.jsx` itself (the component `[id]/configured/page.jsx` renders).\n**Root Cause:** These five routes were added without carrying over the `PermissionGate` wrapper pattern used consistently on the module's other pages — likely because each is reached via an in-app link/button already itself permission-gated elsewhere, so the gap was never hit through the normal navigation flow.\n**Impact:** Not a data exposure — the underlying API calls (`auditAssuranceService.getScopeItem`, the reports/configure endpoints) still require `audit.read`/`audit.update` server-side, confirmed in this module's route file. But any authenticated user who navigates to one of these URLs directly (a guessable/bookmarked/shared link) with no `audit.*` permission at all sees a real page shell attempt to load before failing on the API call, instead of the immediate, clear 'you don't have access to this' the rest of the module gives — an inconsistent, confusing UX distinct from an authorization bypass.\n**Claude Fix Prompt:**\nWrap each of the four `(private)/audit-assurance/...` pages in `<PermissionGate permission=\"audit.read\" allowProjectGrant>...</PermissionGate>` (matching `templates/[templateId]/page.jsx`'s pattern, since these are audit-record pages, not compliance-catalog pages). For the `(detail)` route's client-side `ScopeItemDetailPage`, add a `usePermission('audit.read', { allowProjectGrant: true })` check and render the existing error `Center` state (already present in the component) when it fails, before calling `auditAssuranceService.getScopeItem`."
+  },
+  {
+    "id": "AA-CHK-004",
+    "module": "audit-assurance",
+    "title": "Page-level permission gates are inconsistent across sibling audit-assurance pages — the main list and Programme pages gate on `compliance.read`, while Templates gates on `audit.read`, though the backend for all of them actually requires `audit.*`",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2 — Access Control",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/page.jsx:8",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/new-template/page.jsx:8",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/programme/page.jsx:10",
+      "vibrantix-client-panel/src/app/(private)/audit-assurance/templates/[templateId]/page.jsx:10",
+      "vibrantix-backend/src/modules/audit-assurance/audit-assurance.routes.js"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §1.2 — RBAC permission gates on every UI action, consistent with what the backend actually enforces (this checklist item's underlying intent — a gate that doesn't match reality is as broken as no gate).\n**Files:** `page.jsx:8`, `new-template/page.jsx:8`, and `programme/page.jsx:10` all gate on `<PermissionGate permission=\"compliance.read\" allowProjectGrant>`. `templates/[templateId]/page.jsx:10` instead gates on `<PermissionGate permission=\"audit.read\" allowProjectGrant>`. But `audit-assurance.routes.js` — confirmed exhaustively in this module's prior checklist run — gates essentially every read endpoint in this module (scope items, findings, evidence, reports, the audit itself) on `requirePermission('audit.read')`, not `compliance.read`; `compliance.read` is the permission string owned by the separate `/grc-framework` / `client-compliance` module.\n**Root Cause:** The main list, new-template, and Programme pages were gated with the wrong module's permission string at some point (`compliance.read` instead of `audit.read`) — plausibly copy-pasted from a `/grc-framework` page — while `templates/[templateId]/page.jsx` was built correctly.\n**Impact:** Two failure directions: (1) a user who holds `audit.read` (the permission this module's own backend actually checks, and the one a Custom Project Role would realistically be given for audit access) but not `compliance.read` is blocked at the page gate from ever seeing `/audit-assurance`, `/audit-assurance/new-template`, or `/audit-assurance/programme` at all, despite being fully authorized against the real backend; (2) a user who holds `compliance.read` but not `audit.read` sees these three pages render past the gate, only to have every data call inside them fail — the opposite inconsistency from `AA-CHK-003`, but the same root problem: the frontend gate doesn't reflect the backend's real permission model.\n**Claude Fix Prompt:**\nChange `permission=\"compliance.read\"` to `permission=\"audit.read\"` in `page.jsx:8`, `new-template/page.jsx:8`, and `programme/page.jsx:10`, matching `templates/[templateId]/page.jsx`'s already-correct gate and the backend's actual `requirePermission('audit.read')` checks in `audit-assurance.routes.js`."
   }
 ]

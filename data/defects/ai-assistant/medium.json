@@ -1,0 +1,40 @@
+[
+  {
+    "id": "AIA-CHK-001",
+    "module": "ai-assistant",
+    "title": "`/assistant` page has zero proactive access/entitlement check — any authenticated user (regardless of whether their org has the AI Assistant entitlement, or holds any specific role) sees the full 2978-line chat UI unconditionally, and a metered/quota-blocked send fails with a generic error rather than a clear upgrade prompt",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §1.2/§3.2 — Access Control / Billing & Plan Gating",
+    "affectedFiles": [
+      "vibrantix-client-panel/src/app/(private)/assistant/page.jsx",
+      "assistant-service/src/routes/chat.routes.ts:90-114,444-463,725-744",
+      "assistant-service/src/services/AssistantMetering.ts:158"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist rows:** §1.2 — RBAC permission gates on every UI action, not just page-level read. §3.2 — Seat/usage limits enforced: an over-limit action is blocked with a clear upgrade prompt, not silently allowed or silently failing.\n**Files:** `(private)/assistant/page.jsx` (2978 lines) has zero `PermissionGate`/`usePermission`/`useEntitlements` calls anywhere — confirmed by grep. This is architecturally different from most other modules audited this session: `assistant-service`'s `chat.routes.ts` has no RBAC permission model at all (`preHandler: [fastify.authenticate]` only, no `requirePermission` call anywhere in the file, and no `assistant.read`/`assistant.create` permission string exists anywhere in the codebase) — access is genuinely 'any authenticated user,' gated instead by AI-credit entitlement via `AssistantMetering.reserve()` (line 158) at message-send time. But the frontend never checks this proactively (unlike, for comparison, `vciso`'s AI Strategy Advisor page, which does call `useEntitlements()` and derives `advisorEnabled` before rendering). A grep for `402`/`QUOTA`/`upgrade` in `assistant/page.jsx`'s ~15 `catch` blocks around message-send logic finds none — a metering-rejected send falls through to whatever generic error handling the nearest catch block does.\n**Root Cause:** The module's access model (authenticate + inline credit-reservation, no RBAC) is a legitimate design choice for a chat feature, but the frontend was never given a matching proactive check the way other AI-gated modules (vciso's advisor) were.\n**Impact:** A user in an org with zero remaining AI credits, or whose plan doesn't include the AI Assistant at all, sees the full chat interface load normally and can type and attempt to send messages, only to have every send fail with a generic error — no upfront indication of *why*, and no guidance to upgrade or that a credit limit was hit specifically (as opposed to a network/server error).\n**Claude Fix Prompt:**\nIn `assistant/page.jsx`, add a `useEntitlements()`-based check (mirroring `vciso/ai-strategy-advisor/page.jsx`'s pattern) for the relevant assistant entitlement key(s) and render a clear 'AI Assistant is not included in your plan' state before the chat UI when disabled. For the per-message quota case, have the backend's metering-rejection response carry a distinguishable error code (e.g. `AI_CREDITS_INSUFFICIENT`, matching the pattern already used in `policy-ai.controller.js`/`intelligent-audit.controller.js`), and add a specific `catch` branch in the message-send handler that renders 'You've reached your AI credit limit — upgrade your plan or wait for the next reset' instead of falling through to the generic error toast."
+  },
+  {
+    "id": "AIA-CHK-002",
+    "module": "ai-assistant",
+    "title": "`AI_Assistant_Python` performs no independent authentication of its own — its only middleware is CORS + request-logging, with an explicit code comment stating 'JWT auth + rate limiting handled by gateway' — even though `assistant-service` does forward the real user's JWT, which this service never verifies",
+    "severity": "Medium",
+    "status": "new",
+    "statusRaw": "🆕 NEW",
+    "category": "Checklist §10.2 — API & Cross-Service Contract",
+    "requirement": "ISO 27001:2022 Annex A.8.20 (network security) / A.8.26 (application security requirements)",
+    "affectedFiles": [
+      "AI_Assistant_Python/src/main.py:183-198",
+      "assistant-service/src/services/PythonBackendClient.ts:293-302,409-418"
+    ],
+    "firstDetected": "2026-09-10",
+    "lastVerified": "2026-09-10",
+    "runsOpen": 1,
+    "sourceFile": "Architecture/MODULE_FEATURE_CHECKLIST.md",
+    "description": "**Checklist row:** §10.2 — Internal microservice auth: any service-to-service call uses `X-Internal-Token`, not an unauthenticated internal route.\n**Files:** `AI_Assistant_Python/src/main.py:183-198` registers exactly two middlewares — `CORSMiddleware` and `RequestLoggingMiddleware` — with an explicit inline comment: \"Request logging — internal tracing only (JWT auth + rate limiting handled by gateway).\" No `Depends()`-based auth dependency exists on any router in this service. Meanwhile `assistant-service/src/services/PythonBackendClient.ts` (lines 293-302, 409-418) DOES forward the calling user's real token (`Authorization: Bearer ${userToken}`) on every request to this service — but per the comment above, `AI_Assistant_Python` never independently verifies it; the service trusts network positioning (only the gateway can reach it) rather than checking the credential it's handed.\n**Root Cause:** A deliberate architectural choice — unlike `PM-CHK-006`'s `ai_policy_generator_python` (which sends no auth signal at all and appears to be an unexplained oversight), this is an explicitly documented 'gateway handles auth' design. But it still means the service itself has no defense-in-depth: it is only as secure as the assumption that nothing but `assistant-service` can ever reach it on the network.\n**Impact:** If that network-isolation assumption is ever violated — a misconfigured Docker network, a compromised adjacent container, a future deployment change that exposes this service's port — any caller can invoke every AI Assistant / RAG / MCP-tool-calling route with zero credential check, even though the real user JWT the gateway forwards is sitting right there, unverified.\n**Claude Fix Prompt:**\nAdd a FastAPI dependency (e.g. `verify_gateway_token`) checking a service-level secret header (`X-Internal-Token`, distinct from the forwarded user JWT) that `assistant-service`'s `PythonBackendClient.ts` also sends, applied via `dependencies=[Depends(verify_gateway_token)]` at the app or router level (excluding health/metrics) — matching the same convention recommended for `ai_policy_generator_python` in `PM-CHK-006`. This adds defense-in-depth without removing the existing forwarded-JWT pattern, which can stay for downstream per-user context."
+  }
+]

@@ -4,7 +4,9 @@
   "scope": "feature",
   "qaAgent": "Cloud_Posture_QA_Agent",
   "sourceTrackers": [
-    "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
+    "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv",
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
   ],
-  "description": "Defects converted from the Cloud Posture bug-found CSV (not a live tracker .md — has severity + description but no OPEN/FIXED status lifecycle, just a one-time 'Verified' flag; status defaulted to 'open' for all rows, verified flag carried separately)."
+  "checklistIdPrefix": "CP",
+  "description": "Defects converted from the Cloud Posture bug-found CSV (not a live tracker .md — has severity + description but no OPEN/FIXED status lifecycle, just a one-time 'Verified' flag; status defaulted to 'open' for all rows, verified flag carried separately), plus checklist-conformance gaps found by running Architecture/MODULE_FEATURE_CHECKLIST.md against Cloud Posture (new findings use the CP-CHK-NNN prefix, distinct from the flat CP-NNN sequence)."
 }

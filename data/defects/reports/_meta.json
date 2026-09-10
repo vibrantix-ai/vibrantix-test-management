@@ -1,0 +1,10 @@
+{
+  "slug": "reports",
+  "name": "Reports",
+  "scope": "feature",
+  "sourceTrackers": [
+    "Architecture/MODULE_FEATURE_CHECKLIST.md"
+  ],
+  "checklistIdPrefix": "REPT",
+  "description": "Defects found by running Architecture/MODULE_FEATURE_CHECKLIST.md against the standalone /reports module (vibrantix-backend/src/modules/reports — report.routes.js/reportGeneration.routes.js/reports.routes.js — and vibrantix-client-panel's reports/ pages and components). This module is not one of the 30 slugs in the pre-existing modules registry and has no assigned specialized *_QA_Agent; flagged here as a new module per the checklist agent's own working instructions. First defect entity ever created for it — no prior QA run of any kind recorded."
+}
