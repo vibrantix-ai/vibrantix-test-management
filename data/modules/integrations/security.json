@@ -33,7 +33,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Confirmed: repo-wide search found encryptCredentials()/decryptCredentials() called nowhere outside crypto.ts itself. ConnectorService.ts and ConnectorConfigRepository.ts write accessToken/refreshToken straight into credentials.* with no encryption step. This is a real, current at-rest storage gap, exactly as the test describes it (the test's own 'expected result' documents this as the current/gap behavior to confirm)."
+    }
   },
   {
     "id": "INTG-SEC-002",
@@ -68,7 +74,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: 400 'OAuth state not found or expired. Please restart the OAuth flow.' on a missing Redis key; the oauth-state:<state> key is deleted only after a successful exchange, so a replayed callback URL correctly fails on the second attempt."
+    }
   },
   {
     "id": "INTG-SEC-003",
@@ -101,7 +113,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: findById() filters by { _id, organizationId } as a mandatory condition — a cross-org ID matches no document, returns null, and the route responds 404 with no org B data ever loaded."
+    }
   },
   {
     "id": "INTG-SEC-004",
@@ -135,7 +153,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified line-by-line: POST /connectors, PUT /connectors/:id, DELETE /connectors/:id, and POST /connectors/:id/test all require MANAGE_CONNECTORS; every GET route (list, single, catalog) requires only VIEW."
+    }
   },
   {
     "id": "INTG-SEC-005",
@@ -169,7 +193,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: the webhook route looks up credentials.webhookSecret from the specific matched per-org integration document, not a global secret — a signature computed with a different org's secret produces a different HMAC and fails verification against every candidate."
+    }
   },
   {
     "id": "INTG-SEC-006",
@@ -200,7 +230,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: zero localStorage/sessionStorage matches for credential-shaped values across every actual integrations frontend file (note: two filenames cited in the original test description, GitHubIntegrationPage.jsx and OktaIntegrationPage.jsx, no longer exist — components were reorganized under src/components/integrations/ and src/components/organization/integrations/ — but the underlying claim holds against the current file set)."
+    }
   },
   {
     "id": "INTG-SEC-007",
@@ -235,7 +271,13 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Confirmed real, unfixed gap: repo-wide search for any OAuth revocation call (provider revoke endpoint, token deletion API) returns zero matches anywhere in the connector-service. deleteConnector() only soft-deletes/deactivates/invalidates cache/audit-logs — the token remains valid at the provider until natural expiry."
+    }
   },
   {
     "id": "INTG-SEC-008",
@@ -245,21 +287,37 @@
     "title": "SophosCentralConnector enforces tenant-only OAuth2 credentials and a strict *.central.sophos.com host allow-list on the API host it discovers at runtime",
     "description": "SophosCentralConnector.discoverTenant() calls Sophos's global whoami endpoint and requires idType === 'tenant', rejecting partner- or organization-scoped service principals outright. It then validates the returned data-region API host (validateApiHost()) against a strict https + *.central.sophos.com allow-list before ever issuing a request to it — rejecting a missing host, a different domain, or a suffix-spoofed lookalike (e.g. central.sophos.com.attacker.example.com). This is a genuine, verified control: unlike a credential-scope check alone, it also prevents a compromised or malicious whoami response from redirecting all subsequent evidence collection to an attacker-controlled host.",
     "priority": "P0",
-    "environment": ["dev", "stage"],
+    "environment": [
+      "dev",
+      "stage"
+    ],
     "type": "both",
     "automationStatus": "automated",
-    "preconditions": ["Sophos Central connector with valid client-credentials configured"],
+    "preconditions": [
+      "Sophos Central connector with valid client-credentials configured"
+    ],
     "steps": [
       "Mock the whoami response with idType 'partner' and idType 'organization' — confirm testConnection() rejects both with a message naming the received idType",
       "Mock the whoami response with a data-region host on a suffix-spoofed lookalike domain — confirm testConnection() rejects it and no request is ever issued to that host",
       "Mock a genuine tenant response with a real *.central.sophos.com data-region host — confirm it is accepted"
     ],
     "expectedResult": "Non-tenant idType is always rejected before any evidence API is called. A data-region host that is missing, on the wrong domain, or suffix-spoofed is rejected and never dereferenced. Only a genuine https://*.central.sophos.com origin is accepted and used for subsequent calls.",
-    "tags": ["sophos-central", "ssrf-guard", "credential-scope", "positive-control"],
+    "tags": [
+      "sophos-central",
+      "ssrf-guard",
+      "credential-scope",
+      "positive-control"
+    ],
     "requirement": "ISO 27001 Annex A.8.20",
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Same mechanism as INTG-UNIT-011, verified with extra scrutiny as a security-critical SSRF guard: the *.central.sophos.com host check uses a proper dot-boundary suffix match, correctly rejecting both a missing host and suffix-spoofed lookalike domains before any request is issued to them."
+    }
   }
 ]

@@ -30,7 +30,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "fail",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "FAIL: connector.routes.ts OAuth callback does NOT auto-trigger a sync — the code has an explicit comment stating this was deliberately removed ('every connector requires the user to manually trigger the first sync'). Also the redirect URL differs by connector type (GitHub goes to /integrations, not /evidence-management/sync-jobs like other connectors). Both halves of this test's claim are false as written."
+    }
   },
   {
     "id": "INTG-E2E-002",
@@ -62,7 +68,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: IntegrationEvidenceDetailPage.jsx renders Source as `${data.integrationType} (automated)` plus externalSource.syncStatus/lastSyncAt/syncMetadata.recordCount at the cited field paths."
+    }
   },
   {
     "id": "INTG-E2E-003",
@@ -96,7 +108,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "blocked",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Architecture claim (manual-pick only, no folder-watch, dedicated drive-upload queue) is confirmed TRUE in code (capabilities: syncModes:['manual'], supportsWebhooks:false). But per INTG-005 (defect tracker), the frontend still hardcodes isGoogleDriveEnabled=false unconditionally, so this flow is currently unreachable through the UI — the test's own steps cannot actually be executed today. Blocked pending the frontend fix, not a live UI verification gap."
+    }
   },
   {
     "id": "INTG-E2E-004",
@@ -129,7 +147,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "fail",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "PARTIAL FAIL: deleteConnector() confirmed to never touch evidence (evidence stays intact, no error/blank state — that part holds). But the test's own expected result also requires it to be 'visually distinguishable that the source integration is no longer connected' — confirmed FALSE: IntegrationEvidenceDetailPage.jsx has no active/inactive/connectionStatus lookup at all; orphaned evidence from a disconnected integration renders identically to a healthy connection, with no indicator anywhere."
+    }
   },
   {
     "id": "INTG-E2E-005",
@@ -162,7 +186,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: GenericIntegrationCard.jsx needsReauth = tokenExpired || connectionStatus in ('error','pending') exactly as described, and the UI renders a 'Reauthorize' action label when true (line ~1447). Code-level verification; not a live click-through with an actually-expired token."
+    }
   },
   {
     "id": "INTG-E2E-006",
@@ -225,6 +255,12 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "blocked",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "The signature-verification half of this claim is already confirmed via INTG-UNIT-003/INTG-SEC-005 (correct signature rejected/accepted per-org secret). The 'real GitHub push produces visible evidence end-to-end' half requires live external GitHub webhook delivery, which cannot be verified via source review alone."
+    }
   }
 ]

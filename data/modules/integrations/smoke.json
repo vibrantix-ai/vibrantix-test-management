@@ -12,7 +12,7 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::test 1",
     "preconditions": [
       "Logged in as a user with integration.read permission"
@@ -29,7 +29,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "blocked",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Pure UI-rendering smoke check (page loads, cards visible, no console errors) — requires a live browser session to verify, not determinable from source alone."
+    }
   },
   {
     "id": "INTG-SMK-002",
@@ -61,7 +67,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: vibrantix-client-panel's integrations/layout.jsx wraps all child routes in <PermissionGate permission=\"integration.read\" allowProjectGrant>, confirming a user without integration.read is blocked at the route level."
+    }
   },
   {
     "id": "INTG-SMK-003",
@@ -76,7 +88,7 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::tests 7, 9",
     "steps": [
       "On /integrations, click 'Connect' on any OAuth-based connector card (e.g. GitHub)",
@@ -90,7 +102,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "blocked",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "The code-level half (CSRF state token generation before redirect) is confirmed correct via INTG-UNIT-002. The live browser redirect to a real third-party OAuth consent screen requires actual interaction with GitHub/Okta/etc. and can't be confirmed from source. Separately: automationStatus corrected below — the cited automationRef file doesn't exist anywhere in this workspace."
+    }
   },
   {
     "id": "INTG-SMK-004",
@@ -118,7 +136,13 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified via this session's own work: the GET /connectors route is confirmed reachable and correctly gated (VIEW permission per INTG-SEC-004), and its underlying service method was directly fixed and verified against real dev data this session (see INTG-INT-001)."
+    }
   },
   {
     "id": "INTG-SMK-005",
@@ -133,7 +157,7 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-automation/tests/discover/integration/integration-categories.test.ts::tests 1-20",
     "steps": [
       "On /integrations, click a category in the sidebar (e.g. 'Identity & IAM')",
@@ -147,7 +171,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: category selection in AllIntegrationsContent.jsx is a plain useState (selectedCategory) updated via setSelectedCategory() on click — no router.push/navigation call, confirming the 'without a full page reload' claim at the code level."
+    }
   },
   {
     "id": "INTG-SMK-006",
@@ -162,7 +192,7 @@
       "prod"
     ],
     "type": "manual",
-    "automationStatus": "automated",
+    "automationStatus": "not_automated",
     "automationRef": "test-automation/tests/discover/integration/all-integrations.test.ts::tests 2-3, 7, 9",
     "preconditions": [
       "An active, connected integration"
@@ -179,6 +209,12 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: GenericIntegrationCard.jsx's disconnect handler awaits deleteConnector(), and on success calls fetchStatus() (refreshing the card's displayed state) and shows a status:'success' toast titled 'Integration Disabled' — not an error toast. Matches the expected result."
+    }
   }
 ]

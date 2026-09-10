@@ -28,7 +28,13 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: safe-integration-response.ts maskValue() does exactly this — value.length<=4 -> '****', else '*'.repeat(len-4)+last4. Called from getConnector() via toSafeIntegrationResponse."
+    }
   },
   {
     "id": "INTG-UNIT-002",
@@ -57,7 +63,13 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: ConnectorService.ts startOAuthFlow uses randomBytes(32).toString('hex'), Redis key `oauth-state:${state}`, ttlMs 10*60*1000=600000, payload includes integrationId/organizationId/userId/integrationType."
+    }
   },
   {
     "id": "INTG-UNIT-003",
@@ -87,7 +99,13 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: webhook.routes.ts branches exactly as described — GitHub sha256= prefix, Slack v0:<ts>: prefix with 300s replay window, generic accepts raw or sha256=-prefixed digest."
+    }
   },
   {
     "id": "INTG-UNIT-004",
@@ -115,7 +133,13 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: OAuthConnector.ts ensureValidToken() uses bufferMs=5*60*1000; no expiryDate falls through to return existing token (GitHub-style never-expiring)."
+    }
   },
   {
     "id": "INTG-UNIT-005",
@@ -207,16 +231,24 @@
     "title": "SophosCentralConnector caches its OAuth2 access token across model groups instead of re-authenticating per API family",
     "description": "getToken() caches the token returned by the client-credentials grant and reuses it (tokenCache.expiresAt > now + 60s) across the endpoint, alert, audit, and firewall model groups within a single collect() run, rather than re-authenticating once per group.",
     "priority": "P2",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["Sophos Central connector configured with valid tenant client-credentials"],
+    "preconditions": [
+      "Sophos Central connector configured with valid tenant client-credentials"
+    ],
     "steps": [
       "Enable both endpoint_status and security_alert models on a single collect() call",
       "Count calls to the id.sophos.com/api/v2/oauth2/token endpoint"
     ],
     "expectedResult": "Exactly one token request is made for the whole collect() run, reused for both model groups.",
-    "tags": ["sophos-central", "oauth2", "token-caching"],
+    "tags": [
+      "sophos-central",
+      "oauth2",
+      "token-caching"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
@@ -230,7 +262,9 @@
     "title": "A 401 from a Sophos evidence API triggers exactly one forced token refresh and retry, never a second retry",
     "description": "call() catches an HTTP 401, forces getToken(true) once, and retries the same request with retryAuth=false. If the retried request also 401s, the error propagates without a further retry attempt.",
     "priority": "P1",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -239,11 +273,21 @@
       "Repeat with the endpoint route always returning 401"
     ],
     "expectedResult": "First scenario: 2 token fetches (initial + forced refresh), 2 endpoint attempts, model completes successfully. Second scenario: exactly 2 endpoint attempts total (no third retry), model marked permission_denied/NO_PERMISSION.",
-    "tags": ["sophos-central", "oauth2", "401-retry"],
+    "tags": [
+      "sophos-central",
+      "oauth2",
+      "401-retry"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: SophosCentralConnector.ts call() forces getToken(true) once on 401 with retryAuth=false on the retry; a second 401 throws immediately, no further retry loop."
+    }
   },
   {
     "id": "INTG-UNIT-010",
@@ -253,7 +297,9 @@
     "title": "discoverTenant() rejects partner/organization-level credentials and whoami responses missing a tenant id",
     "description": "SophosCentralConnector V1 requires idType === 'tenant' from the global whoami endpoint. Partner or organization-scoped credentials, or a tenant response missing an id, must fail with a clear, specific message rather than proceeding with the wrong credential scope.",
     "priority": "P1",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -261,12 +307,22 @@
       "Call testConnection() for each case"
     ],
     "expectedResult": "All three cases return { valid: false } with a message stating tenant credentials are required (identifying the received idType) or that whoami returned no tenant ID.",
-    "tags": ["sophos-central", "tenant-scoping", "oauth2"],
+    "tags": [
+      "sophos-central",
+      "tenant-scoping",
+      "oauth2"
+    ],
     "requirement": "ISO 27001 Annex A.8.20",
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: discoverTenant() throws a specific message naming the received idType when !== 'tenant', and a separate specific message when whoami.id is missing."
+    }
   },
   {
     "id": "INTG-UNIT-011",
@@ -276,7 +332,9 @@
     "title": "validateApiHost() only accepts an HTTPS *.central.sophos.com origin for the discovered data-region host",
     "description": "validateApiHost() rejects a missing dataRegion host, a different domain entirely, and a suffix-spoofed lookalike domain (e.g. sophos.com.attacker.example.com), returning only the URL origin when the host genuinely ends with .central.sophos.com over https.",
     "priority": "P0",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -285,12 +343,22 @@
       "Call testConnection() for each case"
     ],
     "expectedResult": "Both cases return { valid: false } with a message identifying an invalid or missing data-region API host; no request is ever issued to the spoofed host.",
-    "tags": ["sophos-central", "ssrf-guard", "host-validation"],
+    "tags": [
+      "sophos-central",
+      "ssrf-guard",
+      "host-validation"
+    ],
     "requirement": "ISO 27001 Annex A.8.20",
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified carefully (SSRF-critical): validateApiHost() uses `url.hostname.endsWith('.central.sophos.com')` with a leading-dot boundary plus a strict https check — traced against both spoof examples in the test, both correctly rejected. Not a naive substring check; genuinely spoof-proof."
+    }
   },
   {
     "id": "INTG-UNIT-012",
@@ -300,7 +368,9 @@
     "title": "classifyError()'s RATE_LIMITED branch is currently unreachable for Sophos because apiCall() swallows the HTTP 429 status on final retry exhaustion",
     "description": "A persistent 404 correctly classifies as unsupported/API_NOT_AVAILABLE. A persistent 429 is retried by BaseConnector.apiCall() with real exponential backoff (~15s total across 4 attempts) but never assigns lastError in its 429 branch, so the final thrown error is the generic 'API call failed after retries' — which does not match classifyError()'s /HTTP 429/ pattern, and the model is marked TRANSIENT_OR_API_ERROR instead of the intended RATE_LIMITED.",
     "priority": "P2",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -308,7 +378,11 @@
       "Mock /common/v1/alerts to always return 429 — run collect() with security_alert enabled (allow ~15-20s for real backoff sleeps)"
     ],
     "expectedResult": "404 case: status 'unsupported', code 'API_NOT_AVAILABLE'. 429 case (current behavior, flagged as a gap): status 'error', code 'TRANSIENT_OR_API_ERROR', message does not contain 'HTTP 429'.",
-    "tags": ["sophos-central", "error-classification", "gap"],
+    "tags": [
+      "sophos-central",
+      "error-classification",
+      "gap"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
@@ -322,7 +396,9 @@
     "title": "numberedPages() aggregates every page up to page.pages.total and falls back to stopping on the first empty page when total is absent",
     "description": "The firewall inventory fetch loops pages 1..100, stopping either once pageNumber >= pages.total (when total is numeric) or as soon as a page returns zero items (when total is absent/non-numeric).",
     "priority": "P2",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -330,7 +406,10 @@
       "Mock a firewall response with no pages.total field: page 1 returns one item, page 2 returns zero items"
     ],
     "expectedResult": "First case: both pages fetched exactly once each, both firewalls present in the resulting inventory. Second case: exactly 2 page requests made, stopping at the first empty page.",
-    "tags": ["sophos-central", "pagination"],
+    "tags": [
+      "sophos-central",
+      "pagination"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
@@ -344,7 +423,9 @@
     "title": "sophos_endpoint_posture skips endpoints missing required fields and reports a partial status with an explicit skip count",
     "description": "An endpoint missing health.overall, a boolean tamperProtectionEnabled, or an array assignedProducts is excluded from posture evidence and counted as skipped; the model result status becomes 'partial' (not 'complete') with code INCOMPLETE_ENDPOINT_FIELDS and a message stating how many were skipped.",
     "priority": "P1",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -352,11 +433,21 @@
       "Run collect() with sophos_endpoint_posture enabled"
     ],
     "expectedResult": "Exactly 1 posture evidence item is produced (the valid endpoint). modelResults for sophos_endpoint_posture shows status 'partial', authoritative false, itemCount 1, code INCOMPLETE_ENDPOINT_FIELDS, message citing 3 skipped endpoints.",
-    "tags": ["sophos-central", "endpoint-posture", "data-quality"],
+    "tags": [
+      "sophos-central",
+      "endpoint-posture",
+      "data-quality"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: sophos_endpoint_posture skip condition covers exactly health.overall/boolean tamperProtectionEnabled/array assignedProducts; result becomes 'partial'/INCOMPLETE_ENDPOINT_FIELDS when any are skipped."
+    }
   },
   {
     "id": "INTG-UNIT-015",
@@ -366,7 +457,9 @@
     "title": "firmware-upgrade-check requests are batched in chunks of at most 1000 firewall IDs",
     "description": "For tenants with more than 1000 firewalls, the firmware-upgrade-check POST is called once per 1000-ID chunk (offset stepping by 1000), never with more than 1000 IDs in a single request body.",
     "priority": "P2",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -374,7 +467,11 @@
       "Run collect() with sophos_firewall_posture enabled and capture every firmware-upgrade-check request body"
     ],
     "expectedResult": "Exactly 2 firmware-upgrade-check calls are made: the first with 1000 firewall IDs, the second with the remaining 500.",
-    "tags": ["sophos-central", "batching", "firewall"],
+    "tags": [
+      "sophos-central",
+      "batching",
+      "firewall"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
@@ -388,7 +485,9 @@
     "title": "Sync-status is queried once per distinct firewall group, excludes ungrouped firewalls, and a single failing group is marked partial without discarding groups that succeeded",
     "description": "sophos_firewall_sync_posture computes the set of unique group.id values across all firewalls and calls the sync-status endpoint once per group (not once per firewall). Firewalls with no group.id never appear in sync-posture evidence. If one group's call fails, the model result is 'partial'/PARTIAL_GROUP_SYNC_STATUS with the successfully-fetched groups' evidence still emitted.",
     "priority": "P1",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -397,11 +496,21 @@
       "Repeat with group-b's sync-status call returning 403"
     ],
     "expectedResult": "First case: exactly one sync-status call for group-a and one for group-b; 3 sync-posture items (for the 3 grouped firewalls), none for the ungrouped one. Second case: modelResults status 'partial', authoritative false, code PARTIAL_GROUP_SYNC_STATUS, itemCount reflecting only the group that succeeded.",
-    "tags": ["sophos-central", "firewall", "partial-failure"],
+    "tags": [
+      "sophos-central",
+      "firewall",
+      "partial-failure"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: sync-status is called once per unique group.id (not per firewall); ungrouped firewalls excluded from evidence; a failing group yields 'partial'/PARTIAL_GROUP_SYNC_STATUS while other groups' evidence is still emitted."
+    }
   },
   {
     "id": "INTG-UNIT-017",
@@ -411,7 +520,9 @@
     "title": "Disabling every model except sophos_tenant makes zero calls to the endpoint, alert, audit, or firewall APIs",
     "description": "collect({ enabledModels: ['sophos_tenant'] }) must only perform the token + whoami discovery calls and synthesize the single sophos_tenant evidence item — no request should ever be issued to the endpoint, common/alerts, audit, or firewall API families.",
     "priority": "P2",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
     "steps": [
@@ -419,7 +530,11 @@
       "Run collect({ enabledModels: ['sophos_tenant'] })"
     ],
     "expectedResult": "No unexpected route is ever hit; exactly one evidence item (sophos_tenant) is returned; syncMetadata.attemptedCanonicalModels === ['sophos_tenant'].",
-    "tags": ["sophos-central", "model-scoping", "efficiency"],
+    "tags": [
+      "sophos-central",
+      "model-scoping",
+      "efficiency"
+    ],
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-08-24",
@@ -433,20 +548,34 @@
     "title": "redact() strips both the configured client secret and the cached access token from any surfaced error text",
     "description": "Even if an upstream error response happens to echo back the caller's own bearer token or client secret, redact() must remove both values from every warning/error message and log line before they reach syncMetadata or the collection result.",
     "priority": "P0",
-    "environment": ["dev"],
+    "environment": [
+      "dev"
+    ],
     "type": "automated",
     "automationStatus": "automated",
-    "preconditions": ["A model API mock deliberately echoes the client secret and access token back in its error body"],
+    "preconditions": [
+      "A model API mock deliberately echoes the client secret and access token back in its error body"
+    ],
     "steps": [
       "Mock /common/v1/alerts to return a 403 whose error body contains the literal client secret and access token",
       "Run collect() and serialize the full result to JSON"
     ],
     "expectedResult": "The serialized result contains neither the client secret nor the access token; both are replaced with '[REDACTED]'.",
-    "tags": ["sophos-central", "credential-security", "redaction"],
+    "tags": [
+      "sophos-central",
+      "credential-security",
+      "redaction"
+    ],
     "requirement": "ISO 27001 Annex A.8.20",
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-08-24",
-    "updatedAt": "2026-08-24"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Verified: redact() strips both credentials.clientSecret and the cached bearer token from every warning/error message reaching syncMetadata, replacing both with '[REDACTED]'."
+    }
   }
 ]

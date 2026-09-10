@@ -27,7 +27,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "pass",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Inferred from confirmed code paths rather than a live DOM inspection: getConnector() (the only API that serves connector credential data) always masks via maskValue() (INTG-UNIT-001), and INTG-SEC-006 confirmed zero localStorage/sessionStorage persistence of raw credential values across every integrations frontend file. No separate raw-credential-serving path was found."
+    }
   },
   {
     "id": "INTG-SAN-002",
@@ -57,7 +63,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "blocked",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "Requires live timing observation of the integration card's refresh behavior after a real sync completes — not determinable from static code alone."
+    }
   },
   {
     "id": "INTG-SAN-003",
@@ -83,7 +95,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "fail",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "FAIL, confirmed directly: GenericIntegrationCard.jsx's handleHubToggle() calls deleteConnector() immediately on click when status.enabled — no window.confirm(), no AlertDialog, no confirmation step of any kind exists in the disconnect path. Clicking the toggle disconnects instantly."
+    }
   },
   {
     "id": "INTG-SAN-004",
@@ -114,7 +132,13 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-02",
+    "execution": {
+      "result": "fail",
+      "runAt": "2026-09-02",
+      "runBy": "Claude (code verification pass)",
+      "notes": "FAIL, confirmed directly: zero permission checks exist on the Connect/Disconnect/Test/Reconfigure buttons in GenericIntegrationCard.jsx, IntegrationEvidenceDrawer.jsx, AllIntegrationsContent.jsx, or IntegrationsCatalog.jsx. Only the outer page-level layout gates on integration.read (view access) — there is no MANAGE_CONNECTORS-equivalent UI gate. A VIEW-only user sees every action button fully visible and enabled; only the backend (INTG-SEC-004, confirmed correct) rejects the actual API call with 403. Enforcement is backend-only, not UI-level as this test expects."
+    }
   },
   {
     "id": "INTG-SAN-005",

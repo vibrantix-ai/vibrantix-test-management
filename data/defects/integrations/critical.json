@@ -4,7 +4,8 @@
     "module": "integrations",
     "title": "No evaluation rules/checks exist for 8 of the 10 named providers - their evidence is stored with zero control linkage, silently",
     "severity": "Critical",
-    "status": "open",
+    "status": "in_progress",
+    "statusRaw": "Re-verified 2026-09-02: substantially addressed. Live dev DB now has 977 evaluation rules across 24 connector types (was 375 across 3 when this was filed) - github(144)/jira(29)/nessus(10)/openvas(28)/splunk(98)/sumologic(81) all now have real rule coverage. Only rapid7 and microsoft_sentinel still have zero rules in both ext_integration_evaluation_rules and ext_integration_check_catalog. The silent-no-verdict code path (EvidenceEvaluationEngine.ts, pipeline.worker.ts) is unchanged and still applies to those 2 remaining providers.",
     "category": "Traceability",
     "description": "GitHub, Jira, Nessus, OpenVAS, Rapid7, Sentinel, and Splunk/SumoLogic evidence is genuinely COLLECTED (each connector declares real `supportedCanonicalModels`, e.g. `GitHubConnector.ts:205`, `JiraConnector.ts:153`, `NessusConnector.ts:163-169`), but the rule catalog that turns collected data into a control verdict is populated for almost none of them. `vibrantix-connector-service/scripts/seeds/data/evaluation_rules.json` has 375 rules total, distributed ONLY across okta (360), forgerock (9), fortinet (6) - zero for github/jira/nessus/openvas/rapid7/sentinel/splunk/sumologic/generic. `SupplementalCheckService.ts`'s built-in checks cover only mongodb/aws/openai_gpt/anthropic_claude/sophos_central/heroku - again none of the named 8. When `EvidenceEvaluationEngine.evaluateEvidence()` (`EvidenceEvaluationEngine.ts:70-84`) finds no matching rules it returns `[]` - no verdict document is ever written. `pipeline.worker.ts:1171-1181` explicitly detects this ('no active integration_check_master record' / 'no active UCL targets'), logs a warning no one in the UI ever sees, and stores the evidence anyway, unlinked.\n\nAuditor-facing breakage: a Nessus scan result, a Jira ticket, a GitHub branch-protection check, a Rapid7/OpenVAS finding, or a Sentinel/Splunk/SumoLogic alert can be pulled into Vibrantix, displayed with a provider badge, and never once be mapped to an ISO 27001 Annex A control, a UCL requirement, or any framework - silently. Only Okta-sourced evidence has a real, populated verdict chain today.",
     "requirement": "ISO 27001:2022 Annex A.5.19/A.5.20 supplier & integration risk controls; Clause 7.5 documented information must indicate its nature",
@@ -16,7 +17,7 @@
     ],
     "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
     "firstDetected": "2026-08-29",
-    "lastVerified": "2026-08-29",
+    "lastVerified": "2026-09-02",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   },
   {
@@ -24,7 +25,8 @@
     "module": "integrations",
     "title": "Hardcoded ISO 27001/SOC2/NIST compliance badges printed on every integration-evidence PDF export, unconditionally (same defect as EM-043, viewed from Integrations UI)",
     "severity": "Critical",
-    "status": "open",
+    "status": "in_progress",
+    "statusRaw": "Re-verified 2026-09-02: fixed in code, commit a342808e (2026-08-29, same day as filed). The COMPLIANCE_BADGES static constant is gone entirely (zero hits repo-wide) - PDF export now filters the real per-evidence `verdicts` prop to PASS entries and prints those, matching what the on-screen Mapped Controls section shows. Left as in_progress pending QA re-verification/close rather than marking fixed outright.",
     "category": "Traceability",
     "description": "`vibrantix-client-panel/src/components/evidence-management/integration-hub/IntegrationEvidenceDetailPage.jsx:224-229` defines a static constant: COMPLIANCE_BADGES = [{framework:'ISO 27001', controls:['A.5.15','A.8.2','A.12.4.1']}, {framework:'SOC 2', controls:['CC6.1','CC6.2','CC7.2']}, {framework:'NIST CSF', controls:['AC-2','IA-2','DE.AE-3']}] despite an adjacent comment claiming it is 'mapped from evidence tags/keywords' - no such lookup exists. The PDF export routine prints exactly this same static array under a 'Compliance Mapping' section (lines 408-426) regardless of the specific evidence item, ignoring the real per-evidence verdict data the same file fetches and renders correctly on-screen elsewhere.\n\nAuditor-facing breakage: a PDF handed to an external auditor as 'evidence for control A.5.15' asserts that mapping unconditionally and identically for every single piece of integration evidence in the platform, whether it is a Jira ticket, a Nessus scan, a passing Okta MFA check, or evidence with zero real verdicts at all (INTG-001). This is cross-referenced with, and confirms still-live, EM-043 in evidence-management/critical.json - same underlying code, logged here separately because it is reachable and independently discoverable from the Integrations module's own evidence surface.",
     "requirement": "ISO/IEC 27007:2019 §6.3.2 evidence verifiability; ISO 27001:2022 Clause 7.5.2 documented information must be of appropriate nature",
@@ -34,7 +36,7 @@
     ],
     "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap", "cross-ref:EM-043"],
     "firstDetected": "2026-08-29",
-    "lastVerified": "2026-08-29",
+    "lastVerified": "2026-09-02",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   },
   {
@@ -62,7 +64,8 @@
     "module": "integrations",
     "title": "Google Drive integration is fully non-functional end-to-end (dead routes, dead worker, dead producer) and would bypass control mapping entirely even if fixed (same root cause as EM-042)",
     "severity": "Critical",
-    "status": "open",
+    "status": "in_progress",
+    "statusRaw": "Re-verified 2026-09-02: 2 of 3 dead paths fixed, 2 real gaps remain. FIXED: backend routes /connectors/:id/drive/files|evidence|upload now exist (connector.routes.ts:826-966+); createDriveUploadWorker is now imported and started in index.ts:28,316. STILL OPEN: UploadDocumentModal.js:217-219 still hardcodes isGoogleDriveEnabled=false unconditionally (never set true anywhere) - feature is still unreachable from the UI regardless of backend readiness. drive-upload.worker.ts still does a bare EVIDENCES.insertOne with no call to a shared evidence-mapping/UCL workflow - picked files still wouldn't get control-mapped even if reachable.",
     "category": "Traceability",
     "description": "Confirmed manual-pick by design (`GoogleDriveConnector.ts:1-6`), but the pipeline is dead in three independent ways: (1) no backend routes exist for `/connectors/:id/drive/files|evidence|upload` despite the frontend calling exactly these paths (`integrationHubService.js:201-208`); (2) the frontend explicitly hardcodes `isGoogleDriveEnabled = false` (`UploadDocumentModal.js:215-219`) with a comment that the enablement endpoint isn't mounted backend-side; (3) `createDriveUploadWorker` (`drive-upload.worker.ts:42`) is defined but never imported/started anywhere, and no producer ever enqueues a job onto the `drive-upload` queue. Even hypothetically wired up, the worker (`drive-upload.worker.ts:144-181`) inserts a bare document directly into the evidences collection without ever calling the shared `createEvidenceMappingsWithWorkflow` function used by every other upload path - so no requirement/UCL mapping would ever be created for it.\n\nAuditor-facing breakage: the 'manual pick' Google Drive evidence path is not merely un-automated, it is fully non-functional today end-to-end, and its design - even hypothetically working - never links picked files to any control. Cross-referenced with, and a more thorough confirmation of, EM-042 in evidence-management/critical.json.",
     "requirement": "ISO 27001:2022 Clause 7.5.3 documented information must be available; Annex A.5.19/A.5.20",
@@ -74,7 +77,7 @@
     ],
     "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap", "cross-ref:EM-042"],
     "firstDetected": "2026-08-29",
-    "lastVerified": "2026-08-29",
+    "lastVerified": "2026-09-02",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
   }
 ]
