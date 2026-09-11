@@ -31,7 +31,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-E2E-002",
@@ -66,7 +70,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-E2E-003",

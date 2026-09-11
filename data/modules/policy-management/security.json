@@ -29,7 +29,11 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-SEC-002",
@@ -61,7 +65,11 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-SEC-003",
@@ -93,7 +101,11 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-SEC-004",
@@ -124,7 +136,11 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-SEC-005",
@@ -156,7 +172,11 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-SEC-006",
@@ -185,6 +205,10 @@
     "owner": "Security",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   }
 ]

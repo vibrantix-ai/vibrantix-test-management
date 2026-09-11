@@ -27,7 +27,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-INT-002",
@@ -57,7 +61,11 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-INT-003",
@@ -87,7 +95,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-INT-004",
@@ -117,6 +129,10 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   }
 ]

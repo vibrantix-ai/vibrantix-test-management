@@ -26,7 +26,11 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-UNIT-002",
@@ -50,7 +54,11 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-UNIT-003",
@@ -76,7 +84,11 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   },
   {
     "id": "POLM-UNIT-004",
@@ -100,6 +112,10 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   }
 ]

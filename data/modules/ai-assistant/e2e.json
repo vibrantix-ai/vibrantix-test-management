@@ -131,7 +131,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-11",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   },
   {
     "id": "AIAS-E2E-005",
