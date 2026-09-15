@@ -3,7 +3,7 @@
     "id": "RR-003",
     "module": "risk-register",
     "severity": "High",
-    "status": "open",
+    "status": "fixed",
     "statusRaw": "🔴 OPEN",
     "component": "CreateRiskModal — Step 4",
     "category": "Compliance Gap",
@@ -17,7 +17,7 @@
     ],
     "description": "`validateStep4` (unconditional `() => true` in the original defect) has genuinely been rewritten to require Annex A/UCL mappings unless `treatmentStrategy === 'Accept'`. However, re-verification found it is architecturally unreachable in practice: `handleNext` calls `validators[currentStep]()` where `validators = [validateStep1, validateStep2, validateStep3, validateStep4]` — this only runs the validator for the step being LEFT when advancing to the NEXT step. Since Mappings is the last step (`currentStep === steps.length - 1`), there is no 'Next' click from it — the wizard shows a 'Save'/'Create' button instead, wired directly to `handleSubmit`. `handleSubmit` itself only re-runs `validateStep1` and `validateStep3` (lines 1248-1258) — it never calls `validateStep2` or `validateStep4`. Net effect: a user can complete the wizard and save a risk with `treatmentStrategy !== 'Accept'` and zero Annex A/UCL control mappings, because the one validator written to prevent that is never executed on the save path. ISO 27001 Clause 6.1.3(b) traceability gap remains real.",
     "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-09-14",
     "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
@@ -322,7 +322,11 @@
       "risk-management-service/src/types/index.ts:225-263",
       "vibrantix-client-panel/src/components/risk-register/RiskTreatmentPanel.jsx"
     ],
-    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "tags": [
+      "iso-auditor-traceability-review-2026-08-29",
+      "priority-highest",
+      "evidence-control-linkage-gap"
+    ],
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
@@ -342,7 +346,11 @@
       "vibrantix-client-panel/src/components/risk-center/CreateRiskModal.jsx:543-561,1464-1526",
       "risk-management-service/src/services/RiskRegisterService.ts:1656-1786"
     ],
-    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "tags": [
+      "iso-auditor-traceability-review-2026-08-29",
+      "priority-highest",
+      "evidence-control-linkage-gap"
+    ],
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"

@@ -25,7 +25,7 @@
     "id": "CP-002",
     "module": "cloud-posture",
     "severity": "Critical",
-    "status": "open",
+    "status": "wont_fix",
     "component": "/cloud-posture/scans/[scanId] (progress polling)",
     "category": "Stale cache / state machine",
     "title": "getScanProgress unconditionally overrides the MongoDB status with the Redis cache's status (status = cacheData.status || dbStatus) with no timestamp/staleness comparison against dbStatus. The Python worker's redis_cache.delete_scan_status() is defined but never called anywhere, so the stale key only expires after a fixed 1-hour TTL.",
@@ -39,14 +39,14 @@
       "verified-note: Yes - unconditional cache override confirmed at the exact lines cited",
       "2026-08-24 re-verification: STILL OPEN, citations updated for line drift"
     ],
-    "lastVerified": "2026-08-24",
+    "lastVerified": "2026-09-14",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
     "id": "CP-003",
     "module": "cloud-posture",
     "severity": "Critical",
-    "status": "open",
+    "status": "cannot_verify",
     "component": "/cloud-posture main dashboard + scans/[scanId]",
     "category": "State machine / infinite polling",
     "title": "None of the frontend's 3 'is this scan done?' terminal-status checks (nor the backend's own progress-percentage switch) include 'abandoned', 'timed_out', or 'completed_with_warnings' - all 3 are real, live terminal statuses (abandoned is set in 5 places by scan-reconciler.job.js; completed_with_warnings/timed_out are real model enum values used elsewhere).",
@@ -60,7 +60,7 @@
       "verified-note: Yes - both cache-override and terminal-status-list gaps directly confirmed",
       "2026-08-24 re-verification: STILL OPEN, citations updated for line drift (grep-reconfirmed all 3 arrays + 5 abandoned-setting sites in scan-reconciler.job.js)"
     ],
-    "lastVerified": "2026-08-24",
+    "lastVerified": "2026-09-14",
     "sourceFile": "QA_Tracker/CLOUD_POSTURE_BUGS_FOUND.csv"
   },
   {
@@ -79,7 +79,11 @@
       "vibrantix-backend/src/modules/compliance-frameworks/requirement-resource-resolver.service.js:384-412",
       "vibrantix-client-panel/src/components/grc/FrameworkComplianceMap.jsx:606-611,650-679"
     ],
-    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "tags": [
+      "iso-auditor-traceability-review-2026-08-29",
+      "priority-highest",
+      "evidence-control-linkage-gap"
+    ],
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"
@@ -97,7 +101,11 @@
     "affectedFiles": [
       "vibrantix-backend/src/core/client-compliance-sync.service.js:1847-1850,2653-2654,128,1975-2004"
     ],
-    "tags": ["iso-auditor-traceability-review-2026-08-29", "priority-highest", "evidence-control-linkage-gap"],
+    "tags": [
+      "iso-auditor-traceability-review-2026-08-29",
+      "priority-highest",
+      "evidence-control-linkage-gap"
+    ],
     "firstDetected": "2026-08-29",
     "lastVerified": "2026-08-29",
     "sourceFile": "Architecture/Reviews_and_defects/ISO27001_AUDITOR_TRACEABILITY_REVIEW_2026-08-29.md"

@@ -75,7 +75,7 @@
     "id": "RR-016",
     "module": "risk-register",
     "severity": "Medium",
-    "status": "open",
+    "status": "fixed",
     "statusRaw": "🔴 OPEN",
     "component": "Risk Trends Page",
     "category": "Analytics Completeness",
@@ -87,7 +87,7 @@
     "description": "Trends page supports only a single time-window selection. No option to overlay a prior period or compare current year vs. prior year risk counts/scores.",
     "fixEvidence": "Re-verified 2026-08-27: trends/page.jsx's `timeRange` selector still offers only 30d/90d/180d/1y as a single window (lines 389-399) — no comparison/overlay/prior-period option exists anywhere in the file (grepped for previousYear/comparisonData/vsLastYear/priorYear/YoY — zero matches). Not fixed; re-opened.",
     "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-09-14",
     "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
