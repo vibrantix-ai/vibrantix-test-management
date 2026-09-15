@@ -28,7 +28,11 @@
     "owner": "SDET",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-INT-002",
@@ -60,7 +64,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-08-12"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-INT-003",
@@ -91,7 +99,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-INT-004",
@@ -123,7 +135,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-INT-005",
@@ -153,7 +169,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-INT-006",
@@ -183,7 +203,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-14",
+    "execution": {
+      "result": "blocked",
+      "notes": "The issue, in plain terms:\n\nWhen someone updates a Finding (like a compliance gap found during an audit), the system lets them change its status to anything in one step — including going straight from open to closed. There's no rule enforcing that a finding has to go through the proper review stages first (e.g. open → in_progress → remediation_in_progress → verification_pending → closed).\n\nThis matters because:\n\nA finding could be marked \"closed\" without anyone ever fixing the underlying issue or verifying the fix.\nIt breaks the audit trail an ISO 27001 reviewer expects — closure should always follow evidence/verification, not happen in a single click.\nCARs (Corrective Action Requests) already have this protection — findings don't, even though they live in the exact same database table/model. It's an inconsistency, not an intentional design choice.\nWhere it lives: findings.controller.js:260-316, specifically the FIELD_MAP loop at lines 277-286 that copies req.body.status straight onto the document.\n\nThe solution:\n\nAdd a transition map for findings, same pattern as CARs already use:\n\n\nconst FINDING_VALID_TRANSITIONS = {\n  open: ['in_progress'],\n  in_progress: ['remediation_in_progress', 'open'],\n  remediation_in_progress: ['verification_pending'],\n  verification_pending: ['closed', 'verification_failed'],\n  verification_failed: ['remediation_in_progress'],\n  accepted_risk: [],\n  closed: [],\n  cancelled: [],\n};\nThen before the FIELD_MAP loop applies a status change, check it:\n\n\nif (req.body.status !== undefined && req.body.status !== finding.status) {\n  const allowed = FINDING_VALID_TRANSITIONS[finding.status] || [];\n  if (!allowed.includes(req.body.status)) {\n    throw AppError.badRequest(\n      `Cannot transition finding from '${finding.status}' to '${req.body.status}'. Allowed: ${allowed.join(', ') || 'none'}.`\n    );\n  }\n}"
+    }
   },
   {
     "id": "AUDT-INT-007",
@@ -212,7 +236,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-14",
+    "execution": {
+      "result": "blocked",
+      "notes": "The issue, in plain terms:\n\nWhen a CAR (Corrective Action Request) is overdue, the system automatically bumps its escalationLevel up the chain — none → auditor → manager → director → executive — based on how many days it's been overdue. That part works.\n\nThe problem is how it decides to update the level. Every time escalate() runs, it looks at the CAR's current days-overdue and computes a level from scratch, then just checks \"is this different from what's stored?\" — not \"is this higher than what's stored?\" So if a CAR's due date ever gets pushed later (which any normal CAR update allows, no restriction on it), the recalculated overdue-days can come out lower than before, and the next escalation run will happily downgrade the CAR from, say, director back down to manager.\n\nThat's exactly backwards from what the ticket expects: once a CAR earns a higher escalation level (meaning higher-ups got notified), it shouldn't quietly get walked back down just because someone stretched the deadline. That undermines the whole point of escalation — it's supposed to be a one-way ratchet that reflects \"this has been ignored for X days,\" and right now it can be silently reset.\n\nWhere it lives: corrective-action.service.js:920-924\n\n\nif (newLevel !== 'none' && newLevel !== car.escalationLevel) {\n  await AuditNonConformance.updateOne({ _id: car._id }, { $set: { escalationLevel: newLevel } });\nThe solution:\n\nCompare the rank of the levels, not just whether they differ, and only ever move forward:\n\n\nconst ESCALATION_RANK = { none: 0, auditor: 1, manager: 2, director: 3, executive: 4 };\n\n// ...inside the loop, replace the existing condition:\nif (ESCALATION_RANK[newLevel] > ESCALATION_RANK[car.escalationLevel]) {\n  await AuditNonConformance.updateOne(\n    { _id: car._id },\n    { $set: { escalationLevel: newLevel } },\n  );\n  // ...rest of logging stays the same\n}"
+    }
   },
   {
     "id": "AUDT-INT-008",

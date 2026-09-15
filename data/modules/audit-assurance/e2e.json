@@ -106,7 +106,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-E2E-004",
@@ -137,7 +141,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-E2E-005",
@@ -168,7 +176,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "skipped",
+      "notes": ""
+    }
   },
   {
     "id": "AUDT-E2E-006",
@@ -198,6 +210,10 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   }
 ]

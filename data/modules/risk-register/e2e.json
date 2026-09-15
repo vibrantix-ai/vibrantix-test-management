@@ -32,7 +32,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "RISK-E2E-002",
@@ -67,7 +71,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   },
   {
     "id": "RISK-E2E-003",
@@ -102,7 +110,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-12",
+    "execution": {
+      "result": "pass",
+      "notes": ""
+    }
   },
   {
     "id": "RISK-E2E-004",
@@ -136,7 +148,11 @@
     "owner": "QA",
     "status": "active",
     "createdAt": "2026-07-31",
-    "updatedAt": "2026-07-31"
+    "updatedAt": "2026-09-14",
+    "execution": {
+      "result": "fail",
+      "notes": ""
+    }
   },
   {
     "id": "RISK-E2E-005",

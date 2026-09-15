@@ -21,7 +21,7 @@
     "id": "RR-022",
     "module": "risk-register",
     "severity": "Low",
-    "status": "open",
+    "status": "fixed",
     "statusRaw": "🔴 OPEN",
     "component": "Risk Center Layout",
     "category": "Authorization Gap",
@@ -33,7 +33,7 @@
     "description": "All risk-center routes are behind a single `PermissionGate permission='risk.read'`. No differentiated gates for write, delete, accept, or governance actions at the frontend layout level.",
     "fixEvidence": "Re-verified 2026-08-27 per this module's own Architecture note (do not rubber-stamp fixed just because the file moved): risk-center/layout.jsx:60 still reads exactly `<PermissionGate permission=\"risk.read\" allowProjectGrant>{children}</PermissionGate>` wrapping every sub-route with a single gate. The underlying frontend gap is unchanged — only relocated from the deleted risk-register/layout.jsx. (Note: the BACKEND is correctly granular — risk-register.routes.ts and sibling route files enforce distinct risk.read/create/update/delete/approve preHandlers per route, independently confirmed 2026-08-27 — this record is specifically about the frontend gate having no equivalent differentiation.) Re-opened; was incorrectly marked fixed in a prior conversion.",
     "firstDetected": "2026-08-27 (re-opened; originally logged against the pre-restructure file)",
-    "lastVerified": "2026-08-27",
+    "lastVerified": "2026-09-14",
     "runsOpen": 1,
     "sourceFile": "QA_Tracker/RISK_REGISTER_QA_LIVE_TRACKER.md"
   },
